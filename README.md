@@ -34,7 +34,7 @@ pip3 install .
 
 | | Model | Reference | Exported From | Netron |
 |:------------:|:------------:|:------------:|:------------:|:------------:|
-| [<img src="hand_recognition/blazehand/output.png" width=128px>](hand_recognition/blazehand/) | [Blaze Hand](/hand_recognition/blazehand/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/032_FaceMesh/033_Hand_Detection_and_Tracking) | TensorFlow | [Netron](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazehand/hand_landmark_new_256x256_full_integer_quant.tflite) |
+| [<img src="hand_recognition/blazehand/output.png" width=128px>](hand_recognition/blazehand/) | [Blaze Hand](/hand_recognition/blazehand/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/033_Hand_Detection_and_Tracking) | TensorFlow | [Netron](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazehand/hand_landmark_new_256x256_full_integer_quant.tflite) |
 
 ## Image classification
 

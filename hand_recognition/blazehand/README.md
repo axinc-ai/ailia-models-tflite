@@ -79,7 +79,7 @@ $ python3 blazehand.py --hands 3
 
 ## Reference
 
-- [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/032_FaceMesh/033_Hand_Detection_and_Tracking)
+- [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/033_Hand_Detection_and_Tracking)
 - [MediaPipe Hands](https://google.github.io/mediapipe/solutions/hands.html)
 
 ## Framework
