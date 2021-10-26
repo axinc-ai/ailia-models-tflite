@@ -3,9 +3,7 @@ import time
 
 import cv2
 
-import ailia_tflite
 import mobilenetv2ssdlite_utils as mut
-import tensorflow as tf
 
 # import original modules
 sys.path.append('../../util')
@@ -31,6 +29,10 @@ IMAGE_WIDTH = 300
 parser = get_base_parser('MultiBox Detector', IMAGE_PATH, SAVE_IMAGE_PATH)
 args = update_parser(parser)
 
+if args.tflite:
+    import tensorflow as tf
+else:
+    import ailia_tflite
 
 # ======================
 # Parameters 2

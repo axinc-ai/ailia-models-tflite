@@ -4,9 +4,7 @@ import numpy as np
 
 import cv2
 
-import ailia_tflite
 import blazeface_utils as but
-import tensorflow as tf
 
 # import original modules
 sys.path.append('../../util')
@@ -47,6 +45,10 @@ parser.add_argument(
 )
 args = update_parser(parser)
 
+if args.tflite:
+    import tensorflow as tf
+else:
+    import ailia_tflite
 
 # ======================
 # Main functions

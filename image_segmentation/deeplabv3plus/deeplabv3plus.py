@@ -4,9 +4,7 @@ import time
 import cv2
 import numpy as np
 
-import ailia_tflite
 from deeplab_utils import *
-import tensorflow as tf
 
 # import original modules
 sys.path.append('../../util')
@@ -36,6 +34,10 @@ parser = get_base_parser(
 )
 args = update_parser(parser)
 
+if args.tflite:
+    import tensorflow as tf
+else:
+    import ailia_tflite
 
 # ======================
 # MODEL PARAMETERS

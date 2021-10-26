@@ -36,6 +36,10 @@ parser = get_base_parser(
 )
 args = update_parser(parser)
 
+if args.tflite:
+    import tensorflow as tf
+else:
+    import ailia_tflite
 
 # ======================
 # Parameters 2

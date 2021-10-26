@@ -5,9 +5,7 @@ import time
 import cv2
 import numpy as np
 
-import ailia_tflite
 import resnet50_labels
-import tensorflow as tf
 
 # import original modules
 sys.path.append('../../util')
@@ -41,6 +39,10 @@ parser.add_argument(
 )
 args = update_parser(parser)
 
+if args.tflite:
+    import tensorflow as tf
+else:
+    import ailia_tflite
 
 # ======================
 # Parameters 2

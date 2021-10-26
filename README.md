@@ -57,3 +57,6 @@ pip3 install .
 | [<img src="object_detection/mobilenetssd/output.png" width=128px>](object_detection/mobilenetssd/) | [MobileNetV2-SSDLite](/object_detection/mobilenetssd/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/master/006_mobilenetv2-ssdlite/01_coco/03_integer_quantization) | TensorFlow | [Netron](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/mobilenetssd/ssdlite_mobilenet_v2_coco_300_integer_quant_with_postprocess.tflite) |
 | [<img src="object_detection/yolov3-tiny/output.png" width=128px>](object_detection/yolov3-tiny/) | [YOLOv3 tiny](/object_detection/yolov3-tiny/) | [tensorflow-yolov4-tflite](https://github.com/hunglc007/tensorflow-yolov4-tflite) | TensorFlow | [Netron](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/yolov3-tiny/yolov3-tiny-416_full_integer_quant.tflite) |
 
+# Options
+
+You can benchmark with the -b option. You can use the official TensorFlow Lite with the --tflite option.

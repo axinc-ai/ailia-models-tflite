@@ -6,9 +6,6 @@ import numpy as np
 
 import blazehand_utils as but
 
-import ailia_tflite
-import tensorflow as tf
-
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
@@ -46,6 +43,10 @@ parser.add_argument(
 )
 args = update_parser(parser)
 
+if args.tflite:
+    import tensorflow as tf
+else:
+    import ailia_tflite
 
 # ======================
 # Parameters 2
