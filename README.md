@@ -22,7 +22,7 @@ pip3 install .
 
 | | Model | Reference | Exported From | Netron |
 |:------------:|:------------:|:------------:|:------------:|:------------:|
-| [<img src="face_detection/blazeface/result.png" width=128px>](face_detection/blazeface/) | [BlazeFace](/face_detection/blazeface/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/master/030_BlazeFace/04_full_integer_quantization) | Tensorflow | [Netron](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazeface/face_detection_front_128_full_integer_quant.tflite) |
+| [<img src="face_detection/blazeface/result.png" width=128px>](face_detection/blazeface/) | [BlazeFace](/face_detection/blazeface/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/master/030_BlazeFace/04_full_integer_quantization) | TensorFlow | [Netron](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazeface/face_detection_front_128_full_integer_quant.tflite) |
 
 ## Face recognition
 
