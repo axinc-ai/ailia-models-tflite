@@ -1,5 +1,9 @@
 # MobileNetV2-SSDLite
 
+### Caution
+
+ailia TFLite Runtime does not support TFLite_Detection_PostProcess yet. So this model run only --tflite mode.
+
 ### Input
 
 <img src="couple.jpg" width="320px">
