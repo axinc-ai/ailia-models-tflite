@@ -8,17 +8,6 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 from logging import getLogger   # noqa: E402
 logger = getLogger(__name__)
 
-try:
-    import ailia
-    AILIA_EXIST = True
-except ImportError:
-    # TODO: create logger.py --> @sngyo
-    print('[WARNING]: ailia package cannot be found under `sys.path`')
-    print('[WARNING]: default env_id is set to 0, you can change the id by '
-          '[--env_id N]')
-    AILIA_EXIST = False
-
-
 def check_file_existance(filename):
     if os.path.isfile(filename):
         return True
@@ -72,12 +61,6 @@ def get_base_parser(description, default_input, default_save, parse=False):
               'execution performance. (Cannot be used in video mode)')
     )
     parser.add_argument(
-        '-e', '--env_id', type=int,
-        default=ailia.get_gpu_environment_id() if AILIA_EXIST else 0,
-        help=('A specific environment id can be specified. By default, '
-              'the return value of ailia.get_gpu_environment_id will be used')
-    )
-    parser.add_argument(
         '-t', '--tflite', action='store_true',
         help='By default, the ailia lite runtime is used, but with this ' +
         'option, you can switch to using the TensorFlow Lite runtime.'
@@ -102,14 +85,5 @@ def update_parser(parser):
         (parse_args() will be done here)
     """
     args = parser.parse_args()
-
-    # 1. check env_id count
-    if AILIA_EXIST:
-        count = ailia.get_environment_count()
-        if count <= args.env_id:
-            print(f'[ERROR] specified env_id: {args.env_id} cannot found. ')
-            print('env_id updated to 0')
-
-    print(f'env_id: {args.env_id}')
 
     return args

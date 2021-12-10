@@ -37,6 +37,10 @@ parser.add_argument(
     '--shape', type=int, 
     help='change input image shape (Please specify one int value to change width and height).'
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -47,7 +51,10 @@ else:
 # ======================
 # Parameters 2
 # ======================
-MODEL_NAME = 'resnet50_quant'
+if args.float:
+    MODEL_NAME = 'resnet50_float'
+else:
+    MODEL_NAME = 'resnet50_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/resnet50/'
 
