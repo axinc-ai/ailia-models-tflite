@@ -71,13 +71,16 @@ def recognize_from_image():
     if args.shape:
         height = width = args.shape
     for path in image_paths:
+        dtype = np.int8
+        if args.float:
+            dtype = np.float32
         image = load_image(
             path,
             (height, width),
             normalize_type='Caffe',
             gen_input_ailia_tflite=True,
             bgr_to_rgb=False,
-            output_type=np.int8
+            output_type=dtype
         )
         if input_data is None:
             input_data = image
