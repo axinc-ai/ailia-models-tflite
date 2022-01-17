@@ -4,9 +4,7 @@ import time
 import cv2
 import numpy as np
 
-import ailia_tflite
 import mobilenetv2_labels
-import tensorflow as tf
 
 # import original modules
 sys.path.append('../../util')

@@ -7,9 +7,6 @@ from scipy.special import expit
 
 import facemesh_utils as fut
 
-import ailia_tflite
-import tensorflow as tf
-
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
@@ -40,6 +37,10 @@ parser = get_base_parser(
 )
 args = update_parser(parser)
 
+if args.tflite:
+    import tensorflow as tf
+else:
+    import ailia_tflite
 
 # ======================
 # Parameters 2
