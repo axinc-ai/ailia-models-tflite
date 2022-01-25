@@ -1,6 +1,8 @@
 import os
 import urllib.request
 
+import numpy as np
+
 
 def progress_print(block_count, block_size, total_size):
     """
@@ -51,3 +53,27 @@ def check_and_download_models(model_path, remote_path):
         )
         print('\n')
     print('TFLite file is prepared!')
+
+
+def get_input_tensor(tensor, input_details, idx):
+    details = input_details[idx]
+    dtype = details['dtype']
+    if dtype == np.uint8 or dtype == np.int8:
+        quant_params = details['quantization_parameters']
+        input_tensor = tensor / quant_params['scales'] + quant_params['zero_points']
+        input_tensor = input_tensor.clip(0, 255)
+        return input_tensor.astype(dtype)
+    else:
+        return tensor
+
+
+def get_real_tensor(interpreter, output_details, idx):
+    details = output_details[idx]
+    if details['dtype'] == np.uint8 or details['dtype'] == np.int8:
+        quant_params = details['quantization_parameters']
+        int_tensor = interpreter.get_tensor(details['index']).astype(np.int32)
+        real_tensor = int_tensor - quant_params['zero_points']
+        real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
+    else:
+        real_tensor = interpreter.get_tensor(details['index'])
+    return real_tensor
