@@ -55,7 +55,7 @@ def check_and_download_models(model_path, remote_path):
     print('TFLite file is prepared!')
 
 
-def get_input_tensor(tensor, input_details, idx):
+def format_input_tensor(tensor, input_details, idx):
     details = input_details[idx]
     dtype = details['dtype']
     if dtype == np.uint8 or dtype == np.int8:
@@ -67,7 +67,7 @@ def get_input_tensor(tensor, input_details, idx):
         return tensor
 
 
-def get_real_tensor(interpreter, output_details, idx):
+def get_output_tensor(interpreter, output_details, idx):
     details = output_details[idx]
     if details['dtype'] == np.uint8 or details['dtype'] == np.int8:
         quant_params = details['quantization_parameters']

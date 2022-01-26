@@ -11,8 +11,8 @@ from yolox_utils import postprocess, filter_predictions
 # import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser, get_savepath
-from model_utils import check_and_download_models, get_input_tensor, \
-    get_real_tensor
+from model_utils import check_and_download_models, format_input_tensor, \
+    get_output_tensor
 from detector_utils import plot_results, write_predictions
 import webcamera_utils
 
@@ -113,10 +113,10 @@ def compute(interpreter, input_data):
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    inputs = get_input_tensor(input_data, input_details, 0)
+    inputs = format_input_tensor(input_data, input_details, 0)
     interpreter.set_tensor(input_details[0]['index'], inputs)
     interpreter.invoke()
-    outputs = [get_real_tensor(interpreter, output_details, 0)]
+    outputs = [get_output_tensor(interpreter, output_details, 0)]
     return outputs
 
 # ======================
