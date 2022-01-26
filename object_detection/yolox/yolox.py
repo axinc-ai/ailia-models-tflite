@@ -100,7 +100,7 @@ else:
 
 MODEL_NAME = args.model_name
 MODEL_PATH = f'{MODEL_NAME}_full_integer_quant.tflite'
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/{MODEL_PATH}'
+REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
 
 HEIGHT = MODEL_PARAMS[MODEL_NAME]['input_shape'][0]
 WIDTH = MODEL_PARAMS[MODEL_NAME]['input_shape'][1]
