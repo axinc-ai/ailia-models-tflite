@@ -222,7 +222,7 @@ def recognize_from_video():
         if dets is not None:
             final_boxes, final_scores = dets[:, :4], dets[:, 4]
             final_cls_inds = dets[:, 5].astype(np.uint32)
-            res_img = plot_results(
+            visual_img = plot_results(
                 frame, final_boxes, final_scores, final_cls_inds,
                 COCO_CATEGORY, normalized_boxes=False, logger=logger)
 
