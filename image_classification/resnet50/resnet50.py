@@ -187,6 +187,7 @@ def main():
         recognize_from_video()
     else:
         # image mode
+        args.input = args.input[0]
         recognize_from_image()
 
 

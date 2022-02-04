@@ -164,6 +164,7 @@ def main():
         segment_from_video()
     else:
         # image mode
+        args.input = args.input[0]
         segment_from_image()
 
 
