@@ -32,6 +32,10 @@ SLEEP_TIME = 0
 parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -42,7 +46,10 @@ else:
 # ======================
 # Parameters 2
 # ======================
-MODEL_NAME = 'mobilenetv2_quant'
+if args.float:
+    MODEL_NAME = 'mobilenetv2_float'
+else:
+    MODEL_NAME = 'mobilenetv2_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/'
 
@@ -52,13 +59,16 @@ REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/'
 # ======================
 def recognize_from_image():
     # prepare input data
+    dtype = np.int8
+    if args.float:
+        dtype = np.float32
     input_data = load_image(
         args.input,
         (IMAGE_HEIGHT, IMAGE_WIDTH),
         normalize_type='None',
         gen_input_ailia_tflite=True,
         bgr_to_rgb=False,
-        output_type=np.uint8
+        output_type=dtype
     )
 
     # net initialize
