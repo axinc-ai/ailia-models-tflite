@@ -91,6 +91,12 @@ parser.add_argument(
     default=-1, type=int,
     help='The detection height and height for yolo. (default: auto)'
 )
+parser.add_argument(
+    '-n', '--normal',
+    action='store_true',
+    help='By default, the optimized model is used, but with this option, ' +
+    'you can switch to the normal (non-optimized) model'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -99,7 +105,10 @@ else:
     import ailia_tflite
 
 MODEL_NAME = args.model_name
-MODEL_PATH = f'{MODEL_NAME}_full_integer_quant.tflite'
+stem = f'{MODEL_NAME}_full_integer_quant'
+if not args.normal:
+    stem += '.opt'
+MODEL_PATH = f'{stem}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
 
 HEIGHT = MODEL_PARAMS[MODEL_NAME]['input_shape'][0]
@@ -130,12 +139,17 @@ def recognize_from_image():
         interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
 
+    if args.normal:
+        swap = (2, 0, 1)
+    else:
+        swap = (0, 1, 2)
+
     # input image loop
     for image_path in args.input:
         # prepare input data
         logger.debug(f'input image: {image_path}')
         raw_img = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        img, ratio = preprocess(raw_img, (HEIGHT, WIDTH))
+        img, ratio = preprocess(raw_img, (HEIGHT, WIDTH), swap=swap)
         inputs = img[np.newaxis]
         logger.debug(f'input image shape: {raw_img.shape}')
 
