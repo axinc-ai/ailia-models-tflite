@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def preproc(img, input_size, swap=(2, 0, 1)):
+def preproc(img, input_size, swap=(0, 1, 2)):
     if len(img.shape) == 3:
         padded_img = np.ones((input_size[0], input_size[1], img.shape[2]), dtype=np.uint8) * 114
     else:
