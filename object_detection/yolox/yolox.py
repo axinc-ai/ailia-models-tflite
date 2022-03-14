@@ -95,7 +95,7 @@ parser.add_argument(
     '-o', '--opt',
     action='store_true',
     help='By default, the no optimized model is used, but with this option, ' +
-    'you can switch to the optimized model'
+    'you can switch to the optimized model (require ailia TFLite Runtime 1.1.1 or above)'
 )
 args = update_parser(parser)
 
@@ -139,7 +139,7 @@ def recognize_from_image():
         interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
 
-    if args.normal:
+    if not args.opt:
         swap = (2, 0, 1)
     else:
         swap = (0, 1, 2)
@@ -219,12 +219,17 @@ def recognize_from_video():
         frame_digit = int(math.log10(capture.get(cv2.CAP_PROP_FRAME_COUNT)) + 1)
         video_name = os.path.splitext(os.path.basename(args.video))[0]
 
+    if not args.opt:
+        swap = (2, 0, 1)
+    else:
+        swap = (0, 1, 2)
+
     while (True):
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
 
-        img, ratio = preprocess(frame, (HEIGHT, WIDTH))
+        img, ratio = preprocess(frame, (HEIGHT, WIDTH), swap=swap)
         inputs = img[np.newaxis]
         outputs = compute(interpreter, inputs)
         predictions = postprocess(outputs[0], (HEIGHT, WIDTH))[0]
