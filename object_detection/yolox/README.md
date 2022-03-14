@@ -55,4 +55,5 @@ Tensorflow 2.7.0
 
 ## Netron
 
-[yolox_tiny_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/yolox/yolox_tiny_full_integer_quant.tflite)
+- [yolox_tiny_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/yolox/yolox_tiny_full_integer_quant.tflite)
+- [yolox_tiny_full_integer_quant.opt.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/yolox/yolox_tiny_full_integer_quant.opt.tflite)
