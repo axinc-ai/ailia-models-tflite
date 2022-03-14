@@ -92,10 +92,10 @@ parser.add_argument(
     help='The detection height and height for yolo. (default: auto)'
 )
 parser.add_argument(
-    '-n', '--normal',
+    '-o', '--opt',
     action='store_true',
-    help='By default, the optimized model is used, but with this option, ' +
-    'you can switch to the normal (non-optimized) model'
+    help='By default, the no optimized model is used, but with this option, ' +
+    'you can switch to the optimized model'
 )
 args = update_parser(parser)
 
@@ -106,7 +106,7 @@ else:
 
 MODEL_NAME = args.model_name
 stem = f'{MODEL_NAME}_full_integer_quant'
-if not args.normal:
+if args.opt:
     stem += '.opt'
 MODEL_PATH = f'{stem}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
