@@ -143,8 +143,12 @@ def recognize_from_image():
             detector.set_tensor(det_input_details[0]['index'], det_input)
             detector.invoke()
             preds_tf_lite = {}
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
+            if args.float:
+                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
+                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
+            else:
+                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
+                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
             detections = fut.detector_postprocess(preds_tf_lite)
 
             # Face landmark estimation
@@ -179,8 +183,12 @@ def recognize_from_image():
         detector.set_tensor(det_input_details[0]['index'], det_input)
         detector.invoke()
         preds_tf_lite = {}
-        preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-        preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
+        if args.float:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
+        else:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
         detections = fut.detector_postprocess(preds_tf_lite)
 
         # Face landmark estimation
@@ -193,8 +201,12 @@ def recognize_from_image():
             estimator.set_tensor(est_input_details[0]['index'], est_input)
             estimator.invoke()
             preds_tf_lite = {}
-            landmarks = get_real_tensor(estimator, est_output_details, 1)
-            confidences = get_real_tensor(estimator, est_output_details, 0)
+            if args.float:
+                landmarks = get_real_tensor(estimator, est_output_details, 0)
+                confidences = get_real_tensor(estimator, est_output_details, 1)
+            else:
+                landmarks = get_real_tensor(estimator, est_output_details, 1)
+                confidences = get_real_tensor(estimator, est_output_details, 0)
             landmarks = landmarks.squeeze((1, 2))
             confidences = confidences.squeeze((1, 2))
             normalized_landmarks = landmarks / 192.0
@@ -260,8 +272,12 @@ def recognize_from_video():
         detector.set_tensor(det_input_details[0]['index'], det_input)
         detector.invoke()
         preds_tf_lite = {}
-        preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-        preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
+        if args.float:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
+        else:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
         detections = fut.detector_postprocess(preds_tf_lite)
 
         # Face landmark estimation
@@ -275,8 +291,12 @@ def recognize_from_video():
             estimator.set_tensor(est_input_details[0]['index'], est_input)
             estimator.invoke()
             preds_tf_lite = {}
-            landmarks = get_real_tensor(estimator, est_output_details, 1)
-            confidences = get_real_tensor(estimator, est_output_details, 0)
+            if args.float:
+                landmarks = get_real_tensor(estimator, est_output_details, 0)
+                confidences = get_real_tensor(estimator, est_output_details, 1)
+            else:
+                landmarks = get_real_tensor(estimator, est_output_details, 1)
+                confidences = get_real_tensor(estimator, est_output_details, 0)
             landmarks = landmarks.squeeze((1, 2))
             confidences = confidences.squeeze((1, 2))
             normalized_landmarks = landmarks / 192.0
