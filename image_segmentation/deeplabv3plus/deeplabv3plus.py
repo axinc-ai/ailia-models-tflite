@@ -93,6 +93,8 @@ def segment_from_image():
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
 
     # postprocessing
+    if args.float:
+        preds_tf_lite = preds_tf_lite[:,:,0]
     seg_img = preds_tf_lite.astype(np.uint8)
     seg_img = label_to_color_image(seg_img)
     org_h, org_w = org_img.shape[:2]
@@ -140,6 +142,8 @@ def segment_from_video():
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
+        if args.float:
+            preds_tf_lite = preds_tf_lite[:,:,0]
 
         # postprocessing
         seg_img = preds_tf_lite.astype(np.uint8)
