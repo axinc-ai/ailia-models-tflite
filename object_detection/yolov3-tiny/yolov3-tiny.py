@@ -63,6 +63,10 @@ parser.add_argument(
     action='store_true',
     help='Flag to output the prediction file.'
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 # parser.add_argument(
 #     '-dw', '--detection_width',
 #     default=DETECTION_SIZE, type=int,
@@ -84,7 +88,10 @@ else:
 # Parameters 2
 # ======================
 MODEL_NAME = 'yolov3-tiny'
-MODEL_PATH = f'yolov3-tiny-416_full_integer_quant.tflite'
+if args.float:
+    MODEL_PATH = f'yolov3-tiny-416.tflite'
+else:
+    MODEL_PATH = f'yolov3-tiny-416_full_integer_quant.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
 
 

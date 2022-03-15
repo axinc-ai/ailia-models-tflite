@@ -97,6 +97,10 @@ parser.add_argument(
     help='By default, the no optimized model is used, but with this option, ' +
     'you can switch to the optimized model (require ailia TFLite Runtime 1.1.1 or above)'
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -105,7 +109,14 @@ else:
     import ailia_tflite
 
 MODEL_NAME = args.model_name
-stem = f'{MODEL_NAME}_full_integer_quant'
+if args.float:
+    if args.opt:
+        stem = f'{MODEL_NAME}'
+    else:
+        logger.error("float model is supported for opt model only")
+        sys.exit(1)
+else:
+    stem = f'{MODEL_NAME}_full_integer_quant'
 if args.opt:
     stem += '.opt'
 MODEL_PATH = f'{stem}.tflite'
