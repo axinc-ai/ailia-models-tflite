@@ -54,4 +54,5 @@ TensorFlow 2.6
 
 ### Netron
 
-[efficientnetliteb0_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_quant.tflite)
+- [efficientnetliteb0_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_quant.tflite)
+- [efficientnetliteb0_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_float.tflite)

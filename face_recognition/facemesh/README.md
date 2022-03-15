@@ -79,5 +79,6 @@ TensorFlow 2.4.1
 
 - [face_detection_front_128_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazeface/face_detection_front_128_full_integer_quant.tflite)
 - [face_landmark_192_full_integer_quant_uint8.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/facemesh/face_landmark_192_full_integer_quant_uint8.tflite)
-
+- [face_detection_front_128.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazeface/face_detection_front_128.tflite)
+- [face_landmark_192.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/facemesh/face_landmark_192.tflite)
 

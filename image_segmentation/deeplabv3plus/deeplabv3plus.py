@@ -32,6 +32,10 @@ parser = get_base_parser(
     'DeepLab is a state-of-art deep learning model '
     'for semantic image segmentation.', IMAGE_PATH, SAVE_IMAGE_PATH
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -42,7 +46,10 @@ else:
 # ======================
 # MODEL PARAMETERS
 # ======================
-MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256_integer_quant'
+if args.float:
+    MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256'
+else:
+    MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256_integer_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/deeplabv3plus/'
 
@@ -86,6 +93,8 @@ def segment_from_image():
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
 
     # postprocessing
+    if args.float:
+        preds_tf_lite = preds_tf_lite[:,:,0]
     seg_img = preds_tf_lite.astype(np.uint8)
     seg_img = label_to_color_image(seg_img)
     org_h, org_w = org_img.shape[:2]
@@ -133,6 +142,8 @@ def segment_from_video():
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
+        if args.float:
+            preds_tf_lite = preds_tf_lite[:,:,0]
 
         # postprocessing
         seg_img = preds_tf_lite.astype(np.uint8)

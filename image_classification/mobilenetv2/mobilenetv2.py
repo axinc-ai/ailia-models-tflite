@@ -123,6 +123,10 @@ def recognize_from_video():
     else:
         writer = None
 
+    dtype = np.int8
+    if args.float:
+        dtype = np.float32
+
     while(True):
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
@@ -130,7 +134,7 @@ def recognize_from_video():
 
         input_image, input_data = webcamera_utils.preprocess_frame(
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='None',
-            bgr_to_rgb=False, output_type=np.uint8
+            bgr_to_rgb=False, output_type=dtype
         )
 
         # Inference

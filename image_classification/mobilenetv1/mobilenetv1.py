@@ -32,6 +32,10 @@ SLEEP_TIME = 0
 parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -42,7 +46,10 @@ else:
 # ======================
 # Parameters 2
 # ======================
-MODEL_NAME = 'mobilenetv1_quant'
+if args.float:
+    MODEL_NAME = 'mobilenetv1_float'
+else:
+    MODEL_NAME = 'mobilenetv1_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv1/'
 
@@ -52,13 +59,16 @@ REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv1/'
 # ======================
 def recognize_from_image():
     # prepare input data
+    dtype = np.uint8
+    if args.float:
+        dtype = np.float32
     input_data = load_image(
         args.input,
         (IMAGE_HEIGHT, IMAGE_WIDTH),
         normalize_type='None',
         gen_input_ailia_tflite=True,
         bgr_to_rgb=False,
-        output_type=np.uint8
+        output_type=dtype
     )
 
     # net initialize
@@ -113,6 +123,10 @@ def recognize_from_video():
     else:
         writer = None
 
+    dtype = np.uint8
+    if args.float:
+        dtype = np.float32
+
     while(True):
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
@@ -120,7 +134,7 @@ def recognize_from_video():
 
         input_image, input_data = webcamera_utils.preprocess_frame(
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='None',
-            bgr_to_rgb=False, output_type=np.uint8
+            bgr_to_rgb=False, output_type=dtype
         )
 
         # Inference

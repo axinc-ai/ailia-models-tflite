@@ -90,3 +90,5 @@ TensorFlow 2.4.1
 
 - [palm_detection_builtin_256_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazepalm/palm_detection_builtin_256_full_integer_quant.tflite)
 - [hand_landmark_new_256x256_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazehand/hand_landmark_new_256x256_full_integer_quant.tflite)
+- [palm_detection_builtin_256.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazepalm/palm_detection_builtin_256.tflite)
+- [hand_landmark_new_256x256.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/blazehand/hand_landmark_new_256x256.tflite)
