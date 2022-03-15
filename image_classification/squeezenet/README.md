@@ -53,4 +53,5 @@ TensorFlow 2.7.0
 
 ### Netron
 
-[squeezenet_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/squeezenet/squeezenet_quant.tflite)
+- [squeezenet_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/squeezenet/squeezenet_quant.tflite)
+- [squeezenet_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/squeezenet/squeezenet_float.tflite)

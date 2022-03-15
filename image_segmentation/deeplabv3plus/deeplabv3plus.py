@@ -32,6 +32,10 @@ parser = get_base_parser(
     'DeepLab is a state-of-art deep learning model '
     'for semantic image segmentation.', IMAGE_PATH, SAVE_IMAGE_PATH
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -42,7 +46,10 @@ else:
 # ======================
 # MODEL PARAMETERS
 # ======================
-MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256_integer_quant'
+if args.float:
+    MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256'
+else:
+    MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256_integer_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/deeplabv3plus/'
 

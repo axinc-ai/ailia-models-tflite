@@ -41,6 +41,10 @@ parser.add_argument(
     default=2,
     help='The maximum number of hands tracked (=2 by default)'
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -53,8 +57,12 @@ else:
 # ======================
 DETECTION_MODEL_NAME = 'blazepalm'
 LANDMARK_MODEL_NAME = 'blazehand'
-DETECTOR_MODEL_PATH = f'palm_detection_builtin_256_full_integer_quant.tflite'
-LANDMARK_MODEL_PATH = f'hand_landmark_new_256x256_full_integer_quant.tflite'
+if args.float:
+    DETECTOR_MODEL_PATH = f'palm_detection_builtin.tflite'
+    LANDMARK_MODEL_PATH = f'hand_landmark_new_256x256_float32.tflite'
+else:
+    DETECTOR_MODEL_PATH = f'palm_detection_builtin_256_full_integer_quant.tflite'
+    LANDMARK_MODEL_PATH = f'hand_landmark_new_256x256_full_integer_quant.tflite'
 DETECTOR_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{DETECTION_MODEL_NAME}/'
 LANDMARK_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{LANDMARK_MODEL_NAME}/'
 

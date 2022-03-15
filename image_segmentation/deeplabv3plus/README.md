@@ -42,4 +42,5 @@ TensorFlow 2.4.1, 1.15
 
 ### Netron
 
-[deeplab_v3_plus_mnv2_decoder_256_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/deeplabv3plus/deeplab_v3_plus_mnv2_decoder_256_integer_quant.tflite)
+- [deeplab_v3_plus_mnv2_decoder_256_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/deeplabv3plus/deeplab_v3_plus_mnv2_decoder_256_integer_quant.tflite)
+- [deeplab_v3_plus_mnv2_decoder_256.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/deeplabv3plus/deeplab_v3_plus_mnv2_decoder_256.tflite)

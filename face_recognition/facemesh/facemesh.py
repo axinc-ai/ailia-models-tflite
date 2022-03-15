@@ -35,6 +35,10 @@ parser = get_base_parser(
     IMAGE_PATH,
     SAVE_IMAGE_PATH,
 )
+parser.add_argument(
+    '--float', action='store_true',
+    help='use float model.'
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -47,8 +51,12 @@ else:
 # ======================
 DETECTION_MODEL_NAME = 'blazeface'
 LANDMARK_MODEL_NAME = 'facemesh'
-DETECTOR_MODEL_PATH = f'face_detection_front_128_full_integer_quant.tflite'
-LANDMARK_MODEL_PATH = f'face_landmark_192_full_integer_quant_uint8.tflite'
+if args.float:
+    DETECTOR_MODEL_PATH = f'face_detection_front.tflite'
+    LANDMARK_MODEL_PATH = f'face_landmark.tflite'
+else:
+    DETECTOR_MODEL_PATH = f'face_detection_front_128_full_integer_quant.tflite'
+    LANDMARK_MODEL_PATH = f'face_landmark_192_full_integer_quant_uint8.tflite'
 DETECTOR_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{DETECTION_MODEL_NAME}/'
 LANDMARK_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{LANDMARK_MODEL_NAME}/'
 
