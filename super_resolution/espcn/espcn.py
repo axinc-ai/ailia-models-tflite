@@ -76,10 +76,8 @@ def get_real_tensor(interpreter, output_details, idx):
 # Main functions
 # ======================
 
-from tensorflow.keras.preprocessing.image import load_img
-from tensorflow.keras.preprocessing.image import img_to_array
-
 import PIL
+from PIL import Image, ImageFilter
 
 def get_lowres_image(img, upscale_factor):
     """Return low-resolution image to use as model input."""
@@ -90,14 +88,14 @@ def get_lowres_image(img, upscale_factor):
 
 def recognize_from_image():
     test_img_path = args.input
-    print(test_img_path)
     upscale_factor = 3
 
-    img = load_img(test_img_path)
+    img = Image.open(test_img_path)
     lowres_input = get_lowres_image(img, upscale_factor)
     ycbcr = img.convert("YCbCr")
     y, cb, cr = ycbcr.split()
-    y = img_to_array(y)
+    y = np.asarray(y)
+    y = np.expand_dims(y, axis=2)
     y = y.astype("float32") / 255.0
     input_data = np.expand_dims(y, axis=0)
 
@@ -110,18 +108,13 @@ def recognize_from_image():
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
-    print(input_details)
-    print(output_details)
 
     inputs = get_input_tensor(input_data, input_details, 0)
     interpreter.set_tensor(input_details[0]['index'], inputs)
     interpreter.invoke()
-    #out = {}
     out_img_y = get_real_tensor(interpreter, output_details, 0)
     out_img_y = out_img_y[0,:,:,0]
 
-    #out_img_y = out[0]
-    print(out_img_y.shape)
     out_img_y *= 255.0
 
     # Restore the image in RGB color space.
