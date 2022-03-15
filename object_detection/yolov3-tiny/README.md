@@ -48,4 +48,5 @@ Tensorflow 2.4.1
 
 ## Netron
 
-[yolov3-tiny-416_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/yolov3-tiny/yolov3-tiny-416_full_integer_quant.tflite)
+- [yolov3-tiny-416_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/yolov3-tiny/yolov3-tiny-416_full_integer_quant.tflite)
+- [yolov3-tiny-416.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/yolov3-tiny/yolov3-tiny-416.tflite)
