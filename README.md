@@ -59,6 +59,12 @@ pip3 install .
 | [<img src="object_detection/yolov3-tiny/output.png" width=128px>](object_detection/yolov3-tiny/) | [YOLOv3 tiny](/object_detection/yolov3-tiny/) | [tensorflow-yolov4-tflite](https://github.com/hunglc007/tensorflow-yolov4-tflite) | TensorFlow | 1.0 |
 | [<img src="object_detection/yolox/output.jpg" width=128px>](object_detection/yolox/) | [YOLOX](/object_detection/yolox/) | [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) | Pytorch | 1.1 |
 
+## Super resolution
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="super_resolution/espcn/output.jpg" width=128px>](super_resolution/espcn/) | [ESPCN](/super_resolution/espcn/) | [Image Super-Resolution using an Efficient Sub-Pixel CNN](https://keras.io/examples/vision/super_resolution_sub_pixel/) | TensorFlow | 1.1 |
+
 # Options
 
 You can benchmark with the -b option. You can use the official TensorFlow Lite with the --tflite option.
