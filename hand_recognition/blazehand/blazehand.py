@@ -150,8 +150,12 @@ def recognize_from_image():
         detector.set_tensor(det_input_details[0]['index'], det_input)
         detector.invoke()
         preds_tf_lite = {}
-        preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
-        preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
+        if args.float:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x2944x18 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x2944x1 classificators
+        else:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
         detections = but.detector_postprocess(preds_tf_lite)
 
         # Hand landmark estimation
@@ -253,8 +257,12 @@ def recognize_from_video():
             detector.set_tensor(det_input_details[0]['index'], det_input)
             detector.invoke()
             preds_tf_lite = {}
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
+            if args.float:
+                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x2944x18 regressors
+                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x2944x1 classificators
+            else:
+                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
+                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
             detections = but.detector_postprocess(preds_tf_lite)
             if detections[0].size > 0:
                 tracking = True
