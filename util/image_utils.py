@@ -139,9 +139,9 @@ def preprocess_image(
     padding: NumPy array (optional)
         Zero-padding, (top, bottom, left, right)
     """
-    img_new, scale, padding = resize_image(img, out_size,
+    img_new = normalize_image(img, normalize_type)
+    img_new, scale, padding = resize_image(img_new, out_size,
         keep_aspect_ratio=keep_aspect_ratio)
-    img_new = normalize_image(img_new, normalize_type)
 
     if len(img_new.shape) == 3:
         if reverse_color_channel:
