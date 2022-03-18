@@ -24,49 +24,34 @@ logger = getLogger(__name__)
 IMAGE_PATH = 'input.jpg'
 SAVE_IMAGE_PATH = 'output.jpg'
 
-COCO_CATEGORY = {
-    1: 'person', 2: 'bicycle', 3: 'car', 4: 'motorcycle', 5: 'airplane',
-    6: 'bus', 7: 'train', 8: 'truck', 9: 'boat', 10: 'traffic light',
-    11: 'fire hydrant', 13: 'stop sign', 14: 'parking meter', 15: 'bench',
-    16: 'bird', 17: 'cat', 18: 'dog', 19: 'horse', 20: 'sheep', 21: 'cow',
-    22: 'elephant', 23: 'bear', 24: 'zebra', 25: 'giraffe', 27: 'backpack',
-    28: 'umbrella', 31: 'handbag', 32: 'tie', 33: 'suitcase', 34: 'frisbee',
-    35: 'skis', 36: 'snowboard', 37: 'sports ball', 38: 'kite',
-    39: 'baseball bat', 40: 'baseball glove', 41: 'skateboard', 42: 'surfboard',
-    43: 'tennis racket', 44: 'bottle', 46: 'wine glass', 47: 'cup', 48: 'fork',
-    49: 'knife', 50: 'spoon', 51: 'bowl', 52: 'banana', 53: 'apple',
-    54: 'sandwich', 55: 'orange', 56: 'broccoli', 57: 'carrot', 58: 'hot dog',
-    59: 'pizza', 60: 'donut', 61: 'cake', 62: 'chair', 63: 'couch',
-    64: 'potted plant', 65: 'bed', 67: 'dining table', 70: 'toilet', 72: 'tv',
-    73: 'laptop', 74: 'mouse', 75: 'remote', 76: 'keyboard', 77: 'cell phone',
-    78: 'microwave', 79: 'oven', 80: 'toaster', 81: 'sink', 82: 'refrigerator',
-    84: 'book', 85: 'clock', 86: 'vase', 87: 'scissors', 88: 'teddy bear',
-    89: 'hair drier', 90: 'toothbrush',
-}  # pyformat: disable
+COCO_CATEGORY = [
+    "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train",
+    "truck", "boat", "traffic light", "fire hydrant", "stop sign",
+    "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
+    "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella",
+    "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard",
+    "sports ball", "kite", "baseball bat", "baseball glove", "skateboard",
+    "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork",
+    "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange",
+    "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
+    "couch", "potted plant", "bed", "dining table", "toilet", "tv",
+    "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave",
+    "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase",
+    "scissors", "teddy bear", "hair drier", "toothbrush"
+]
 
 THRESHOLD = 0.4
-IOU = 0.45
-DETECTION_SIZE = 416 # Currently model only accepts this size
+DETECTION_SIZE = 320 # Currently model only accepts this size
 
 
 # ======================
 # Argument Parser Config
 # ======================
-parser = get_base_parser('EfficientDet model', IMAGE_PATH, SAVE_IMAGE_PATH)
+parser = get_base_parser('EfficientDetLite model', IMAGE_PATH, SAVE_IMAGE_PATH)
 parser.add_argument(
     '-th', '--threshold',
     default=THRESHOLD, type=float,
     help='The detection threshold for yolo. (default: '+str(THRESHOLD)+')'
-)
-parser.add_argument(
-    '-iou', '--iou',
-    default=IOU, type=float,
-    help='The detection iou for yolo. (default: '+str(IOU)+')'
-)
-parser.add_argument(
-    '-w', '--write_prediction',
-    action='store_true',
-    help='Flag to output the prediction file.'
 )
 parser.add_argument(
     '--float', action='store_true',
@@ -82,11 +67,11 @@ else:
 # ======================
 # Parameters 2
 # ======================
-MODEL_NAME = 'efficientdet'
+MODEL_NAME = 'efficientdet_lite'
 if args.float:
-    MODEL_PATH = f'efficientdet_d0_416x416.tflite'
+    MODEL_PATH = f'efficientdet_lite0_float32.tflite'
 else:
-    MODEL_PATH = f'efficientdet_d0_416x416_integer_quant.tflite'
+    MODEL_PATH = f'efficientdet_lite0_integer_quant.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
 
 
@@ -128,7 +113,6 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
     random.seed(None)
 
     for i in range(num_boxes):
-        #print(i,out_boxes[i],out_classes[i])
         if int(out_classes[i]) < 0 or int(out_classes[i]) > num_classes: continue
         coor = out_boxes[i]
         coor[0] = int(coor[0] * image_h)
@@ -138,6 +122,8 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
 
         fontScale = 0.5
         score = out_scores[i]
+        if score<args.threshold:
+            continue
         class_ind = int(out_classes[i])
         bbox_color = colors[class_ind]
         bbox_thick = int(0.6 * (image_h + image_w) / 600)
@@ -155,6 +141,14 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
     return image
 
 
+def reverse_padding(bboxes, pad):
+    # bboxes = ymin xmin ymax xmax
+    # pad = top bottom left right
+
+    bboxes[:,0] = (bboxes[:,0] - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
+    bboxes[:,2] = (bboxes[:,2] - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
+    bboxes[:,1] = (bboxes[:,1] - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
+    bboxes[:,3] = (bboxes[:,3] - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
 
 # ======================
 # Main functions
@@ -173,25 +167,19 @@ def recognize_from_image():
     image_path = args.input
     logger.info(image_path)
     src_img = cv2.imread(image_path)
-    #print(src_img)
     det_w = DETECTION_SIZE
     det_h = DETECTION_SIZE
+
+    # input image is 0-255 RGB image
     input_data, _, pad = load_image(
         args.input,
         (det_h, det_w),
-        normalize_type='ImageNet',
+        normalize_type='None',
+        bgr_to_rgb=True,
         gen_input_ailia_tflite=True,
         return_scale_pad=True,
         output_type=np.float32
     )
-
-    print(input_data.shape)
-    #print(input_data[0,0,0,:])
-
-    #input channel is bgr
-    #mean and stddev (https://github.com/google/automl/blob/59b7f5bbdea8b180fcb58b82faf3d5480d649976/efficientdet/hparams_config.py#L170)
-    #h.mean_rgb = [0.485 * 255, 0.456 * 255, 0.406 * 255]
-    #h.stddev_rgb = [0.229 * 255, 0.224 * 255, 0.225 * 255]
 
     # inference
     logger.info('Start inference...')
@@ -202,56 +190,28 @@ def recognize_from_image():
             inputs = get_input_tensor(input_data, input_details, 0)
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
-            prediction = get_real_tensor(interpreter, output_details, 0)
+            bboxes = get_real_tensor(interpreter, output_details, 0)
+            class_ids = get_real_tensor(interpreter, output_details, 1)
+            confs = get_real_tensor(interpreter, output_details, 2)
             end = int(round(time.time() * 1000))
             logger.info(f'\tailia processing time {end - start} ms')
     else:
         inputs = get_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
-        prediction = get_real_tensor(interpreter, output_details, 0)
+        bboxes = get_real_tensor(interpreter, output_details, 0)
+        class_ids = get_real_tensor(interpreter, output_details, 1)
+        confs = get_real_tensor(interpreter, output_details, 2)
+    
+    bboxes = bboxes[0]
+    reverse_padding(bboxes, pad)
 
-    prediction = prediction[0]
-    print(prediction.shape)
-    boxes = prediction[:, 1:5] #ymin, xmin, ymax, xmax
-    classes = prediction[:, 6].astype(int)
-    scores = prediction[:, 5]
-
-    boxes = boxes / DETECTION_SIZE
-
-    print(boxes)
-    print(classes)
-    print(scores)
-
-
-
-    #boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
-    #    det_w, det_h, pad, score_threshold=args.threshold)
-    #boxes, scores, classes = nms(boxes[0], pred_conf[0],
-    #    iou_threshold=args.iou, score_threshold=args.threshold)
-    src_img = draw_bbox(src_img, boxes, scores, classes)
-
-
-    #regression, classification, anchors = output
-
-    #threshold = args.threshold
-    #iou_threshold = args.iou_threshold
-    #out = postprocess(
-    #    img,
-    #    anchors, regression, classification,
-    #    threshold, iou_threshold)
-
-
-
-
+    class_ids = class_ids[0]
+    confs = confs[0]
+    src_img = draw_bbox(src_img, bboxes, confs, class_ids)
 
     logger.info(f'saved at : {args.savepath}')        
     cv2.imwrite(args.savepath, src_img)
-
-    # write prediction
-    if args.write_prediction:
-        pred_file = '%s.txt' % args.savepath.rsplit('.', 1)[0]
-        write_predictions(pred_file, boxes, scores, classes, src_img, COCO_CATEGORY)
 
     logger.info('Script finished successfully.')
 
@@ -286,7 +246,7 @@ def recognize_from_video():
         input_data, _, pad = preprocess_image(
             frame,
             (det_h, det_w),
-            normalize_type='ImageNet',
+            normalize_type='None',
             reverse_color_channel=True,
             chan_first=False,
             return_scale_pad=True
@@ -296,24 +256,18 @@ def recognize_from_video():
         inputs = get_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
-        preds_tf_lite = {}
-        preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
-        preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
+        bboxes = get_real_tensor(interpreter, output_details, 0)
+        class_ids = get_real_tensor(interpreter, output_details, 1)
+        confs = get_real_tensor(interpreter, output_details, 2)
 
-        boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
-            det_w, det_h, pad, score_threshold=args.threshold)
-        boxes, scores, classes = nms(boxes[0], pred_conf[0],
-            iou_threshold=args.iou, score_threshold=args.threshold)
+        bboxes = bboxes[0]
+        reverse_padding(bboxes, pad)
 
-        visual_img = frame
-        if args.video == '0': # Flip horizontally if camera
-            visual_img = np.ascontiguousarray(frame[:,::-1,:])
-            boxes_vis = boxes.copy()
-            boxes_vis[:, [1, 3]] = 1 - boxes[:, [3, 1]]
-            visual_img = draw_bbox(visual_img, boxes_vis, scores, classes)
+        class_ids = class_ids[0]
+        confs = confs[0]
 
-        frame = draw_bbox(frame, boxes, scores, classes)
-        cv2.imshow('frame', visual_img)
+        frame = draw_bbox(frame, bboxes, confs, class_ids)
+        cv2.imshow('frame', frame)
 
         # save results
         if writer is not None:
