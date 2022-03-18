@@ -190,18 +190,21 @@ def recognize_from_image():
             inputs = get_input_tensor(input_data, input_details, 0)
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
-            bboxes = get_real_tensor(interpreter, output_details, 0)
-            class_ids = get_real_tensor(interpreter, output_details, 1)
-            confs = get_real_tensor(interpreter, output_details, 2)
             end = int(round(time.time() * 1000))
             logger.info(f'\tailia processing time {end - start} ms')
     else:
         inputs = get_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
+
+    if args.float:
         bboxes = get_real_tensor(interpreter, output_details, 0)
         class_ids = get_real_tensor(interpreter, output_details, 1)
         confs = get_real_tensor(interpreter, output_details, 2)
+    else:
+        bboxes = get_real_tensor(interpreter, output_details, 0)
+        class_ids = get_real_tensor(interpreter, output_details, 2)
+        confs = get_real_tensor(interpreter, output_details, 1)
     
     bboxes = bboxes[0]
     reverse_padding(bboxes, pad)
@@ -256,9 +259,15 @@ def recognize_from_video():
         inputs = get_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
-        bboxes = get_real_tensor(interpreter, output_details, 0)
-        class_ids = get_real_tensor(interpreter, output_details, 1)
-        confs = get_real_tensor(interpreter, output_details, 2)
+
+        if args.float:
+            bboxes = get_real_tensor(interpreter, output_details, 0)
+            class_ids = get_real_tensor(interpreter, output_details, 1)
+            confs = get_real_tensor(interpreter, output_details, 2)
+        else:
+            bboxes = get_real_tensor(interpreter, output_details, 0)
+            class_ids = get_real_tensor(interpreter, output_details, 2)
+            confs = get_real_tensor(interpreter, output_details, 1)
 
         bboxes = bboxes[0]
         reverse_padding(bboxes, pad)
