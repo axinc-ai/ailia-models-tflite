@@ -4,7 +4,7 @@
 
 ![Input](input.jpg)
 
-- Shape : (1, 3, 416, 416)  
+- Shape : (1, 320, 320, 3)  
 - Range : [0.0, 1.0]
 
 ## Output
@@ -49,4 +49,4 @@ Tensorflow 2.7.0
 ## Netron
 
 - [efficientdet_lite0_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet_lite0_integer_quant.tflite)
-- [efficientdet_lite0_float32](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet_lite0_float32)
+- [efficientdet_lite0_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet_lite0_float32.tflite)
