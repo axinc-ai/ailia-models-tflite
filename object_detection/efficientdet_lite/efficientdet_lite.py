@@ -54,6 +54,10 @@ parser.add_argument(
     help='The detection threshold for yolo. (default: '+str(THRESHOLD)+')'
 )
 parser.add_argument(
+    '--opt', action='store_true',
+    help='use opt model.'
+)
+parser.add_argument(
     '--float', action='store_true',
     help='use float model.'
 )
@@ -69,9 +73,15 @@ else:
 # ======================
 MODEL_NAME = 'efficientdet_lite'
 if args.float:
-    MODEL_PATH = f'efficientdet_lite0_float32.tflite'
+    if args.opt:
+        MODEL_PATH = f'efficientdet_lite0_float32_opt.tflite'
+    else:
+        MODEL_PATH = f'efficientdet_lite0_float32.tflite'
 else:
-    MODEL_PATH = f'efficientdet_lite0_integer_quant.tflite'
+    if args.opt:
+        MODEL_PATH = f'efficientdet_lite0_integer_quant_opt.tflite'
+    else:
+        MODEL_PATH = f'efficientdet_lite0_integer_quant.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
 
 
@@ -196,6 +206,10 @@ def recognize_from_image():
         inputs = get_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
+
+    if args.opt:
+        logger.warning('post process not implemented.')
+        return
 
     if args.float:
         bboxes = get_real_tensor(interpreter, output_details, 0)
