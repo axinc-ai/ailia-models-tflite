@@ -103,7 +103,10 @@ def recognize_from_image():
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
-        interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+        if args.flags:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, flags = args.flags)
+        else:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.resize_tensor_input(0, input_data.shape)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
