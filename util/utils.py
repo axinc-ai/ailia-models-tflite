@@ -104,6 +104,11 @@ def get_base_parser(
         help='By default, the ailia lite runtime is used, but with this ' +
         'option, you can switch to using the TensorFlow Lite runtime.'
     )
+    parser.add_argument(
+        '-f', '--flags', metavar='FLAGS',
+        default=0, type=int,
+        help='set flags for tflite runtime'
+    )
 
     return parser
 
