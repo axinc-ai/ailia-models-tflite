@@ -75,8 +75,8 @@ def recognize_from_image():
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
-        if args.flags:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, flags = args.flags)
+        if args.flags or args.memory_mode:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -108,8 +108,8 @@ def recognize_from_video():
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
-        if args.flags:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, flags = args.flags)
+        if args.flags or args.memory_mode:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()

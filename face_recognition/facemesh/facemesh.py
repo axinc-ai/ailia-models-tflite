@@ -111,8 +111,12 @@ def recognize_from_image():
         detector = tf.lite.Interpreter(model_path=DETECTOR_MODEL_PATH)
         estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     else:
-        detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
-        estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
+        if args.memory_mode or args.flags:
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        else:
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     detector.allocate_tensors()
     det_input_details = detector.get_input_details()
     det_output_details = detector.get_output_details()
@@ -233,8 +237,12 @@ def recognize_from_video():
         detector = tf.lite.Interpreter(model_path=DETECTOR_MODEL_PATH)
         estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     else:
-        detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
-        estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
+        if args.memory_mode or args.flags:
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        else:
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     detector.allocate_tensors()
     det_input_details = detector.get_input_details()
     det_output_details = detector.get_output_details()

@@ -68,16 +68,16 @@ def recognize_from_image():
 
     # net initialize
     if args.float:
-        model_path = MODEL_FLOAT_PATH
+        MODEL_PATH = MODEL_FLOAT_PATH
     else:
-        model_path = MODEL_INT_PATH
+        MODEL_PATH = MODEL_INT_PATH
     if args.tflite:
-        interpreter = tf.lite.Interpreter(model_path=model_path)
+        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
-        if args.flags:
-            interpreter = ailia_tflite.Interpreter(model_path=model_path, flags = args.flags)
+        if args.flags or args.memory_mode:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
-            interpreter = ailia_tflite.Interpreter(model_path=model_path)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -122,16 +122,16 @@ def recognize_from_image():
 def recognize_from_video():
     # net initialize
     if args.float:
-        model_path = "face_detection_front.tflite"
+        MODEL_PATH = "face_detection_front.tflite"
     else:
-        model_path = "face_detection_front_128_full_integer_quant.tflite"
+        MODEL_PATH = "face_detection_front_128_full_integer_quant.tflite"
     if args.tflite:
-        interpreter = tf.lite.Interpreter(model_path=model_path)
+        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
-        if args.flags:
-            interpreter = ailia_tflite.Interpreter(model_path=model_path, flags = args.flags)
+        if args.flags or args.memory_mode:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
-            interpreter = ailia_tflite.Interpreter(model_path=model_path)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
 
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
