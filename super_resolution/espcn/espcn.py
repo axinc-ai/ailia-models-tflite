@@ -113,8 +113,19 @@ def recognize_from_image():
     output_details = interpreter.get_output_details()
 
     inputs = get_input_tensor(input_data, input_details, 0)
-    interpreter.set_tensor(input_details[0]['index'], inputs)
-    interpreter.invoke()
+
+    print('Start inference...')
+    if args.benchmark:
+        print('BENCHMARK mode')
+        for i in range(5):
+            start = int(round(time.time() * 1000))
+            interpreter.set_tensor(input_details[0]['index'], inputs)
+            interpreter.invoke()
+            end = int(round(time.time() * 1000))
+            print(f'\tailia processing time {end - start} ms')
+    else:
+        interpreter.set_tensor(input_details[0]['index'], inputs)
+        interpreter.invoke()
     out_img_y = get_real_tensor(interpreter, output_details, 0)
     out_img_y = out_img_y[0,:,:,0]
 
@@ -129,7 +140,7 @@ def recognize_from_image():
     out_img = PIL.Image.merge("YCbCr", (out_img_y, out_img_cb, out_img_cr)).convert(
         "RGB"
     )
-    out_img.save("output.jpg")
+    out_img.save(args.savepath)
     print('Script finished successfully.')
 
 
