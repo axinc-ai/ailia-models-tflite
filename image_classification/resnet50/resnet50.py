@@ -10,7 +10,7 @@ import resnet50_labels
 # import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from model_utils import check_and_download_models,format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -98,28 +98,31 @@ def recognize_from_image():
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
-    
+
     if len(image_paths) > 1 or args.shape:
         print(f"update input shape {[len(image_paths), height, width, 3]}")
         interpreter.resize_tensor_input(0, [len(image_paths), height, width, 3])
         interpreter.allocate_tensors()
-    
+
+    # quantize
+    inputs = format_input_tensor(input_data, input_details, 0)
+
     # inference
     print('Start inference...')
     if args.benchmark:
         print('BENCHMARK mode')
         for i in range(5):
             start = int(round(time.time() * 1000))
-            interpreter.set_tensor(input_details[0]['index'], input_data)
+            interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
-            preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+            preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
             end = int(round(time.time() * 1000))
             print(f'\tailia processing time {end - start} ms')
     else:
-        interpreter.set_tensor(input_details[0]['index'], input_data)
+        interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
-        preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
-    
+        preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
+
     for i, name in enumerate(image_paths):
         print(f"=== {name} ===")
         print_results([preds_tf_lite[i]], resnet50_labels.imagenet_category)
@@ -163,9 +166,10 @@ def recognize_from_video():
         )
 
         # Inference
-        interpreter.set_tensor(input_details[0]['index'], input_data)
+        inputs = format_input_tensor(input_data, input_details, 0)
+        interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
-        preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+        preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
 
         plot_results(
             input_image, preds_tf_lite, resnet50_labels.imagenet_category
