@@ -109,6 +109,11 @@ def get_base_parser(
         default=0, type=int,
         help='set flags for tflite runtime'
     )
+    parser.add_argument(
+        '-m', '--memory_mode', metavar='MEMORY_MODE',
+        default=0, type=int,
+        help='set memory mode for tflite runtime'
+    )
 
     return parser
 
