@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import glob
 from logging import DEBUG
 
 from params import MODALITIES, EXTENSIONS
