@@ -37,6 +37,9 @@ def print_results(classifier, labels, top_k = MAX_CLASS_COUNT):
         print(f'  category={top_scores[idx]}['
               f'{labels[top_scores[idx]]} ]')
         print(f'  prob={scores[top_scores[idx]]}')
+        if len(classifier)>=2:
+            print(f'  value={classifier[1][top_scores[idx]]}')
+
 
 
 def hsv_to_rgb(h, s, v):
