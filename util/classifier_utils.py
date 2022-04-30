@@ -10,20 +10,9 @@ RECT_HEIGHT = 20
 RECT_MARGIN = 2
 
 def get_top_scores(classifier, top_k = MAX_CLASS_COUNT):
-    if hasattr(classifier, 'get_class_count'):
-        # ailia classifier API
-        count = classifier.get_class_count()
-        scores = {}
-        top_scores = []
-        for idx in range(count):
-            obj = classifier.get_class(idx)
-            top_scores.append(obj.category)
-            scores[obj.category] = obj.prob
-    else:
-        # ailia predict API
-        classifier = classifier[0]
-        top_scores = classifier.argsort()[-1 * top_k:][::-1]
-        scores = classifier
+    classifier = classifier[0]
+    top_scores = classifier.argsort()[-1 * top_k:][::-1]
+    scores = classifier
     return top_scores, scores
 
 
