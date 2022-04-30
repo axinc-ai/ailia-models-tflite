@@ -26,6 +26,8 @@ IMAGE_WIDTH = 224
 MAX_CLASS_COUNT = 3
 SLEEP_TIME = 0
 
+TTA_NAMES = ['none', '1_crop']
+
 
 # ======================
 # Argument Parser Config
@@ -45,6 +47,12 @@ parser.add_argument(
     '-w', '--write_prediction',
     action='store_true',
     help='Flag to output the prediction file.'
+)
+parser.add_argument(
+    '--tta', '-t', metavar='TTA',
+    default='none', choices=TTA_NAMES,
+    help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
+          ' (default: none)')
 )
 args = update_parser(parser)
 
@@ -102,7 +110,8 @@ def recognize_from_image():
             normalize_type='Caffe',
             gen_input_ailia_tflite=True,
             bgr_to_rgb=False,
-            output_type=dtype
+            output_type=dtype,
+            tta=args.tta
         )
         if input_data is None:
             input_data = image

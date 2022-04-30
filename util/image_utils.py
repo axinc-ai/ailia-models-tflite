@@ -95,7 +95,8 @@ def preprocess_image(
         chan_first=True,
         batch_dim=True,
         output_type=np.float32,
-        return_scale_pad=False
+        return_scale_pad=False,
+        tta="none"
     ):
     """
     Preprocess the image with various operations.
@@ -140,6 +141,16 @@ def preprocess_image(
         Zero-padding, (top, bottom, left, right)
     """
     img_new = normalize_image(img, normalize_type)
+    if tta == "1_crop": # imagenet 1 crop mode (256x256 -> 224x224)
+        pad = 16
+        if img_new.shape[0] < img_new.shape[1]:
+            img_new = cv2.resize(img_new, (int(img_new.shape[1]*(out_size[0]+pad*2)/img_new.shape[0]), (out_size[0]+pad*2)))
+            img_new = img_new[pad:pad+out_size[0],(img_new.shape[1]-out_size[1])//2:(img_new.shape[1]-out_size[1])//2+out_size[1],:]
+        else:
+            img_new = cv2.resize(img_new, ((out_size[1]+pad*2), int(img_new.shape[0]*(out_size[1]+pad*2)/img_new.shape[1])))
+            img_new = img_new[(img_new.shape[0]-out_size[0])//2:(img_new.shape[0]-out_size[0])//2+out_size[0],pad:pad+out_size[1],:]
+        img_new = img_new.copy()
+
     img_new, scale, padding = resize_image(img_new, out_size,
         keep_aspect_ratio=keep_aspect_ratio)
 
@@ -174,7 +185,8 @@ def load_image(
         bgr_to_rgb=True,
         output_type=np.float32,
         keep_aspect_ratio=True,
-        return_scale_pad=False
+        return_scale_pad=False,
+        tta="none"
     ):
     """
     Loads the image of the given path, performs the necessary preprocessing,
@@ -216,7 +228,7 @@ def load_image(
     res = preprocess_image(image, image_shape, normalize_type,
         keep_aspect_ratio=keep_aspect_ratio, reverse_color_channel=bgr_to_rgb,
         chan_first=False, batch_dim=gen_input_ailia_tflite,
-        output_type=output_type, return_scale_pad=return_scale_pad)
+        output_type=output_type, return_scale_pad=return_scale_pad, tta=tta)
 
     return res
 
