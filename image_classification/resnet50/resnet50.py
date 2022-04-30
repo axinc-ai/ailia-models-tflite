@@ -123,9 +123,11 @@ def recognize_from_image():
         interpreter.invoke()
         preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
 
+    preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
+
     for i, name in enumerate(image_paths):
         print(f"=== {name} ===")
-        print_results([preds_tf_lite[i]], resnet50_labels.imagenet_category)
+        print_results([preds_tf_lite[i],preds_tf_lite_int8[i]], resnet50_labels.imagenet_category)
     print('Script finished successfully.')
 
 
