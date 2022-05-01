@@ -49,6 +49,11 @@ parser.add_argument(
     help='Flag to output the prediction file.'
 )
 parser.add_argument(
+    '--recalib',
+    action='store_true',
+    help='Use re-calibrated model. The default model was calibrated by only 4 images. If you specify recalib option, we use 50000 images for calibaraion.'
+)
+parser.add_argument(
     '--tta', '-t', metavar='TTA',
     default='none', choices=TTA_NAMES,
     help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
@@ -67,7 +72,10 @@ else:
 if args.float:
     MODEL_NAME = 'resnet50_float'
 else:
-    MODEL_NAME = 'resnet50_quant'
+    if args.recalib:
+        MODEL_NAME = 'resnet50_quant_recalib'
+    else:
+        MODEL_NAME = 'resnet50_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/resnet50/'
 
