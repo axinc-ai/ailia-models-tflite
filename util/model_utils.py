@@ -61,7 +61,10 @@ def format_input_tensor(tensor, input_details, idx):
     if dtype == np.uint8 or dtype == np.int8:
         quant_params = details['quantization_parameters']
         input_tensor = tensor / quant_params['scales'] + quant_params['zero_points']
-        input_tensor = input_tensor.clip(0, 255)
+        if dtype == np.int8:
+            input_tensor = input_tensor.clip(-128, 127)
+        else:
+            input_tensor = input_tensor.clip(0, 255)
         return input_tensor.astype(dtype)
     else:
         return tensor
