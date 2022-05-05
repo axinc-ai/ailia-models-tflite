@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import glob
 from logging import DEBUG
 
 from params import MODALITIES, EXTENSIONS
@@ -100,7 +101,7 @@ def get_base_parser(
         help='set iteration count of benchmark'
     )
     parser.add_argument(
-        '-t', '--tflite', action='store_true',
+        '--tflite', action='store_true',
         help='By default, the ailia lite runtime is used, but with this ' +
         'option, you can switch to using the TensorFlow Lite runtime.'
     )

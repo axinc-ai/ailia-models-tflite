@@ -9,10 +9,10 @@ import resnet50_labels
 
 # import original modules
 sys.path.append('../../util')
-from utils import get_base_parser, update_parser  # noqa: E402
+from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
 from model_utils import check_and_download_models,format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
-from classifier_utils import plot_results, print_results  # noqa: E402
+from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
 
 
@@ -25,6 +25,8 @@ IMAGE_WIDTH = 224
 
 MAX_CLASS_COUNT = 3
 SLEEP_TIME = 0
+
+TTA_NAMES = ['none', '1_crop']
 
 
 # ======================
@@ -41,6 +43,22 @@ parser.add_argument(
     '--float', action='store_true',
     help='use float model.'
 )
+parser.add_argument(
+    '-w', '--write_prediction',
+    action='store_true',
+    help='Flag to output the prediction file.'
+)
+parser.add_argument(
+    '--recalib',
+    action='store_true',
+    help='Use re-calibrated model. The default model was calibrated by only 4 images. If you specify recalib option, we use 50000 images for calibaraion.'
+)
+parser.add_argument(
+    '--tta', '-t', metavar='TTA',
+    default='none', choices=TTA_NAMES,
+    help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
+          ' (default: none)')
+)
 args = update_parser(parser)
 
 if args.tflite:
@@ -54,7 +72,10 @@ else:
 if args.float:
     MODEL_NAME = 'resnet50_float'
 else:
-    MODEL_NAME = 'resnet50_quant'
+    if args.recalib:
+        MODEL_NAME = 'resnet50_quant_recalib'
+    else:
+        MODEL_NAME = 'resnet50_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/resnet50/'
 
@@ -63,30 +84,6 @@ REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/resnet50/'
 # Main functions
 # ======================
 def recognize_from_image():
-    # prepare input data
-    height = IMAGE_HEIGHT
-    width = IMAGE_WIDTH
-    image_paths = args.input.split(",")
-    input_data = None
-    if args.shape:
-        height = width = args.shape
-    for path in image_paths:
-        dtype = np.int8
-        if args.float:
-            dtype = np.float32
-        image = load_image(
-            path,
-            (height, width),
-            normalize_type='Caffe',
-            gen_input_ailia_tflite=True,
-            bgr_to_rgb=False,
-            output_type=dtype
-        )
-        if input_data is None:
-            input_data = image
-        else:
-            input_data = np.concatenate([input_data, image])
-
     # net initialize
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
@@ -98,36 +95,67 @@ def recognize_from_image():
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
-
-    if len(image_paths) > 1 or args.shape:
-        print(f"update input shape {[len(image_paths), height, width, 3]}")
-        interpreter.resize_tensor_input(0, [len(image_paths), height, width, 3])
+    
+    if args.shape:
+        print(f"update input shape {[1, height, width, 3]}")
+        interpreter.resize_tensor_input(0, [1, height, width, 3])
         interpreter.allocate_tensors()
+    
+    # image loop
+    for image_path in args.input:
+        # prepare input data
+        height = IMAGE_HEIGHT
+        width = IMAGE_WIDTH
+        input_data = None
+        if args.shape:
+            height = width = args.shape
+        dtype = np.int8
+        if args.float:
+            dtype = np.float32
+        image = load_image(
+            image_path,
+            (height, width),
+            normalize_type='Caffe',
+            gen_input_ailia_tflite=True,
+            bgr_to_rgb=False,
+            output_type=dtype,
+            tta=args.tta
+        )
+        if input_data is None:
+            input_data = image
+        else:
+            input_data = np.concatenate([input_data, image])
 
-    # quantize
-    inputs = format_input_tensor(input_data, input_details, 0)
+        # quantize input data
+        inputs = format_input_tensor(input_data, input_details, 0)
 
-    # inference
-    print('Start inference...')
-    if args.benchmark:
-        print('BENCHMARK mode')
-        for i in range(5):
-            start = int(round(time.time() * 1000))
+        # inference
+        print('Start inference...')
+        if args.benchmark:
+            print('BENCHMARK mode')
+            for i in range(5):
+                start = int(round(time.time() * 1000))
+                interpreter.set_tensor(input_details[0]['index'], inputs)
+                interpreter.invoke()
+                preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
+                end = int(round(time.time() * 1000))
+                print(f'\tailia processing time {end - start} ms')
+        else:
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
             preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
-            end = int(round(time.time() * 1000))
-            print(f'\tailia processing time {end - start} ms')
-    else:
-        interpreter.set_tensor(input_details[0]['index'], inputs)
-        interpreter.invoke()
-        preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
 
-    preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
+        preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
 
-    for i, name in enumerate(image_paths):
-        print(f"=== {name} ===")
-        print_results([preds_tf_lite[i],preds_tf_lite_int8[i]], resnet50_labels.imagenet_category)
+        print(f"=== {image_path} ===")
+        print_results([preds_tf_lite[0],preds_tf_lite_int8[0]], resnet50_labels.imagenet_category)
+
+        # write prediction
+        if args.write_prediction:
+            savepath = get_savepath(args.savepath, image_path)
+            pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
+            write_predictions(pred_file, preds_tf_lite, resnet50_labels.imagenet_category)
+
     print('Script finished successfully.')
 
 
@@ -199,7 +227,6 @@ def main():
         recognize_from_video()
     else:
         # image mode
-        args.input = args.input[0]
         recognize_from_image()
 
 
