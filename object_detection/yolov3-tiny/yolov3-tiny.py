@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 sys.path.append('../../util')
-from utils import get_base_parser, update_parser  # noqa: E402
+from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
@@ -206,57 +206,61 @@ def recognize_from_image():
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    # prepare input data
-    image_path = args.input
-    logger.info(image_path)
-    src_img = cv2.imread(image_path)
-    det_w = DETECTION_SIZE
-    det_h = DETECTION_SIZE
-    input_data, _, pad = load_image(
-        args.input,
-        (det_h, det_w),
-        normalize_type='255',
-        gen_input_ailia_tflite=True,
-        return_scale_pad=True,
-    )
+    # input image loop
+    for image_path in args.input:
+        # prepare input data
+        logger.debug(f'input image: {image_path}')
 
-    # inference
-    logger.info('Start inference...')
-    if args.benchmark:
-        logger.info('BENCHMARK mode')
-        for _ in range(5):
-            start = int(round(time.time() * 1000))
+        # prepare input data
+        src_img = cv2.imread(image_path)
+        det_w = DETECTION_SIZE
+        det_h = DETECTION_SIZE
+        input_data, _, pad = load_image(
+            image_path,
+            (det_h, det_w),
+            normalize_type='255',
+            gen_input_ailia_tflite=True,
+            return_scale_pad=True,
+        )
+
+        # inference
+        logger.info('Start inference...')
+        if args.benchmark:
+            logger.info('BENCHMARK mode')
+            for _ in range(5):
+                start = int(round(time.time() * 1000))
+                inputs = get_input_tensor(input_data, input_details, 0)
+                interpreter.set_tensor(input_details[0]['index'], inputs)
+                interpreter.invoke()
+                preds_tf_lite = {}
+                preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
+                preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
+                end = int(round(time.time() * 1000))
+                logger.info(f'\tailia processing time {end - start} ms')
+        else:
             inputs = get_input_tensor(input_data, input_details, 0)
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
             preds_tf_lite = {}
             preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
             preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
-            end = int(round(time.time() * 1000))
-            logger.info(f'\tailia processing time {end - start} ms')
-    else:
-        inputs = get_input_tensor(input_data, input_details, 0)
-        interpreter.set_tensor(input_details[0]['index'], inputs)
-        interpreter.invoke()
-        preds_tf_lite = {}
-        preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
-        preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
 
-    boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
-        det_w, det_h, pad, score_threshold=args.threshold)
-    boxes, scores, classes = nms(boxes[0], pred_conf[0],
-        iou_threshold=args.iou, score_threshold=args.threshold)
-    src_img = draw_bbox(src_img, boxes, scores, classes)
+        boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
+            det_w, det_h, pad, score_threshold=args.threshold)
+        boxes, scores, classes = nms(boxes[0], pred_conf[0],
+            iou_threshold=args.iou, score_threshold=args.threshold)
+        src_img = draw_bbox(src_img, boxes, scores, classes)
 
-    logger.info(f'saved at : {args.savepath}')        
-    cv2.imwrite(args.savepath, src_img)
+        savepath = get_savepath(args.savepath, image_path)
+        logger.info(f'saved at : {savepath}')        
+        cv2.imwrite(savepath, src_img)
 
-    # write prediction
-    if args.write_prediction:
-        pred_file = '%s.txt' % args.savepath.rsplit('.', 1)[0]
-        write_predictions(
-            pred_file, boxes, scores, classes,
-            normalized_boxes=False, classes=COCO_CATEGORY)
+        # write prediction
+        if args.write_prediction:
+            pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
+            write_predictions(
+                pred_file, boxes, scores, classes,
+                normalized_boxes=False, classes=COCO_CATEGORY)
 
     logger.info('Script finished successfully.')
 
@@ -345,7 +349,6 @@ def main():
         recognize_from_video()
     else:
         # image mode
-        args.input = args.input[0]
         recognize_from_image()
 
 
