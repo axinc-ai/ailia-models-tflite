@@ -142,6 +142,6 @@ def filter_predictions(predictions, raw_img, ratio, nms_thr, score_thr):
     boxes_xyxy /= ratio
     dets = multiclass_nms(boxes_xyxy, scores, nms_thr, score_thr)
 
-    if dets==None:
-        return None
-    return dets.astype(np.float32)
+    if dets is not None:
+        return dets.astype(np.float32)
+    return None
