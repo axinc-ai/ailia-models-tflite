@@ -193,6 +193,9 @@ def recognize_from_image():
                 raw_img, final_boxes, final_scores, final_cls_inds,
                 COCO_CATEGORY, normalized_boxes=False, logger=logger)
         else:
+            final_boxes = np.zeros((0))
+            final_scores = np.zeros((0))
+            final_cls_inds = np.zeros((0))
             res_img = raw_img
 
         # plot result

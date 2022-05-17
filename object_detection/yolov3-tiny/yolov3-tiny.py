@@ -143,10 +143,10 @@ def filter_boxes(box_xywh, scores, w, h, padding, score_threshold=0.4):
     box_mins = (box_yx - (box_hw / 2.)) / input_shape
     box_maxes = (box_yx + (box_hw / 2.)) / input_shape
     boxes = np.concatenate([
-        box_mins[..., 0:1],  # y_min
         box_mins[..., 1:2],  # x_min
-        box_maxes[..., 0:1],  # y_max
-        box_maxes[..., 1:2]  # x_max
+        box_mins[..., 0:1],  # y_min
+        box_maxes[..., 1:2],  # x_max
+        box_maxes[..., 0:1]  # y_max
     ], axis=-1)
     # return tf.concat([boxes, pred_conf], axis=-1)
     return (boxes, pred_conf)
@@ -166,17 +166,17 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
     for i in range(num_boxes):
         if int(out_classes[i]) < 0 or int(out_classes[i]) > num_classes: continue
         coor = out_boxes[i]
-        coor[0] = int(coor[0] * image_h)
-        coor[2] = int(coor[2] * image_h)
-        coor[1] = int(coor[1] * image_w)
-        coor[3] = int(coor[3] * image_w)
+        coor[0] = int(coor[0] * image_w)
+        coor[1] = int(coor[1] * image_h)
+        coor[2] = int(coor[2] * image_w)
+        coor[3] = int(coor[3] * image_h)
 
         fontScale = 0.5
         score = out_scores[i]
         class_ind = int(out_classes[i])
         bbox_color = colors[class_ind]
         bbox_thick = int(0.6 * (image_h + image_w) / 600)
-        c1, c2 = (int(coor[1]), int(coor[0])), (int(coor[3]), int(coor[2]))
+        c1, c2 = (int(coor[0]), int(coor[1])), (int(coor[2]), int(coor[3]))
         cv2.rectangle(image, c1, c2, bbox_color, bbox_thick)
 
         if show_label:
@@ -233,8 +233,12 @@ def recognize_from_image():
                 interpreter.set_tensor(input_details[0]['index'], inputs)
                 interpreter.invoke()
                 preds_tf_lite = {}
-                preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
-                preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
+                if args.float:
+                    preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 0)
+                    preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 1)
+                else:
+                    preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
+                    preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
                 end = int(round(time.time() * 1000))
                 logger.info(f'\tailia processing time {end - start} ms')
         else:
@@ -242,8 +246,12 @@ def recognize_from_image():
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
             preds_tf_lite = {}
-            preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
-            preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
+            if args.float:
+                preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 0)
+                preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 1)
+            else:
+                preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
+                preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
 
         boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
             det_w, det_h, pad, score_threshold=args.threshold)
