@@ -12,6 +12,7 @@ from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 from nms_utils import nms
+from detector_utils import plot_results, write_predictions
 
 # logger
 from logging import getLogger   # noqa: E402
@@ -188,23 +189,6 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
                         fontScale, (0, 0, 0), bbox_thick // 2, lineType=cv2.LINE_AA)
     return image
 
-def write_predictions(file_name, out_boxes, out_scores, out_classes, img=None, category=None):
-    h, w = (img.shape[0], img.shape[1]) if img is not None else (1, 1)
-
-    count = len(out_boxes)
-
-    with open(file_name, 'w') as f:
-        for idx in range(count):
-            label = category[out_classes[idx]] if category else out_classes[idx]
-            y_min, x_min, y_max, x_max = out_boxes[idx]
-            w, h = x_max - x_min, y_max - y_min
-            f.write('%s %f %d %d %d %d\n' % (
-                label.replace(' ', '_'),
-                out_scores[idx],
-                int(w * x_min), int(h * y_min),
-                int(w * w), int(h * h),
-            ))
-
 
 # ======================
 # Main functions
@@ -270,7 +254,9 @@ def recognize_from_image():
     # write prediction
     if args.write_prediction:
         pred_file = '%s.txt' % args.savepath.rsplit('.', 1)[0]
-        write_predictions(pred_file, boxes, scores, classes, src_img, COCO_CATEGORY)
+        write_predictions(
+            pred_file, boxes, scores, classes,
+            normalized_boxes=False, classes=COCO_CATEGORY)
 
     logger.info('Script finished successfully.')
 
