@@ -268,4 +268,5 @@ def write_predictions(file_name, boxes, scores, class_ids, normalized_boxes=True
 
             class_id = class_ids[idx]
             label = classes[class_id] if classes is not None else class_id
+            label = label.replace(' ', '_')
             f.write(f'{label} {scores[idx]} {x} {y} {dw} {dh}\n')
