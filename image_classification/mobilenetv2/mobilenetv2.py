@@ -77,6 +77,9 @@ def recognize_from_image():
             output_type=dtype
         )
 
+        if args.float:
+            input_data = input_data / 127.5 - 1
+
         # net initialize
         if args.tflite:
             interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
@@ -155,6 +158,9 @@ def recognize_from_video():
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='None',
             bgr_to_rgb=False, output_type=dtype
         )
+
+        if args.float:
+            input_data = input_data / 127.5 - 1
 
         # Inference
         interpreter.set_tensor(input_details[0]['index'], input_data)
