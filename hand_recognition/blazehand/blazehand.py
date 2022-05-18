@@ -164,13 +164,20 @@ def recognize_from_image():
             imgs, affines, _ = but.estimator_preprocess(
                 src_img, detections, scale, pad
             )
-            est_input = get_input_tensor(imgs, est_input_details, 0)
-            estimator.set_tensor(est_input_details[0]['index'], est_input)
-            estimator.invoke()
-            preds_tf_lite = {}
-            landmarks = get_real_tensor(estimator, est_output_details, 2)
-            flags = get_real_tensor(estimator, est_output_details, 0)
-            handedness = get_real_tensor(estimator, est_output_details, 1)
+
+            landmarks = np.zeros((0,63))
+            flags = np.zeros((0,1,1,1))
+            handedness = np.zeros((0,1,1,1))
+
+            for img_id in range(len(imgs)):
+                est_input = get_input_tensor(np.expand_dims(imgs[img_id],axis=0), est_input_details, 0)
+                estimator.set_tensor(est_input_details[0]['index'], est_input)
+                estimator.invoke()
+
+                landmarks = np.concatenate([landmarks, get_real_tensor(estimator, est_output_details, 2)], 0)
+                flags = np.concatenate([flags, get_real_tensor(estimator, est_output_details, 0)], 0)
+                handedness = np.concatenate([handedness, get_real_tensor(estimator, est_output_details, 1)], 0)
+
             normalized_landmarks = landmarks.reshape((landmarks.shape[0], -1, 3))
             normalized_landmarks = normalized_landmarks / 256.0
             flags = flags.squeeze((1, 2, 3))
@@ -277,13 +284,19 @@ def recognize_from_video():
         # Hand landmark estimation
         presence = [0, 0] # [left, right]
         if tracking:
-            est_input = get_input_tensor(roi_imgs, est_input_details, 0)
-            estimator.set_tensor(est_input_details[0]['index'], est_input)
-            estimator.invoke()
-            preds_tf_lite = {}
-            landmarks = get_real_tensor(estimator, est_output_details, 2)
-            hand_flags = get_real_tensor(estimator, est_output_details, 0)
-            handedness = get_real_tensor(estimator, est_output_details, 1)
+            landmarks = np.zeros((0,63))
+            hand_flags = np.zeros((0,1,1,1))
+            handedness = np.zeros((0,1,1,1))
+
+            for img_id in range(len(roi_imgs)):
+                est_input = get_input_tensor(np.expand_dims(roi_imgs[img_id],axis=0), est_input_details, 0)
+                estimator.set_tensor(est_input_details[0]['index'], est_input)
+                estimator.invoke()
+
+                landmarks = np.concatenate([landmarks, get_real_tensor(estimator, est_output_details, 2)], 0)
+                hand_flags = np.concatenate([hand_flags, get_real_tensor(estimator, est_output_details, 0)], 0)
+                handedness = np.concatenate([handedness, get_real_tensor(estimator, est_output_details, 1)], 0)
+
             normalized_landmarks = landmarks.reshape((landmarks.shape[0], -1, 3))
             normalized_landmarks = normalized_landmarks / 256.0
             hand_flags = hand_flags.squeeze((1, 2, 3))
