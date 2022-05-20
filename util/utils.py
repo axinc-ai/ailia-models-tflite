@@ -115,7 +115,14 @@ def get_base_parser(
         default=0, type=int,
         help='set memory mode for tflite runtime'
     )
-
+    parser.add_argument(
+        '--shape', type=int, 
+        help='change input image shape (Please specify one int value to change width and height).'
+    )
+    parser.add_argument(
+        '--float', action='store_true',
+        help='use float model.'
+    )
     return parser
 
 

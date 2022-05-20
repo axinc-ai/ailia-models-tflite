@@ -43,7 +43,6 @@ COCO_CATEGORY = [
 THRESHOLD = 0.4
 DETECTION_SIZE = 320 # Currently model only accepts this size
 
-
 # ======================
 # Argument Parser Config
 # ======================
@@ -53,16 +52,15 @@ parser.add_argument(
     default=THRESHOLD, type=float,
     help='The detection threshold for yolo. (default: '+str(THRESHOLD)+')'
 )
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
 args = update_parser(parser)
 
 if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+
+if args.shape:
+    DETECTION_SIZE = args.shape
 
 # ======================
 # Parameters 2
@@ -166,58 +164,63 @@ def recognize_from_image():
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    # prepare input data
-    image_path = args.input
-    logger.info(image_path)
-    src_img = cv2.imread(image_path)
-    det_w = DETECTION_SIZE
-    det_h = DETECTION_SIZE
+    if args.shape:
+        print(f"update input shape {[1, DETECTION_SIZE, DETECTION_SIZE, 3]}")
+        interpreter.resize_tensor_input(input_details[0]["index"], [1, DETECTION_SIZE, DETECTION_SIZE, 3])
+        interpreter.allocate_tensors()
 
-    # input image is 0-255 RGB image
-    input_data, _, pad = load_image(
-        args.input,
-        (det_h, det_w),
-        normalize_type='None',
-        bgr_to_rgb=True,
-        gen_input_ailia_tflite=True,
-        return_scale_pad=True,
-        output_type=np.float32
-    )
-
-    # inference
     logger.info('Start inference...')
-    if args.benchmark:
-        logger.info('BENCHMARK mode')
-        for _ in range(5):
-            start = int(round(time.time() * 1000))
+    for image_path in args.input:
+        # prepare input data
+        logger.info(image_path)
+        src_img = cv2.imread(image_path)
+        det_w = DETECTION_SIZE
+        det_h = DETECTION_SIZE
+
+        # input image is 0-255 RGB image
+        input_data, _, pad = load_image(
+            image_path,
+            (det_h, det_w),
+            normalize_type='None',
+            bgr_to_rgb=True,
+            gen_input_ailia_tflite=True,
+            return_scale_pad=True,
+            output_type=np.float32
+        )
+
+        # inference
+        if args.benchmark:
+            logger.info('BENCHMARK mode')
+            for _ in range(5):
+                start = int(round(time.time() * 1000))
+                inputs = get_input_tensor(input_data, input_details, 0)
+                interpreter.set_tensor(input_details[0]['index'], inputs)
+                interpreter.invoke()
+                end = int(round(time.time() * 1000))
+                logger.info(f'\tailia processing time {end - start} ms')
+        else:
             inputs = get_input_tensor(input_data, input_details, 0)
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
-            end = int(round(time.time() * 1000))
-            logger.info(f'\tailia processing time {end - start} ms')
-    else:
-        inputs = get_input_tensor(input_data, input_details, 0)
-        interpreter.set_tensor(input_details[0]['index'], inputs)
-        interpreter.invoke()
 
-    if args.float:
-        bboxes = get_real_tensor(interpreter, output_details, 0)
-        class_ids = get_real_tensor(interpreter, output_details, 1)
-        confs = get_real_tensor(interpreter, output_details, 2)
-    else:
-        bboxes = get_real_tensor(interpreter, output_details, 0)
-        class_ids = get_real_tensor(interpreter, output_details, 2)
-        confs = get_real_tensor(interpreter, output_details, 1)
-    
-    bboxes = bboxes[0]
-    reverse_padding(bboxes, pad)
+        if args.float:
+            bboxes = get_real_tensor(interpreter, output_details, 0)
+            class_ids = get_real_tensor(interpreter, output_details, 1)
+            confs = get_real_tensor(interpreter, output_details, 2)
+        else:
+            bboxes = get_real_tensor(interpreter, output_details, 0)
+            class_ids = get_real_tensor(interpreter, output_details, 2)
+            confs = get_real_tensor(interpreter, output_details, 1)
+        
+        bboxes = bboxes[0]
+        reverse_padding(bboxes, pad)
 
-    class_ids = class_ids[0]
-    confs = confs[0]
-    src_img = draw_bbox(src_img, bboxes, confs, class_ids)
+        class_ids = class_ids[0]
+        confs = confs[0]
+        src_img = draw_bbox(src_img, bboxes, confs, class_ids)
 
-    logger.info(f'saved at : {args.savepath}')        
-    cv2.imwrite(args.savepath, src_img)
+        logger.info(f'saved at : {args.savepath}')        
+        cv2.imwrite(args.savepath, src_img)
 
     logger.info('Script finished successfully.')
 
@@ -306,7 +309,6 @@ def main():
         recognize_from_video()
     else:
         # image mode
-        args.input = args.input[0]
         recognize_from_image()
 
 

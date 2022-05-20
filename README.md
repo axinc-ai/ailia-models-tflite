@@ -58,7 +58,7 @@ pip3 install .
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="object_detection/yolov3-tiny/output.png" width=128px>](object_detection/yolov3-tiny/) | [YOLOv3 tiny](/object_detection/yolov3-tiny/) | [tensorflow-yolov4-tflite](https://github.com/hunglc007/tensorflow-yolov4-tflite) | TensorFlow | 1.0 |
 | [<img src="object_detection/yolox/output.jpg" width=128px>](object_detection/yolox/) | [YOLOX](/object_detection/yolox/) | [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) | Pytorch | 1.1 |
-| [<img src="object_detection/efficientdet_lite/output.jpg" width=128px>](object_detection/efficientdet_lite/) | [EfficientDetLite](/object_detection/efficientdet_lite/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/103_EfficientDet_lite) | TensorFlow | 1.1.1 |
+| [<img src="object_detection/efficientdet_lite/output.jpg" width=128px>](object_detection/efficientdet_lite/) | [EfficientDetLite](/object_detection/efficientdet_lite/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/103_EfficientDet_lite) | TensorFlow | 1.1.3 |
 
 ## Super resolution
 
