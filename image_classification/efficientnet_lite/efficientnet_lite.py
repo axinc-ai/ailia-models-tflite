@@ -33,14 +33,6 @@ SLEEP_TIME = 0
 parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
 )
-parser.add_argument(
-    '--shape', type=int, 
-    help='change input image shape (Please specify one int value to change width and height).'
-)
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
 args = update_parser(parser)
 
 if args.tflite:
