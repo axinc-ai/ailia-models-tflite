@@ -88,10 +88,6 @@ parser.add_argument(
     help='By default, the optimized model is used, but with this option, ' +
     'you can switch to the normal model for ailia TFLite Runtime 1.1.0'
 )
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
 args = update_parser(parser)
 
 if args.tflite:

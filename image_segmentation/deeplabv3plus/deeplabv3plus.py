@@ -32,10 +32,6 @@ parser = get_base_parser(
     'DeepLab is a state-of-art deep learning model '
     'for semantic image segmentation.', IMAGE_PATH, SAVE_IMAGE_PATH
 )
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
 args = update_parser(parser)
 
 if args.tflite:
