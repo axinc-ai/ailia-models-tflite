@@ -36,14 +36,6 @@ parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
 )
 parser.add_argument(
-    '--shape', type=int, 
-    help='change input image shape (Please specify one int value to change width and height).'
-)
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
-parser.add_argument(
     '-w', '--write_prediction',
     action='store_true',
     help='Flag to output the prediction file.'
@@ -65,6 +57,10 @@ if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+
+if args.shape:
+    IMAGE_WIDTH = args.shape
+    IMAGE_HEIGHT = args.shape
 
 # ======================
 # Parameters 2
@@ -97,24 +93,22 @@ def recognize_from_image():
     output_details = interpreter.get_output_details()
     
     if args.shape:
-        print(f"update input shape {[1, height, width, 3]}")
-        interpreter.resize_tensor_input(0, [1, height, width, 3])
+        print(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
+        interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
         interpreter.allocate_tensors()
     
+    print('Start inference...')
+
     # image loop
     for image_path in args.input:
         # prepare input data
-        height = IMAGE_HEIGHT
-        width = IMAGE_WIDTH
         input_data = None
-        if args.shape:
-            height = width = args.shape
         dtype = np.int8
         if args.float:
             dtype = np.float32
         image = load_image(
             image_path,
-            (height, width),
+            (IMAGE_HEIGHT, IMAGE_WIDTH),
             normalize_type='Caffe',
             gen_input_ailia_tflite=True,
             bgr_to_rgb=False,
@@ -130,7 +124,6 @@ def recognize_from_image():
         inputs = format_input_tensor(input_data, input_details, 0)
 
         # inference
-        print('Start inference...')
         if args.benchmark:
             print('BENCHMARK mode')
             average_time = 0

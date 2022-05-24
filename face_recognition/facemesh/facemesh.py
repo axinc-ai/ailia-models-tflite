@@ -8,7 +8,7 @@ from scipy.special import expit
 import facemesh_utils as fut
 
 sys.path.append('../../util')
-from utils import get_base_parser, update_parser  # noqa: E402
+from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
@@ -25,6 +25,7 @@ IMAGE_PATH = 'man.jpg'
 SAVE_IMAGE_PATH = 'output.png'
 IMAGE_HEIGHT = 128
 IMAGE_WIDTH = 128
+LANDMARK_WIDTH = 192
 
 
 # ======================
@@ -35,16 +36,15 @@ parser = get_base_parser(
     IMAGE_PATH,
     SAVE_IMAGE_PATH,
 )
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
 args = update_parser(parser)
 
 if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+
+if args.shape:
+    LANDMARK_WIDTH = args.shape
 
 # ======================
 # Parameters 2
@@ -124,24 +124,69 @@ def recognize_from_image():
     est_input_details = estimator.get_input_details()
     est_output_details = estimator.get_output_details()
 
-    # prepare input data
-    image_path = args.input
-    logger.info(image_path)
-    src_img = cv2.imread(image_path)
-    input_data, scale, pad = load_image(
-        args.input,
-        (IMAGE_HEIGHT, IMAGE_WIDTH),
-        normalize_type='127.5',
-        gen_input_ailia_tflite=True,
-        return_scale_pad=True
-    )
+    if args.shape:
+        print(f"update input shape {[1, LANDMARK_WIDTH, LANDMARK_WIDTH, 3]}")
+        estimator.resize_tensor_input(est_input_details[0]["index"], [1, LANDMARK_WIDTH, LANDMARK_WIDTH, 3])
+        estimator.allocate_tensors()
 
-    # inference
-    logger.info('Start inference...')
-    if args.benchmark:
-        logger.info('BENCHMARK mode')
-        for _ in range(5):
-            start = int(round(time.time() * 1000))
+    for image_path in args.input:
+        # prepare input data
+        logger.info(image_path)
+        src_img = cv2.imread(image_path)
+        input_data, scale, pad = load_image(
+            image_path,
+            (IMAGE_HEIGHT, IMAGE_WIDTH),
+            normalize_type='127.5',
+            gen_input_ailia_tflite=True,
+            return_scale_pad=True
+        )
+
+        # inference
+        logger.info('Start inference...')
+        if args.benchmark:
+            logger.info('BENCHMARK mode')
+            for _ in range(5):
+                start = int(round(time.time() * 1000))
+                # Face detection
+                det_input = get_input_tensor(input_data, det_input_details, 0)
+                detector.set_tensor(det_input_details[0]['index'], det_input)
+                detector.invoke()
+                preds_tf_lite = {}
+                if args.float:
+                    preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
+                    preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
+                else:
+                    preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
+                    preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
+                detections = fut.detector_postprocess(preds_tf_lite)
+
+                # Face landmark estimation
+                if detections[0].size != 0:
+                    imgs, affines, box = fut.estimator_preprocess(
+                        src_img[:, :, ::-1], detections, scale, pad, LANDMARK_WIDTH
+                    )
+                    draw_roi(src_img, box)
+                    est_input = get_input_tensor(imgs, est_input_details, 0)
+                    estimator.set_tensor(est_input_details[0]['index'], est_input)
+                    estimator.invoke()
+                    preds_tf_lite = {}
+                    landmarks = get_real_tensor(estimator, est_output_details, 1)
+                    confidences = get_real_tensor(estimator, est_output_details, 0)
+                    landmarks = landmarks.squeeze((1, 2))
+                    confidences = confidences.squeeze((1, 2))
+                    normalized_landmarks = landmarks / 192.0
+
+                    # postprocessing
+                    landmarks = fut.denormalize_landmarks(
+                        normalized_landmarks, affines, LANDMARK_WIDTH
+                    )
+                    for i in range(len(landmarks)):
+                        landmark, face_flag = landmarks[i], expit(confidences[i])
+                        if face_flag > 0:
+                            draw_landmarks(src_img, landmark[:, :2], size=1)
+                end = int(round(time.time() * 1000))
+                logger.info(f'\tailia processing time {end - start} ms')
+        else:
             # Face detection
             det_input = get_input_tensor(input_data, det_input_details, 0)
             detector.set_tensor(det_input_details[0]['index'], det_input)
@@ -158,76 +203,35 @@ def recognize_from_image():
             # Face landmark estimation
             if detections[0].size != 0:
                 imgs, affines, box = fut.estimator_preprocess(
-                    src_img[:, :, ::-1], detections, scale, pad
+                    src_img[:, :, ::-1], detections, scale, pad, LANDMARK_WIDTH
                 )
                 draw_roi(src_img, box)
                 est_input = get_input_tensor(imgs, est_input_details, 0)
                 estimator.set_tensor(est_input_details[0]['index'], est_input)
                 estimator.invoke()
                 preds_tf_lite = {}
-                landmarks = get_real_tensor(estimator, est_output_details, 1)
-                confidences = get_real_tensor(estimator, est_output_details, 0)
+                if args.float:
+                    landmarks = get_real_tensor(estimator, est_output_details, 0)
+                    confidences = get_real_tensor(estimator, est_output_details, 1)
+                else:
+                    landmarks = get_real_tensor(estimator, est_output_details, 1)
+                    confidences = get_real_tensor(estimator, est_output_details, 0)
                 landmarks = landmarks.squeeze((1, 2))
                 confidences = confidences.squeeze((1, 2))
                 normalized_landmarks = landmarks / 192.0
 
                 # postprocessing
                 landmarks = fut.denormalize_landmarks(
-                    normalized_landmarks, affines
+                    normalized_landmarks, affines, LANDMARK_WIDTH
                 )
                 for i in range(len(landmarks)):
                     landmark, face_flag = landmarks[i], expit(confidences[i])
                     if face_flag > 0:
                         draw_landmarks(src_img, landmark[:, :2], size=1)
-            end = int(round(time.time() * 1000))
-            logger.info(f'\tailia processing time {end - start} ms')
-    else:
-        # Face detection
-        det_input = get_input_tensor(input_data, det_input_details, 0)
-        detector.set_tensor(det_input_details[0]['index'], det_input)
-        detector.invoke()
-        preds_tf_lite = {}
-        if args.float:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
-        else:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
-        detections = fut.detector_postprocess(preds_tf_lite)
 
-        # Face landmark estimation
-        if detections[0].size != 0:
-            imgs, affines, box = fut.estimator_preprocess(
-                src_img[:, :, ::-1], detections, scale, pad
-            )
-            draw_roi(src_img, box)
-            est_input = get_input_tensor(imgs, est_input_details, 0)
-            estimator.set_tensor(est_input_details[0]['index'], est_input)
-            estimator.invoke()
-            preds_tf_lite = {}
-            if args.float:
-                landmarks = get_real_tensor(estimator, est_output_details, 0)
-                confidences = get_real_tensor(estimator, est_output_details, 1)
-            else:
-                landmarks = get_real_tensor(estimator, est_output_details, 1)
-                confidences = get_real_tensor(estimator, est_output_details, 0)
-            landmarks = landmarks.squeeze((1, 2))
-            confidences = confidences.squeeze((1, 2))
-            normalized_landmarks = landmarks / 192.0
-
-            # postprocessing
-            landmarks = fut.denormalize_landmarks(
-                normalized_landmarks, affines
-            )
-            for i in range(len(landmarks)):
-                landmark, face_flag = landmarks[i], expit(confidences[i])
-                if face_flag > 0:
-                    draw_landmarks(src_img, landmark[:, :2], size=1)
-
-    # savepath = get_savepath(args.savepath, image_path)
-    savepath = args.savepath
-    logger.info(f'saved at : {savepath}')
-    cv2.imwrite(savepath, src_img)
+        savepath = get_savepath(args.savepath, image_path)
+        logger.info(f'saved at : {savepath}')
+        cv2.imwrite(savepath, src_img)
     logger.info('Script finished successfully.')
 
 
@@ -291,7 +295,7 @@ def recognize_from_video():
         # Face landmark estimation
         if detections[0].size != 0:
             imgs, affines, box = fut.estimator_preprocess(
-                frame[:, :, ::-1], detections, scale, pad
+                frame[:, :, ::-1], detections, scale, pad, LANDMARK_WIDTH
             )
             draw_roi(frame, box)
 
@@ -311,7 +315,7 @@ def recognize_from_video():
 
             # postprocessing
             landmarks = fut.denormalize_landmarks(
-                normalized_landmarks, affines
+                normalized_landmarks, affines, LANDMARK_WIDTH
             )
             for i in range(len(landmarks)):
                 landmark, face_flag = landmarks[i], expit(confidences[i])
@@ -351,7 +355,6 @@ def main():
         recognize_from_video()
     else:
         # image mode
-        args.input = args.input[0]
         recognize_from_image()
 
 

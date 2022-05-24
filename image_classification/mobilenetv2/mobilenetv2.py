@@ -9,7 +9,7 @@ import mobilenetv2_labels
 # import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -33,10 +33,6 @@ parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
 )
 parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
-parser.add_argument(
     '-w', '--write_prediction',
     action='store_true',
     help='Flag to output the prediction file.'
@@ -47,6 +43,10 @@ if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+
+if args.shape:
+    IMAGE_WIDTH = args.shape
+    IMAGE_HEIGHT = args.shape
 
 # ======================
 # Parameters 2
@@ -63,6 +63,25 @@ REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/'
 # Main functions
 # ======================
 def recognize_from_image():
+    # net initialize
+    if args.tflite:
+        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    else:
+        if args.flags or args.memory_mode:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        else:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    if args.shape:
+        print(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
+        interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
+        interpreter.allocate_tensors()
+
+    print('Start inference...')
+
     for image_path in args.input:
         # prepare input data
         dtype = np.int8
@@ -80,20 +99,10 @@ def recognize_from_image():
         if args.float:
             input_data = input_data / 127.5 - 1
 
-        # net initialize
-        if args.tflite:
-            interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
-        else:
-            if args.flags or args.memory_mode:
-                interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
-            else:
-                interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
-        interpreter.allocate_tensors()
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
+        # quantize input data
+        input_data = format_input_tensor(input_data, input_details, 0)
 
         # inference
-        print('Start inference...')
         if args.benchmark:
             print('BENCHMARK mode')
             for i in range(5):
@@ -161,6 +170,9 @@ def recognize_from_video():
 
         if args.float:
             input_data = input_data / 127.5 - 1
+
+        # quantize input data
+        input_data = format_input_tensor(input_data, input_details, 0)
 
         # Inference
         interpreter.set_tensor(input_details[0]['index'], input_data)

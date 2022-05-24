@@ -26,13 +26,14 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 # ======================
 # Parameters
 # ======================
-MODEL_PARAMS = {'yolox_nano': {'input_shape': [416, 416]},
+MODEL_PARAMS = {#'yolox_nano': {'input_shape': [416, 416]},
                 'yolox_tiny': {'input_shape': [416, 416]},
-                'yolox_s': {'input_shape': [640, 640]},
-                'yolox_m': {'input_shape': [640, 640]},
-                'yolox_l': {'input_shape': [640, 640]},
-                'yolox_darknet': {'input_shape': [640, 640]},
-                'yolox_x': {'input_shape': [640, 640]}}
+                #'yolox_s': {'input_shape': [640, 640]},
+                #'yolox_m': {'input_shape': [640, 640]},
+                #'yolox_l': {'input_shape': [640, 640]},
+                #'yolox_darknet': {'input_shape': [640, 640]},
+                #'yolox_x': {'input_shape': [640, 640]}
+                }
 
 IMAGE_PATH = 'input.jpg'
 SAVE_IMAGE_PATH = 'output.jpg'
@@ -82,24 +83,10 @@ parser.add_argument(
     help='The detection iou for yolo. (default: '+str(NMS_THR)+')'
 )
 parser.add_argument(
-    '-dw', '--detection_width',
-    default=-1, type=int,
-    help='The detection width and height for yolo. (default: auto)'
-)
-parser.add_argument(
-    '-dh', '--detection_height',
-    default=-1, type=int,
-    help='The detection height and height for yolo. (default: auto)'
-)
-parser.add_argument(
-    '-o', '--opt',
+    '-n', '--normal',
     action='store_true',
-    help='By default, the no optimized model is used, but with this option, ' +
-    'you can switch to the optimized model (require ailia TFLite Runtime 1.1.1 or above)'
-)
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
+    help='By default, the optimized model is used, but with this option, ' +
+    'you can switch to the normal model for ailia TFLite Runtime 1.1.0'
 )
 args = update_parser(parser)
 
@@ -110,14 +97,14 @@ else:
 
 MODEL_NAME = args.model_name
 if args.float:
-    if args.opt:
+    if not args.normal:
         stem = f'{MODEL_NAME}'
     else:
         logger.error("float model is supported for opt model only")
         sys.exit(1)
 else:
     stem = f'{MODEL_NAME}_full_integer_quant'
-if args.opt:
+if not args.normal:
     stem += '.opt'
 MODEL_PATH = f'{stem}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
@@ -125,6 +112,9 @@ REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
 HEIGHT = MODEL_PARAMS[MODEL_NAME]['input_shape'][0]
 WIDTH = MODEL_PARAMS[MODEL_NAME]['input_shape'][1]
 
+if args.shape:
+    HEIGHT = args.shape
+    WIDTH = args.shape
 
 # ======================
 # Utils
@@ -137,6 +127,7 @@ def compute(interpreter, input_data):
     interpreter.set_tensor(input_details[0]['index'], inputs)
     interpreter.invoke()
     outputs = [get_output_tensor(interpreter, output_details, 0)]
+
     return outputs
 
 # ======================
@@ -152,8 +143,19 @@ def recognize_from_image():
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
 
-    if not args.opt:
+    if args.shape:
+        if args.normal:
+            print(f"update input shape {[1, 3, HEIGHT, WIDTH]}")
+            interpreter.resize_tensor_input(input_details[0]["index"], [1, 3, HEIGHT, WIDTH])
+        else:
+            print(f"update input shape {[1,  HEIGHT, WIDTH, 3]}")
+            interpreter.resize_tensor_input(input_details[0]["index"], [1, HEIGHT, WIDTH, 3])
+        interpreter.allocate_tensors()
+
+    if args.normal:
         swap = (2, 0, 1)
     else:
         swap = (0, 1, 2)
@@ -239,7 +241,7 @@ def recognize_from_video():
         frame_digit = int(math.log10(capture.get(cv2.CAP_PROP_FRAME_COUNT)) + 1)
         video_name = os.path.splitext(os.path.basename(args.video))[0]
 
-    if not args.opt:
+    if args.normal:
         swap = (2, 0, 1)
     else:
         swap = (0, 1, 2)

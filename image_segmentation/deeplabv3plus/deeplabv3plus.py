@@ -8,8 +8,8 @@ from deeplab_utils import *
 
 # import original modules
 sys.path.append('../../util')
-from utils import get_base_parser, update_parser  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -32,16 +32,16 @@ parser = get_base_parser(
     'DeepLab is a state-of-art deep learning model '
     'for semantic image segmentation.', IMAGE_PATH, SAVE_IMAGE_PATH
 )
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
 args = update_parser(parser)
 
 if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+
+if args.shape:
+    IMAGE_HEIGHT = args.shape
+    IMAGE_WIDTH = args.shape
 
 # ======================
 # MODEL PARAMETERS
@@ -70,42 +70,54 @@ def segment_from_image():
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    # prepare input data
-    org_img = cv2.imread(args.input)
-    input_data = load_image(
-        args.input,
-        (IMAGE_HEIGHT, IMAGE_WIDTH),
-        normalize_type='127.5',
-        gen_input_ailia_tflite=True,
-    )
+    if args.shape:
+        print(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
+        interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
+        interpreter.allocate_tensors()
 
-    # inference
     print('Start inference...')
-    if args.benchmark:
-        print('BENCHMARK mode')
-        for i in range(5):
-            start = int(round(time.time() * 1000))
+
+    for image_path in args.input:
+        # prepare input data
+        org_img = cv2.imread(image_path)
+        input_data = load_image(
+            image_path,
+            (IMAGE_HEIGHT, IMAGE_WIDTH),
+            normalize_type='127.5',
+            gen_input_ailia_tflite=True,
+        )
+
+        # quantize input data
+        input_data = format_input_tensor(input_data, input_details, 0)
+
+        # inference
+        if args.benchmark:
+            print('BENCHMARK mode')
+            for i in range(5):
+                start = int(round(time.time() * 1000))
+                interpreter.set_tensor(input_details[0]['index'], input_data)
+                interpreter.invoke()
+                preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
+                end = int(round(time.time() * 1000))
+                print(f'ailia processing time {end - start} ms')
+        else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
             preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
-            end = int(round(time.time() * 1000))
-            print(f'ailia processing time {end - start} ms')
-    else:
-        interpreter.set_tensor(input_details[0]['index'], input_data)
-        interpreter.invoke()
-        preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
 
-    # postprocessing
-    if args.float:
-        preds_tf_lite = preds_tf_lite[:,:,0]
-    seg_img = preds_tf_lite.astype(np.uint8)
-    seg_img = label_to_color_image(seg_img)
-    org_h, org_w = org_img.shape[:2]
-    seg_img = cv2.resize(seg_img, (org_w, org_h))
-    seg_img = cv2.cvtColor(seg_img, cv2.COLOR_RGB2BGR)
-    seg_overlay = cv2.addWeighted(org_img, 1.0, seg_img, 0.9, 0)
+        # postprocessing
+        if args.float:
+            preds_tf_lite = preds_tf_lite[:,:,0]
+        seg_img = preds_tf_lite.astype(np.uint8)
+        seg_img = label_to_color_image(seg_img)
+        org_h, org_w = org_img.shape[:2]
+        seg_img = cv2.resize(seg_img, (org_w, org_h))
+        seg_img = cv2.cvtColor(seg_img, cv2.COLOR_RGB2BGR)
+        seg_overlay = cv2.addWeighted(org_img, 1.0, seg_img, 0.9, 0)
 
-    cv2.imwrite(args.savepath, seg_overlay)
+        savepath = get_savepath(args.savepath, image_path)
+        print(f'saved at : {savepath}')        
+        cv2.imwrite(args.savepath, seg_overlay)
     print('Script finished successfully.')
 
 
@@ -181,7 +193,6 @@ def main():
         segment_from_video()
     else:
         # image mode
-        args.input = args.input[0]
         segment_from_image()
 
 

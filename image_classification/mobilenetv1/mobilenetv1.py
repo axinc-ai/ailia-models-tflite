@@ -9,7 +9,7 @@ import mobilenetv1_labels
 # import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -32,16 +32,16 @@ SLEEP_TIME = 0
 parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
 )
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
 args = update_parser(parser)
 
 if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+
+if args.shape:
+    IMAGE_WIDTH = args.shape
+    IMAGE_HEIGHT = args.shape
 
 # ======================
 # Parameters 2
@@ -58,19 +58,6 @@ REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv1/'
 # Main functions
 # ======================
 def recognize_from_image():
-    # prepare input data
-    dtype = np.uint8
-    if args.float:
-        dtype = np.float32
-    input_data = load_image(
-        args.input,
-        (IMAGE_HEIGHT, IMAGE_WIDTH),
-        normalize_type='None',
-        gen_input_ailia_tflite=True,
-        bgr_to_rgb=False,
-        output_type=dtype
-    )
-
     # net initialize
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
@@ -83,23 +70,46 @@ def recognize_from_image():
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    # inference
+    if args.shape:
+        print(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
+        interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
+        interpreter.allocate_tensors()
+
     print('Start inference...')
-    if args.benchmark:
-        print('BENCHMARK mode')
-        for i in range(5):
-            start = int(round(time.time() * 1000))
+
+    for image_path in args.input:
+        # prepare input data
+        dtype = np.uint8
+        if args.float:
+            dtype = np.float32
+        input_data = load_image(
+            image_path,
+            (IMAGE_HEIGHT, IMAGE_WIDTH),
+            normalize_type='None',
+            gen_input_ailia_tflite=True,
+            bgr_to_rgb=False,
+            output_type=dtype
+        )
+
+        # quantize input data
+        input_data = format_input_tensor(input_data, input_details, 0)
+
+        # inference
+        if args.benchmark:
+            print('BENCHMARK mode')
+            for i in range(5):
+                start = int(round(time.time() * 1000))
+                interpreter.set_tensor(input_details[0]['index'], input_data)
+                interpreter.invoke()
+                preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+                end = int(round(time.time() * 1000))
+                print(f'\tailia processing time {end - start} ms')
+        else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
             preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
-            end = int(round(time.time() * 1000))
-            print(f'\tailia processing time {end - start} ms')
-    else:
-        interpreter.set_tensor(input_details[0]['index'], input_data)
-        interpreter.invoke()
-        preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
 
-    print_results(preds_tf_lite, mobilenetv1_labels.imagenet_category)
+        print_results(preds_tf_lite, mobilenetv1_labels.imagenet_category)
     print('Script finished successfully.')
 
 
@@ -143,6 +153,9 @@ def recognize_from_video():
             bgr_to_rgb=False, output_type=dtype
         )
 
+        # quantize input data
+        input_data = format_input_tensor(input_data, input_details, 0)
+
         # Inference
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
@@ -174,7 +187,6 @@ def main():
         recognize_from_video()
     else:
         # image mode
-        args.input = args.input[0]
         recognize_from_image()
 
 

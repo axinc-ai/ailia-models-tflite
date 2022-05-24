@@ -19,7 +19,7 @@ theta0 = 0
 dscale = 1.5
 dy = 0.
 
-resolution = 192
+#resolution = 192
 
 
 def resize_pad(img):
@@ -341,7 +341,7 @@ def detection2roi(detection, detection2roi_method='box'):
     return xc, yc, scale, theta
 
 
-def extract_roi(frame, xc, yc, theta, scale):
+def extract_roi(frame, xc, yc, theta, scale, resolution=192):
     # take points on unit square and transform them according to the roi
     points = np.array([[-1, -1, 1, 1], [-1, 1, -1, 1]]).reshape(1, 2, 4)
     points = points * scale.reshape(-1, 1, 1)/2
@@ -376,18 +376,18 @@ def extract_roi(frame, xc, yc, theta, scale):
     return imgs, affines, points
 
 
-def estimator_preprocess(src_img, detections, scale, pad):
+def estimator_preprocess(src_img, detections, scale, pad, resolution=192):
     """
     Extract ROI given detections
     """
     dets = denormalize_detections(detections[0], scale, pad)
     xc, yc, scale, theta = detection2roi(dets)
-    img, affine, box = extract_roi(src_img, xc, yc, theta, scale)
+    img, affine, box = extract_roi(src_img, xc, yc, theta, scale, resolution)
 
     return img, affine, box
 
 
-def denormalize_landmarks(landmarks, affines):
+def denormalize_landmarks(landmarks, affines, resolution=192):
     landmarks = landmarks.reshape((landmarks.shape[0], -1, 3))
     landmarks[:, :, :2] *= resolution
     for i in range(len(landmarks)):

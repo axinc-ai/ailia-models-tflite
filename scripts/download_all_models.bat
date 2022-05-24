@@ -11,3 +11,4 @@ cd ..\\..\\image_classification\\resnet50& python resnet50.py %OPTION% --float
 cd ..\\..\\image_segmentation\\deeplabv3plus& python deeplabv3plus.py %OPTION%
 cd ..\\..\\object_detection\\yolov3-tiny& python yolov3-tiny.py %OPTION%
 cd ..\\..\\object_detection\\yolox& python yolox.py %OPTION%
+cd ..\\..\\object_detection\\efficientdet_lite& python efficientdet_lite.py %OPTION%

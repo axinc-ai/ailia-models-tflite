@@ -64,26 +64,15 @@ parser.add_argument(
     action='store_true',
     help='Flag to output the prediction file.'
 )
-parser.add_argument(
-    '--float', action='store_true',
-    help='use float model.'
-)
-# parser.add_argument(
-#     '-dw', '--detection_width',
-#     default=DETECTION_SIZE, type=int,
-#     help='The detection width and height for yolo. (default: 416)'
-# )
-# parser.add_argument(
-#     '-dh', '--detection_height',
-#     default=DETECTION_SIZE, type=int,
-#     help='The detection height and height for yolo. (default: 416)'
-# )
 args = update_parser(parser)
 
 if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+
+if args.shape:
+    DETECTION_SIZE = args.shape
 
 # ======================
 # Parameters 2
@@ -205,6 +194,11 @@ def recognize_from_image():
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
+
+    if args.shape:
+        print(f"update input shape {[1, DETECTION_SIZE, DETECTION_SIZE, 3]}")
+        interpreter.resize_tensor_input(input_details[0]["index"], [1, DETECTION_SIZE, DETECTION_SIZE, 3])
+        interpreter.allocate_tensors()
 
     # input image loop
     for image_path in args.input:
