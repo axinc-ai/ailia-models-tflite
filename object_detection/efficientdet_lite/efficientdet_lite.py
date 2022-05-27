@@ -226,6 +226,8 @@ def recognize_from_image():
         )
 
         # inference
+        if args.profile:
+            interpreter.set_profile_mode(True)
         if args.benchmark:
             logger.info('BENCHMARK mode')
             for _ in range(5):
@@ -265,6 +267,9 @@ def recognize_from_image():
 
         logger.info(f'saved at : {args.savepath}')        
         cv2.imwrite(args.savepath, src_img)
+
+        if args.profile:
+            print(interpreter.get_summary())
 
     logger.info('Script finished successfully.')
 
