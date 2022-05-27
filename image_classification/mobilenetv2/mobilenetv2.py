@@ -103,6 +103,8 @@ def recognize_from_image():
         input_data = format_input_tensor(input_data, input_details, 0)
 
         # inference
+        if args.profile:
+            interpreter.set_profile_mode(True)
         if args.benchmark:
             print('BENCHMARK mode')
             for i in range(5):
@@ -124,6 +126,9 @@ def recognize_from_image():
             savepath = get_savepath(args.savepath, image_path)
             pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
             write_predictions(pred_file, preds_tf_lite, mobilenetv2_labels.imagenet_category)
+
+        if args.profile:
+            print(interpreter.get_summary())
 
     print('Script finished successfully.')
 
