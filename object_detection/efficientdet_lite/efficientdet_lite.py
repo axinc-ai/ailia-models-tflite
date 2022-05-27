@@ -41,7 +41,8 @@ COCO_CATEGORY = [
 ]
 
 THRESHOLD = 0.4
-DETECTION_SIZE = 320 # Currently model only accepts this size
+
+MODEL_LIST=["pinto", "edgeai", "automl"]
 
 # ======================
 # Argument Parser Config
@@ -51,6 +52,12 @@ parser.add_argument(
     '-th', '--threshold',
     default=THRESHOLD, type=float,
     help='The detection threshold for yolo. (default: '+str(THRESHOLD)+')'
+)
+parser.add_argument(
+    '-m', '--model',
+    default='pinto',
+    choices=MODEL_LIST,
+    help='Select model format'
 )
 args = update_parser(parser)
 
@@ -66,10 +73,19 @@ if args.shape:
 # Parameters 2
 # ======================
 MODEL_NAME = 'efficientdet_lite'
-if args.float:
-    MODEL_PATH = f'efficientdet_lite0_float32.tflite'
-else:
-    MODEL_PATH = f'efficientdet_lite0_integer_quant.tflite'
+if args.model == 'pinto':
+    if args.float:
+        MODEL_PATH = f'efficientdet_lite0_float32.tflite'
+    else:
+        MODEL_PATH = f'efficientdet_lite0_integer_quant.tflite'
+    DETECTION_SIZE = 320
+elif args.model == 'edgeai':
+    MODEL_PATH = f'efficientdet_lite1_relu_ti.tflite'
+    DETECTION_SIZE = 384
+elif args.model == 'automl':
+    MODEL_PATH = f'efficientdet-lite0_automl.tflite'
+    DETECTION_SIZE = 320
+
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
 
 
@@ -79,6 +95,14 @@ REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/
 def get_input_tensor(tensor, input_details, idx):
     details = input_details[idx]
     dtype = details['dtype']
+
+    if args.model == 'edgeai' or args.model == 'automl':
+        if dtype == np.uint8 or dtype == np.int8:
+            input_tensor = tensor.clip(0, 255)
+            return input_tensor.astype(dtype)
+        else:
+            return tensor / 255.0
+
     if dtype == np.uint8 or dtype == np.int8:
         quant_params = details['quantization_parameters']
         input_tensor = tensor / quant_params['scales'] + quant_params['zero_points']
@@ -143,10 +167,14 @@ def reverse_padding(bboxes, pad):
     # bboxes = ymin xmin ymax xmax
     # pad = top bottom left right
 
-    bboxes[:,0] = (bboxes[:,0] - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
-    bboxes[:,2] = (bboxes[:,2] - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
-    bboxes[:,1] = (bboxes[:,1] - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
-    bboxes[:,3] = (bboxes[:,3] - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
+    scale = 1.0
+    if args.model == 'edgeai' or args.model == 'automl':
+        scale = DETECTION_SIZE
+
+    bboxes[:,0] = (bboxes[:,0] / scale - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
+    bboxes[:,2] = (bboxes[:,2] / scale - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
+    bboxes[:,1] = (bboxes[:,1] / scale - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
+    bboxes[:,3] = (bboxes[:,3] / scale - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
 
 # ======================
 # Main functions
@@ -203,15 +231,21 @@ def recognize_from_image():
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
 
-        if args.float:
-            bboxes = get_real_tensor(interpreter, output_details, 0)
-            class_ids = get_real_tensor(interpreter, output_details, 1)
-            confs = get_real_tensor(interpreter, output_details, 2)
+        if args.model == "edgeai" or args.model == "automl":
+            outputs = get_real_tensor(interpreter, output_details, 0)
+            bboxes = outputs[:,:,1:5]
+            class_ids = outputs[:,:,6] - 1
+            confs = outputs[:,:,5]
         else:
-            bboxes = get_real_tensor(interpreter, output_details, 0)
-            class_ids = get_real_tensor(interpreter, output_details, 2)
-            confs = get_real_tensor(interpreter, output_details, 1)
-        
+            if args.float:
+                bboxes = get_real_tensor(interpreter, output_details, 0)
+                class_ids = get_real_tensor(interpreter, output_details, 1)
+                confs = get_real_tensor(interpreter, output_details, 2)
+            else:
+                bboxes = get_real_tensor(interpreter, output_details, 0)
+                class_ids = get_real_tensor(interpreter, output_details, 2)
+                confs = get_real_tensor(interpreter, output_details, 1)
+
         bboxes = bboxes[0]
         reverse_padding(bboxes, pad)
 
@@ -269,14 +303,20 @@ def recognize_from_video():
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
 
-        if args.float:
-            bboxes = get_real_tensor(interpreter, output_details, 0)
-            class_ids = get_real_tensor(interpreter, output_details, 1)
-            confs = get_real_tensor(interpreter, output_details, 2)
+        if args.model == "edgeai" or args.model == "automl":
+            outputs = get_real_tensor(interpreter, output_details, 0)
+            bboxes = outputs[:,:,1:5]
+            class_ids = outputs[:,:,6] - 1
+            confs = outputs[:,:,5]
         else:
-            bboxes = get_real_tensor(interpreter, output_details, 0)
-            class_ids = get_real_tensor(interpreter, output_details, 2)
-            confs = get_real_tensor(interpreter, output_details, 1)
+            if args.float:
+                bboxes = get_real_tensor(interpreter, output_details, 0)
+                class_ids = get_real_tensor(interpreter, output_details, 1)
+                confs = get_real_tensor(interpreter, output_details, 2)
+            else:
+                bboxes = get_real_tensor(interpreter, output_details, 0)
+                class_ids = get_real_tensor(interpreter, output_details, 2)
+                confs = get_real_tensor(interpreter, output_details, 1)
 
         bboxes = bboxes[0]
         reverse_padding(bboxes, pad)
