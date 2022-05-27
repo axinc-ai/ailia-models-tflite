@@ -42,7 +42,7 @@ COCO_CATEGORY = [
 
 THRESHOLD = 0.4
 
-MODEL_LIST=["pinto", "edgeai", "automl"]
+MODEL_LIST=["lite0", "lite1", "edgeai", "automl"]
 
 # ======================
 # Argument Parser Config
@@ -55,7 +55,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '-m', '--model',
-    default='pinto',
+    default='lite0',
     choices=MODEL_LIST,
     help='Select model format'
 )
@@ -73,17 +73,26 @@ if args.shape:
 # Parameters 2
 # ======================
 MODEL_NAME = 'efficientdet_lite'
-if args.model == 'pinto':
+if args.model == 'lite0':
     if args.float:
         MODEL_PATH = f'efficientdet_lite0_float32.tflite'
     else:
         MODEL_PATH = f'efficientdet_lite0_integer_quant.tflite'
     DETECTION_SIZE = 320
+elif args.model == 'lite1':
+    if args.float:
+        MODEL_PATH = f'efficientdet_lite1_float32.tflite'
+    else:
+        MODEL_PATH = f'efficientdet_lite1_integer_quant.tflite'
+    DETECTION_SIZE = 384
 elif args.model == 'edgeai':
     MODEL_PATH = f'efficientdet_lite1_relu_ti.tflite'
     DETECTION_SIZE = 384
 elif args.model == 'automl':
-    MODEL_PATH = f'efficientdet-lite0_automl.tflite'
+    if args.float:
+        MODEL_PATH = f'efficientdet-lite0_automl.tflite'
+    else:
+        MODEL_PATH = f'efficientdet-lite0_integer_quant_automl.tflite'
     DETECTION_SIZE = 320
 
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
@@ -236,6 +245,7 @@ def recognize_from_image():
             bboxes = outputs[:,:,1:5]
             class_ids = outputs[:,:,6] - 1
             confs = outputs[:,:,5]
+            print(outputs)
         else:
             if args.float:
                 bboxes = get_real_tensor(interpreter, output_details, 0)

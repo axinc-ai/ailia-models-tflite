@@ -59,6 +59,13 @@ edgeai
 efficientdet_lite1_relu.tflite
 ```
 
+### Run
+
+```
+python3 model_inspect.py --runmode=saved_model --model_name=efficientdet-lite0   --ckpt_path=checkpoints/efficientdet-lite0  --saved_model_dir=checkpoints/efficientdet-lite0/tflite_int8 --tflite_path=checkpoints/efficientdet-lite0/tflite_int8/efficientdet-lite0_integer_quant_automl.tflite
+```
+
+
 ## Framework
 
 Tensorflow 2.7.0
@@ -69,9 +76,12 @@ pinto (int8 / float)
 
 - [efficientdet_lite0_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet_lite0_integer_quant.tflite)
 - [efficientdet_lite0_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet_lite0_float32.tflite)
+- [efficientdet_lite1_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet_lite1_integer_quant.tflite)
+- [efficientdet_lite1_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet_lite1_float32.tflite)
 
 automl (float)
 
+- [efficientdet-lite0_integer_quant_automl.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet-lite0_integer_quant_automl.tflite)
 - [efficientdet-lite0_automl.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientdet_lite/efficientdet-lite0_automl.tflite)
 
 edgeai (float)
