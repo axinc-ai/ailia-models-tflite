@@ -59,13 +59,6 @@ edgeai
 efficientdet_lite1_relu.tflite
 ```
 
-### Run
-
-```
-python3 model_inspect.py --runmode=saved_model --model_name=efficientdet-lite0   --ckpt_path=checkpoints/efficientdet-lite0  --saved_model_dir=checkpoints/efficientdet-lite0/tflite_int8 --tflite_path=checkpoints/efficientdet-lite0/tflite_int8/efficientdet-lite0_integer_quant_automl.tflite
-```
-
-
 ## Framework
 
 Tensorflow 2.7.0
