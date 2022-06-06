@@ -90,6 +90,7 @@ def recognize_from_image():
             bgr_to_rgb=False,
             output_type=dtype
         )
+        input_data = input_data / 127.5 - 1
 
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
@@ -152,6 +153,7 @@ def recognize_from_video():
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='None',
             bgr_to_rgb=False, output_type=dtype
         )
+        input_data = input_data / 127.5 - 1
 
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
