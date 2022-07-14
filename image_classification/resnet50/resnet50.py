@@ -133,11 +133,9 @@ def recognize_from_image():
                 interpreter.invoke()
                 preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
                 end = int(round(time.time() * 1000))
-                if i!=0:
-                    average_time = average_time + (end - start)
+                average_time = average_time + (end - start)
                 print(f'\tailia processing time {end - start} ms')
-            average_time = average_time / (args.benchmark_count-1)
-            print(f'\taverage time {average_time} ms')
+            print(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()

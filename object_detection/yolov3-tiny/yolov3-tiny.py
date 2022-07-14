@@ -221,31 +221,28 @@ def recognize_from_image():
         logger.info('Start inference...')
         if args.benchmark:
             logger.info('BENCHMARK mode')
-            for _ in range(5):
+            average_time = 0
+            for _ in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
                 inputs = get_input_tensor(input_data, input_details, 0)
                 interpreter.set_tensor(input_details[0]['index'], inputs)
                 interpreter.invoke()
-                preds_tf_lite = {}
-                if args.float:
-                    preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 0)
-                    preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 1)
-                else:
-                    preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
-                    preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
                 end = int(round(time.time() * 1000))
+                average_time = average_time + (end - start)
                 logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
             inputs = get_input_tensor(input_data, input_details, 0)
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
-            preds_tf_lite = {}
-            if args.float:
-                preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 0)
-                preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 1)
-            else:
-                preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
-                preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
+
+        preds_tf_lite = {}
+        if args.float:
+            preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 0)
+            preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 1)
+        else:
+            preds_tf_lite[0] = get_real_tensor(interpreter, output_details, 1)
+            preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
 
         boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
             det_w, det_h, pad, score_threshold=args.threshold)

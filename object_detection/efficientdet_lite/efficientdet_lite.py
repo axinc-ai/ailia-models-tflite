@@ -230,13 +230,16 @@ def recognize_from_image():
             interpreter.set_profile_mode(True)
         if args.benchmark:
             logger.info('BENCHMARK mode')
-            for _ in range(5):
+            average_time = 0
+            for _ in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
                 inputs = get_input_tensor(input_data, input_details, 0)
                 interpreter.set_tensor(input_details[0]['index'], inputs)
                 interpreter.invoke()
                 end = int(round(time.time() * 1000))
+                average_time = average_time + (end - start)
                 logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
             inputs = get_input_tensor(input_data, input_details, 0)
             interpreter.set_tensor(input_details[0]['index'], inputs)
