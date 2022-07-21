@@ -18,8 +18,6 @@ def plot_detections(
     # if detections.ndim == 1:
     # detections = np.expand_dims(detections, axis=0)
 
-    print(f'Found {detections.shape[0]} faces')
-        
     for i in range(detections.shape[0]):
         ymin = detections[i, 0] * img.shape[0]
         xmin = detections[i, 1] * img.shape[1]

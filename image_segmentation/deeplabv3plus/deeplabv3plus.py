@@ -14,6 +14,10 @@ from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results  # noqa: E402
 import webcamera_utils  # noqa: E402
 
+# logger
+from logging import getLogger   # noqa: E402
+logger = getLogger(__name__)
+
 
 # ======================
 # Parameters
@@ -71,11 +75,11 @@ def segment_from_image():
     output_details = interpreter.get_output_details()
 
     if args.shape:
-        print(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
+        logger.info(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
         interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
         interpreter.allocate_tensors()
 
-    print('Start inference...')
+    logger.info('Start inference...')
 
     for image_path in args.input:
         # prepare input data
@@ -92,18 +96,20 @@ def segment_from_image():
 
         # inference
         if args.benchmark:
-            print('BENCHMARK mode')
-            for i in range(5):
+            logger.info('BENCHMARK mode')
+            average_time = 0
+            for i in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
                 interpreter.set_tensor(input_details[0]['index'], input_data)
                 interpreter.invoke()
-                preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
                 end = int(round(time.time() * 1000))
-                print(f'ailia processing time {end - start} ms')
+                average_time = average_time + (end - start)
+                logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
+        preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
 
         # postprocessing
         if args.float:
@@ -116,9 +122,9 @@ def segment_from_image():
         seg_overlay = cv2.addWeighted(org_img, 1.0, seg_img, 0.9, 0)
 
         savepath = get_savepath(args.savepath, image_path)
-        print(f'saved at : {savepath}')        
+        logger.info(f'saved at : {savepath}')        
         cv2.imwrite(args.savepath, seg_overlay)
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def segment_from_video():
@@ -181,7 +187,7 @@ def segment_from_video():
     cv2.destroyAllWindows()
     if writer is not None:
         writer.release()
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def main():
