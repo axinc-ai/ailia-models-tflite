@@ -13,6 +13,9 @@ from model_utils import check_and_download_models  # noqa: E402
 from image_utils import load_image  # noqa: E402
 import webcamera_utils  # noqa: E402
 
+# logger
+from logging import getLogger   # noqa: E402
+logger = getLogger(__name__)
 
 # ======================
 # PARAMETERS
@@ -68,7 +71,7 @@ def recognize_from_image():
     output_details = interpreter.get_output_details()
 
     if args.shape:
-        print(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
+        logger.info(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
         interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
         interpreter.allocate_tensors()
 
@@ -86,43 +89,41 @@ def recognize_from_image():
         )
 
         # inference
-        print('Start inference...')
+        logger.info('Start inference...')
         if args.benchmark:
-            print('BENCHMARK mode')
-            for i in range(5):
+            logger.info('BENCHMARK mode')
+            average_time = 0
+            for i in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
                 interpreter.set_tensor(input_details[0]['index'], input_data)
                 interpreter.invoke()
-                preds_tf_lite = {}
-                if args.float:
-                    preds_tf_lite[0] = interpreter.get_tensor(output_details[0]['index'])   #1x896x16 regressors
-                    preds_tf_lite[1] = interpreter.get_tensor(output_details[1]['index'])   #1x896x1 classificators
-                else:
-                    preds_tf_lite[0] = interpreter.get_tensor(output_details[1]['index'])   #1x896x16 regressors
-                    preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
                 end = int(round(time.time() * 1000))
-                print(f'\tailia processing time {end - start} ms')
+                average_time = average_time + (end - start)
+                logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            preds_tf_lite = {}
-            if args.float:
-                preds_tf_lite[0] = interpreter.get_tensor(output_details[0]['index'])   #1x896x16 regressors
-                preds_tf_lite[1] = interpreter.get_tensor(output_details[1]['index'])   #1x896x1 classificators
-            else:
-                preds_tf_lite[0] = interpreter.get_tensor(output_details[1]['index'])   #1x896x16 regressors
-                preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
+
+        preds_tf_lite = {}
+        if args.float:
+            preds_tf_lite[0] = interpreter.get_tensor(output_details[0]['index'])   #1x896x16 regressors
+            preds_tf_lite[1] = interpreter.get_tensor(output_details[1]['index'])   #1x896x1 classificators
+        else:
+            preds_tf_lite[0] = interpreter.get_tensor(output_details[1]['index'])   #1x896x16 regressors
+            preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
 
         # postprocessing
         detections = but.postprocess(preds_tf_lite)
 
         savepath = get_savepath(args.savepath, image_path)
-        print(f'saved at : {savepath}')        
+        logger.info(f'saved at : {savepath}')        
 
         # generate detections
         for detection in detections:
+            logger.info(f'Found {detection.shape[0]} faces')
             but.plot_detections(org_img, detection, save_image_path=savepath)
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def recognize_from_video():
@@ -189,7 +190,7 @@ def recognize_from_video():
     cv2.destroyAllWindows()
     if writer is not None:
         writer.release()
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def main():

@@ -142,64 +142,71 @@ def recognize_from_image():
 
         # inference
         logger.info('Start inference...')
+
+        # Palm detection
+        det_input = get_input_tensor(input_data, det_input_details, 0)
+
         if args.benchmark:
             logger.info('BENCHMARK mode')
-            for _ in range(5):
+            average_time = 0
+            for _ in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
-                # flags, handedness, normed_landmarks = estimator.predict([imgs])
+                detector.set_tensor(det_input_details[0]['index'], det_input)
+                detector.invoke()
                 end = int(round(time.time() * 1000))
+                average_time = average_time + (end - start)
                 logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
-            # Palm detection
-            det_input = get_input_tensor(input_data, det_input_details, 0)
             detector.set_tensor(det_input_details[0]['index'], det_input)
             detector.invoke()
-            preds_tf_lite = {}
-            if args.float:
-                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x2944x18 regressors
-                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x2944x1 classificators
-            else:
-                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
-                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
-            detections = but.detector_postprocess(preds_tf_lite)
 
-            # Hand landmark estimation
-            presence = [0, 0]  # [left, right]
-            if detections[0].size != 0:
-                imgs, affines, _ = but.estimator_preprocess(
-                    src_img, detections, scale, pad
-                )
+        preds_tf_lite = {}
+        if args.float:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x2944x18 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x2944x1 classificators
+        else:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
+        detections = but.detector_postprocess(preds_tf_lite)
 
-                landmarks = np.zeros((0,63))
-                flags = np.zeros((0,1,1,1))
-                handedness = np.zeros((0,1,1,1))
+        # Hand landmark estimation
+        presence = [0, 0]  # [left, right]
+        if detections[0].size != 0:
+            imgs, affines, _ = but.estimator_preprocess(
+                src_img, detections, scale, pad
+            )
 
-                for img_id in range(len(imgs)):
-                    est_input = get_input_tensor(np.expand_dims(imgs[img_id],axis=0), est_input_details, 0)
-                    estimator.set_tensor(est_input_details[0]['index'], est_input)
-                    estimator.invoke()
+            landmarks = np.zeros((0,63))
+            flags = np.zeros((0,1,1,1))
+            handedness = np.zeros((0,1,1,1))
 
-                    landmarks = np.concatenate([landmarks, get_real_tensor(estimator, est_output_details, 2)], 0)
-                    flags = np.concatenate([flags, get_real_tensor(estimator, est_output_details, 0)], 0)
-                    handedness = np.concatenate([handedness, get_real_tensor(estimator, est_output_details, 1)], 0)
+            for img_id in range(len(imgs)):
+                est_input = get_input_tensor(np.expand_dims(imgs[img_id],axis=0), est_input_details, 0)
+                estimator.set_tensor(est_input_details[0]['index'], est_input)
+                estimator.invoke()
 
-                normalized_landmarks = landmarks.reshape((landmarks.shape[0], -1, 3))
-                normalized_landmarks = normalized_landmarks / 256.0
-                flags = flags.squeeze((1, 2, 3))
-                handedness = handedness.squeeze((1, 2, 3))
+                landmarks = np.concatenate([landmarks, get_real_tensor(estimator, est_output_details, 2)], 0)
+                flags = np.concatenate([flags, get_real_tensor(estimator, est_output_details, 0)], 0)
+                handedness = np.concatenate([handedness, get_real_tensor(estimator, est_output_details, 1)], 0)
 
-                # postprocessing
-                landmarks = but.denormalize_landmarks(
-                    normalized_landmarks, affines
-                )
-                for i in range(len(flags)):
-                    landmark, flag, handed = landmarks[i], flags[i], handedness[i]
-                    if flag > 0.75:
-                        if handed > 0.5: # Right handedness when not flipped camera input
-                            presence[0] = 1
-                        else:
-                            presence[1] = 1
-                        draw_landmarks(src_img, landmark[:,:2], but.HAND_CONNECTIONS, size=2)
+            normalized_landmarks = landmarks.reshape((landmarks.shape[0], -1, 3))
+            normalized_landmarks = normalized_landmarks / 256.0
+            flags = flags.squeeze((1, 2, 3))
+            handedness = handedness.squeeze((1, 2, 3))
+
+            # postprocessing
+            landmarks = but.denormalize_landmarks(
+                normalized_landmarks, affines
+            )
+            for i in range(len(flags)):
+                landmark, flag, handed = landmarks[i], flags[i], handedness[i]
+                if flag > 0.75:
+                    if handed > 0.5: # Right handedness when not flipped camera input
+                        presence[0] = 1
+                    else:
+                        presence[1] = 1
+                    draw_landmarks(src_img, landmark[:,:2], but.HAND_CONNECTIONS, size=2)
 
             if presence[0] and presence[1]:
                 hand_presence = 'Left and right'

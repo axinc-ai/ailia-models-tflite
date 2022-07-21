@@ -125,7 +125,7 @@ def recognize_from_image():
     est_output_details = estimator.get_output_details()
 
     if args.shape:
-        print(f"update input shape {[1, LANDMARK_WIDTH, LANDMARK_WIDTH, 3]}")
+        logger.info(f"update input shape {[1, LANDMARK_WIDTH, LANDMARK_WIDTH, 3]}")
         estimator.resize_tensor_input(est_input_details[0]["index"], [1, LANDMARK_WIDTH, LANDMARK_WIDTH, 3])
         estimator.allocate_tensors()
 
@@ -143,91 +143,65 @@ def recognize_from_image():
 
         # inference
         logger.info('Start inference...')
+
+        # Face detection
+        det_input = get_input_tensor(input_data, det_input_details, 0)
+        detector.set_tensor(det_input_details[0]['index'], det_input)
+        detector.invoke()
+        preds_tf_lite = {}
+        if args.float:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
+        else:
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
+        detections = fut.detector_postprocess(preds_tf_lite)
+
+        if detections[0].size != 0:
+            imgs, affines, box = fut.estimator_preprocess(
+                src_img[:, :, ::-1], detections, scale, pad, LANDMARK_WIDTH
+            )
+            draw_roi(src_img, box)
+            est_input = get_input_tensor(imgs, est_input_details, 0)
+
         if args.benchmark:
             logger.info('BENCHMARK mode')
-            for _ in range(5):
+            average_time = 0
+            for _ in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
-                # Face detection
-                det_input = get_input_tensor(input_data, det_input_details, 0)
-                detector.set_tensor(det_input_details[0]['index'], det_input)
-                detector.invoke()
-                preds_tf_lite = {}
-                if args.float:
-                    preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
-                    preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
-                else:
-                    preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-                    preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
-                detections = fut.detector_postprocess(preds_tf_lite)
-
-                # Face landmark estimation
                 if detections[0].size != 0:
-                    imgs, affines, box = fut.estimator_preprocess(
-                        src_img[:, :, ::-1], detections, scale, pad, LANDMARK_WIDTH
-                    )
-                    draw_roi(src_img, box)
-                    est_input = get_input_tensor(imgs, est_input_details, 0)
                     estimator.set_tensor(est_input_details[0]['index'], est_input)
                     estimator.invoke()
-                    preds_tf_lite = {}
-                    landmarks = get_real_tensor(estimator, est_output_details, 1)
-                    confidences = get_real_tensor(estimator, est_output_details, 0)
-                    landmarks = landmarks.squeeze((1, 2))
-                    confidences = confidences.squeeze((1, 2))
-                    normalized_landmarks = landmarks / 192.0
-
-                    # postprocessing
-                    landmarks = fut.denormalize_landmarks(
-                        normalized_landmarks, affines, LANDMARK_WIDTH
-                    )
-                    for i in range(len(landmarks)):
-                        landmark, face_flag = landmarks[i], expit(confidences[i])
-                        if face_flag > 0:
-                            draw_landmarks(src_img, landmark[:, :2], size=1)
                 end = int(round(time.time() * 1000))
+                average_time = average_time + (end - start)
                 logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
-            # Face detection
-            det_input = get_input_tensor(input_data, det_input_details, 0)
-            detector.set_tensor(det_input_details[0]['index'], det_input)
-            detector.invoke()
-            preds_tf_lite = {}
-            if args.float:
-                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
-                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
-            else:
-                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
-            detections = fut.detector_postprocess(preds_tf_lite)
-
             # Face landmark estimation
             if detections[0].size != 0:
-                imgs, affines, box = fut.estimator_preprocess(
-                    src_img[:, :, ::-1], detections, scale, pad, LANDMARK_WIDTH
-                )
-                draw_roi(src_img, box)
-                est_input = get_input_tensor(imgs, est_input_details, 0)
                 estimator.set_tensor(est_input_details[0]['index'], est_input)
                 estimator.invoke()
-                preds_tf_lite = {}
-                if args.float:
-                    landmarks = get_real_tensor(estimator, est_output_details, 0)
-                    confidences = get_real_tensor(estimator, est_output_details, 1)
-                else:
-                    landmarks = get_real_tensor(estimator, est_output_details, 1)
-                    confidences = get_real_tensor(estimator, est_output_details, 0)
-                landmarks = landmarks.squeeze((1, 2))
-                confidences = confidences.squeeze((1, 2))
-                normalized_landmarks = landmarks / 192.0
 
-                # postprocessing
-                landmarks = fut.denormalize_landmarks(
-                    normalized_landmarks, affines, LANDMARK_WIDTH
-                )
-                for i in range(len(landmarks)):
-                    landmark, face_flag = landmarks[i], expit(confidences[i])
-                    if face_flag > 0:
-                        draw_landmarks(src_img, landmark[:, :2], size=1)
+        # get result
+        preds_tf_lite = {}
+        if args.float:
+            landmarks = get_real_tensor(estimator, est_output_details, 0)
+            confidences = get_real_tensor(estimator, est_output_details, 1)
+        else:
+            landmarks = get_real_tensor(estimator, est_output_details, 1)
+            confidences = get_real_tensor(estimator, est_output_details, 0)
+        landmarks = landmarks.squeeze((1, 2))
+        confidences = confidences.squeeze((1, 2))
+        normalized_landmarks = landmarks / 192.0
+
+        # postprocessing
+        landmarks = fut.denormalize_landmarks(
+            normalized_landmarks, affines, LANDMARK_WIDTH
+        )
+        for i in range(len(landmarks)):
+            landmark, face_flag = landmarks[i], expit(confidences[i])
+            if face_flag > 0:
+                draw_landmarks(src_img, landmark[:, :2], size=1)
 
         savepath = get_savepath(args.savepath, image_path)
         logger.info(f'saved at : {savepath}')
