@@ -267,14 +267,6 @@ def recognize_from_video():
                 frame, final_boxes, final_scores, final_cls_inds,
                 COCO_CATEGORY, normalized_boxes=False, logger=logger)
 
-            if args.video == '0': # Flip horizontally if camera
-                visual_img = np.ascontiguousarray(frame[:,::-1,:])
-                boxes_vis = final_boxes.copy()
-                boxes_vis[:, [0, 2]] = frame.shape[1] - final_boxes[:, [2, 0]]
-                visual_img = plot_results(
-                    visual_img, boxes_vis, final_scores, final_cls_inds,
-                    COCO_CATEGORY, normalized_boxes=False, logger=logger)
-
         cv2.imshow('frame', visual_img)
 
         # save results
