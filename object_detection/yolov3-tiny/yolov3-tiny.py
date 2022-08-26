@@ -317,12 +317,6 @@ def recognize_from_video():
             iou_threshold=args.iou, score_threshold=args.threshold)
 
         visual_img = frame
-        if args.video == '0': # Flip horizontally if camera
-            visual_img = np.ascontiguousarray(frame[:,::-1,:])
-            boxes_vis = boxes.copy()
-            boxes_vis[:, [1, 3]] = 1 - boxes[:, [3, 1]]
-            visual_img = draw_bbox(visual_img, boxes_vis, scores, classes)
-
         frame = draw_bbox(frame, boxes, scores, classes)
         cv2.imshow('frame', visual_img)
 
