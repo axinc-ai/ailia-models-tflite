@@ -4,7 +4,7 @@ Quantized tflite models for ailia TFLite Runtime
 
 # About ailia TFLite Runtime
 
-ailia TF Lite Runtime is a TensorFlow Lite compatible inference engine. Written in C99, it supports inference in Non-OS and RTOS. It also supports high-speed inference using Intel MKL on a PC, and operates 29 times faster than the official TensorFlow Lite.
+ailia TF Lite Runtime is a TensorFlow Lite compatible inference engine. Written in C99, it supports inference in Non-OS and RTOS. It also supports high-speed inference using Intel MKL on a PC, and operates 360 times faster than the official TensorFlow Lite.
 
 # Install
 
