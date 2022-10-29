@@ -88,6 +88,8 @@ def recognize_from_image():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    if args.profile:
+        interpreter.set_profile_mode(True)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -151,6 +153,9 @@ def recognize_from_image():
             savepath = get_savepath(args.savepath, image_path)
             pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
             write_predictions(pred_file, preds_tf_lite, resnet50_labels.imagenet_category)
+
+        if args.profile:
+            print(interpreter.get_summary())
 
     print('Script finished successfully.')
 

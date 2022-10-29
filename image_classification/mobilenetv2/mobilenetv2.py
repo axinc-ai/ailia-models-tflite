@@ -9,7 +9,7 @@ import mobilenetv2_labels
 # import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -25,6 +25,8 @@ IMAGE_WIDTH = 224
 MAX_CLASS_COUNT = 3
 SLEEP_TIME = 0
 
+TTA_NAMES = ['none', '1_crop']
+
 
 # ======================
 # Argument Parser Config
@@ -36,6 +38,17 @@ parser.add_argument(
     '-w', '--write_prediction',
     action='store_true',
     help='Flag to output the prediction file.'
+)
+parser.add_argument(
+    '--recalib',
+    action='store_true',
+    help='Use re-calibrated model. The default model was calibrated by only 4 images. If you specify recalib option, we use 50000 images for calibaraion.'
+)
+parser.add_argument(
+    '--tta', '-t', metavar='TTA',
+    default='none', choices=TTA_NAMES,
+    help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
+          ' (default: none)')
 )
 args = update_parser(parser)
 
@@ -54,7 +67,10 @@ if args.shape:
 if args.float:
     MODEL_NAME = 'mobilenetv2_float'
 else:
-    MODEL_NAME = 'mobilenetv2_quant'
+    if args.recalib:
+        MODEL_NAME = 'mobilenetv2_quant_recalib'
+    else:
+        MODEL_NAME = 'mobilenetv2_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/'
 
@@ -71,6 +87,8 @@ def recognize_from_image():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    if args.profile:
+        interpreter.set_profile_mode(True)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -92,19 +110,18 @@ def recognize_from_image():
             (IMAGE_HEIGHT, IMAGE_WIDTH),
             normalize_type='None',
             gen_input_ailia_tflite=True,
-            bgr_to_rgb=False,
-            output_type=dtype
+            bgr_to_rgb=True,
+            output_type=dtype,
+            tta=args.tta
         )
 
-        if args.float:
+        if args.float or args.recalib:
             input_data = input_data / 127.5 - 1
 
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
 
         # inference
-        if args.profile:
-            interpreter.set_profile_mode(True)
         if args.benchmark:
             print('BENCHMARK mode')
             average_time = 0
@@ -112,7 +129,7 @@ def recognize_from_image():
                 start = int(round(time.time() * 1000))
                 interpreter.set_tensor(input_details[0]['index'], input_data)
                 interpreter.invoke()
-                preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+                preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
                 end = int(round(time.time() * 1000))
                 average_time = average_time + (end - start)
                 print(f'\tailia processing time {end - start} ms')
@@ -120,9 +137,11 @@ def recognize_from_image():
         else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+            preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
 
-        print_results(preds_tf_lite, mobilenetv2_labels.imagenet_category)
+        preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
+
+        print_results([preds_tf_lite[0], preds_tf_lite_int8[0]],  mobilenetv2_labels.imagenet_category)
 
         # write prediction
         if args.write_prediction:
@@ -163,7 +182,7 @@ def recognize_from_video():
         writer = None
 
     dtype = np.int8
-    if args.float:
+    if args.float or args.recalib:
         dtype = np.float32
 
     while(True):
@@ -173,7 +192,7 @@ def recognize_from_video():
 
         input_image, input_data = webcamera_utils.preprocess_frame(
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='None',
-            bgr_to_rgb=False, output_type=dtype
+            bgr_to_rgb=True, output_type=dtype
         )
 
         if args.float:
