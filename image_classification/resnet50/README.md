@@ -54,5 +54,6 @@ TensorFlow 2.6
 
 ### Netron
 
+- [resnet50_quant_recalib.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/resnet50/resnet50_quant_recalib.tflite)
 - [resnet50_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/resnet50/resnet50_quant.tflite)
 - [resnet50_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/resnet50/resnet50_float.tflite)

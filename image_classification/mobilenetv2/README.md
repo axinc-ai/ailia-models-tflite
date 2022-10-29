@@ -53,5 +53,6 @@ TensorFlow 2.4.1, 1.15
 
 ### Netron
 
+- [mobilenetv2_quant_recalib.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/mobilenetv2_quant_recalib.tflite)
 - [mobilenetv2_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/mobilenetv2_quant.tflite)
 - [mobilenetv2_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/mobilenetv2_float.tflite)

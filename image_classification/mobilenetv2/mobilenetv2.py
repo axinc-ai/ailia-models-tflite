@@ -40,9 +40,9 @@ parser.add_argument(
     help='Flag to output the prediction file.'
 )
 parser.add_argument(
-    '--recalib',
+    '--legacy',
     action='store_true',
-    help='Use re-calibrated model. The default model was calibrated by only 4 images. If you specify recalib option, we use 50000 images for calibaraion.'
+    help='Use legacy model. The default model was re-calibrated by 50000 images. If you specify legacy option, we use only 4 images for calibaraion.'
 )
 parser.add_argument(
     '--tta', '-t', metavar='TTA',
@@ -67,10 +67,10 @@ if args.shape:
 if args.float:
     MODEL_NAME = 'mobilenetv2_float'
 else:
-    if args.recalib:
-        MODEL_NAME = 'mobilenetv2_quant_recalib'
-    else:
+    if args.legacy:
         MODEL_NAME = 'mobilenetv2_quant'
+    else:
+        MODEL_NAME = 'mobilenetv2_quant_recalib'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/'
 
@@ -115,7 +115,7 @@ def recognize_from_image():
             tta=args.tta
         )
 
-        if args.float or args.recalib:
+        if args.float or not args.legacy:
             input_data = input_data / 127.5 - 1
 
         # quantize input data
@@ -182,7 +182,7 @@ def recognize_from_video():
         writer = None
 
     dtype = np.int8
-    if args.float or args.recalib:
+    if args.float or not args.legacy:
         dtype = np.float32
 
     while(True):
