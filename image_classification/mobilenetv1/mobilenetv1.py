@@ -145,7 +145,7 @@ def recognize_from_image():
         if args.write_prediction:
             savepath = get_savepath(args.savepath, image_path)
             pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
-            write_predictions(pred_file, preds_tf_lite, mobilenetv2_labels.imagenet_category)
+            write_predictions(pred_file, preds_tf_lite, mobilenetv1_labels.imagenet_category)
 
         if args.profile:
             print(interpreter.get_summary())
