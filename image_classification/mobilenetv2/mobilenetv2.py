@@ -102,7 +102,7 @@ def recognize_from_image():
 
     for image_path in args.input:
         # prepare input data
-        dtype = np.int8
+        dtype = np.uint8
         if args.float:
             dtype = np.float32
         input_data = load_image(
@@ -181,7 +181,7 @@ def recognize_from_video():
     else:
         writer = None
 
-    dtype = np.int8
+    dtype = np.uint8
     if args.float or not args.legacy:
         dtype = np.float32
 
