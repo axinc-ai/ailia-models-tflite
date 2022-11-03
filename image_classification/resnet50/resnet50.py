@@ -41,9 +41,9 @@ parser.add_argument(
     help='Flag to output the prediction file.'
 )
 parser.add_argument(
-    '--recalib',
+    '--legacy',
     action='store_true',
-    help='Use re-calibrated model. The default model was calibrated by only 4 images. If you specify recalib option, we use 50000 images for calibaraion.'
+    help='Use legacy model. The default model was re-calibrated by 50000 images. If you specify legacy option, we use only 4 images for calibaraion.'
 )
 parser.add_argument(
     '--tta', '-t', metavar='TTA',
@@ -68,10 +68,10 @@ if args.shape:
 if args.float:
     MODEL_NAME = 'resnet50_float'
 else:
-    if args.recalib:
-        MODEL_NAME = 'resnet50_quant_recalib'
-    else:
+    if args.legacy:
         MODEL_NAME = 'resnet50_quant'
+    else:
+        MODEL_NAME = 'resnet50_quant_recalib'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/resnet50/'
 
@@ -88,6 +88,8 @@ def recognize_from_image():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    if args.profile:
+        interpreter.set_profile_mode(True)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -151,6 +153,9 @@ def recognize_from_image():
             savepath = get_savepath(args.savepath, image_path)
             pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
             write_predictions(pred_file, preds_tf_lite, resnet50_labels.imagenet_category)
+
+        if args.profile:
+            print(interpreter.get_summary())
 
     print('Script finished successfully.')
 

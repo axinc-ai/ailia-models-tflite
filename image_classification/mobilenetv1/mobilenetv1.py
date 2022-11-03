@@ -8,10 +8,10 @@ import mobilenetv1_labels
 
 # import original modules
 sys.path.append('../../util')
-from utils import get_base_parser, update_parser  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
+from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
-from classifier_utils import plot_results, print_results  # noqa: E402
+from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
 
 
@@ -25,12 +25,30 @@ IMAGE_WIDTH = 224
 MAX_CLASS_COUNT = 3
 SLEEP_TIME = 0
 
+TTA_NAMES = ['none', '1_crop']
+
 
 # ======================
 # Argument Parser Config
 # ======================
 parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
+)
+parser.add_argument(
+    '-w', '--write_prediction',
+    action='store_true',
+    help='Flag to output the prediction file.'
+)
+parser.add_argument(
+    '--legacy',
+    action='store_true',
+    help='Use legacy model. The default model was re-calibrated by 50000 images. If you specify legacy option, we use only 4 images for calibaraion.'
+)
+parser.add_argument(
+    '--tta', '-t', metavar='TTA',
+    default='none', choices=TTA_NAMES,
+    help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
+          ' (default: none)')
 )
 args = update_parser(parser)
 
@@ -49,7 +67,10 @@ if args.shape:
 if args.float:
     MODEL_NAME = 'mobilenetv1_float'
 else:
-    MODEL_NAME = 'mobilenetv1_quant'
+    if args.legacy:
+        MODEL_NAME = 'mobilenetv1_quant'
+    else:
+        MODEL_NAME = 'mobilenetv1_quant_recalib'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv1/'
 
@@ -66,6 +87,8 @@ def recognize_from_image():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    if args.profile:
+        interpreter.set_profile_mode(True)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -87,8 +110,9 @@ def recognize_from_image():
             (IMAGE_HEIGHT, IMAGE_WIDTH),
             normalize_type='None',
             gen_input_ailia_tflite=True,
-            bgr_to_rgb=False,
-            output_type=dtype
+            bgr_to_rgb=True,
+            output_type=dtype,
+            tta=args.tta
         )
         input_data = input_data / 127.5 - 1
 
@@ -103,7 +127,7 @@ def recognize_from_image():
                 start = int(round(time.time() * 1000))
                 interpreter.set_tensor(input_details[0]['index'], input_data)
                 interpreter.invoke()
-                preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+                preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
                 end = int(round(time.time() * 1000))
                 average_time = average_time + (end - start)
                 print(f'\tailia processing time {end - start} ms')
@@ -111,9 +135,21 @@ def recognize_from_image():
         else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+            preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
 
-        print_results(preds_tf_lite, mobilenetv1_labels.imagenet_category)
+        preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
+
+        print_results([preds_tf_lite[0], preds_tf_lite_int8[0]], mobilenetv1_labels.imagenet_category)
+
+        # write prediction
+        if args.write_prediction:
+            savepath = get_savepath(args.savepath, image_path)
+            pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
+            write_predictions(pred_file, preds_tf_lite, mobilenetv1_labels.imagenet_category)
+
+        if args.profile:
+            print(interpreter.get_summary())
+
     print('Script finished successfully.')
 
 
@@ -154,7 +190,7 @@ def recognize_from_video():
 
         input_image, input_data = webcamera_utils.preprocess_frame(
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='None',
-            bgr_to_rgb=False, output_type=dtype
+            bgr_to_rgb=True, output_type=dtype
         )
         input_data = input_data / 127.5 - 1
 
