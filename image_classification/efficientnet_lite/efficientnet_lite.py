@@ -26,12 +26,25 @@ IMAGE_WIDTH = 224
 MAX_CLASS_COUNT = 3
 SLEEP_TIME = 0
 
+TTA_NAMES = ['none', '1_crop']
+
 
 # ======================
 # Argument Parser Config
 # ======================
 parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
+)
+parser.add_argument(
+    '--legacy',
+    action='store_true',
+    help='Use legacy model. The default model was re-calibrated by 50000 images. If you specify legacy option, we use only 4 images for calibaraion.'
+)
+parser.add_argument(
+    '--tta', '-t', metavar='TTA',
+    default='none', choices=TTA_NAMES,
+    help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
+          ' (default: none)')
 )
 args = update_parser(parser)
 
@@ -50,7 +63,10 @@ if args.shape:
 if args.float:
     MODEL_NAME = 'efficientnetliteb0_float'
 else:
-    MODEL_NAME = 'efficientnetliteb0_quant'
+    if args.legacy:
+        MODEL_NAME = 'efficientnetliteb0_quant'
+    else:
+        MODEL_NAME = 'efficientnetliteb0_quant_recalib'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/'
 
@@ -78,6 +94,13 @@ def recognize_from_image():
 
     print('Start inference...')
 
+    if args.legacy:
+        normalize_type='Caffe'
+        bgr_to_rgb=False
+    else:
+        normalize_type='None'
+        bgr_to_rgb=True
+
     for image_path in args.input:
         # prepare input data
         dtype = np.int8
@@ -86,11 +109,14 @@ def recognize_from_image():
         input_data = load_image(
             image_path,
             (IMAGE_HEIGHT, IMAGE_WIDTH),
-            normalize_type='Caffe',
+            normalize_type=normalize_type,
             gen_input_ailia_tflite=True,
-            bgr_to_rgb=False,
-            output_type=dtype
+            bgr_to_rgb=bgr_to_rgb,
+            output_type=dtype,
+            tta=args.tta
         )
+        if args.float or not args.legacy:
+            input_data = input_data / 127.5 - 1           
    
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
@@ -144,15 +170,24 @@ def recognize_from_video():
     else:
         writer = None
 
+    if args.legacy:
+        normalize_type='Caffe'
+        bgr_to_rgb=False
+    else:
+        normalize_type='None'
+        bgr_to_rgb=True
+
     while(True):
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
 
         input_image, input_data = webcamera_utils.preprocess_frame(
-            frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='Caffe',
-            bgr_to_rgb=False, output_type=np.int8
+            frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type=normalize_type,
+            bgr_to_rgb=bgr_to_rgb, output_type=np.int8
         )
+        if args.float or not args.legacy:
+            input_data = input_data / 127.5 - 1           
 
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
