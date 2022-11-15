@@ -110,7 +110,10 @@ def recognize_from_image():
 
     for image_path in args.input:
         # prepare input data
-        dtype = np.int8
+        if args.legacy:
+            dtype = np.int8
+        else:
+            dtype = np.uint8
         if args.float:
             dtype = np.float32
         input_data = load_image(
@@ -123,7 +126,7 @@ def recognize_from_image():
             tta=args.tta
         )
         if args.float or not args.legacy:
-            input_data = input_data / 127.5 - 1           
+            input_data = input_data / 127.5 - 1
    
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
