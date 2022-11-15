@@ -10,7 +10,7 @@ import efficientnet_lite_labels
 # import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -129,7 +129,7 @@ def recognize_from_image():
                 start = int(round(time.time() * 1000))
                 interpreter.set_tensor(input_details[0]['index'], input_data)
                 interpreter.invoke()
-                preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+                preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
                 end = int(round(time.time() * 1000))
                 average_time = average_time + (end - start)
                 print(f'\tailia processing time {end - start} ms')
@@ -137,10 +137,12 @@ def recognize_from_image():
         else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
-        
+            preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
+
+        preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
+
         print(f"=== {image_path} ===")
-        print_results([preds_tf_lite[0]], efficientnet_lite_labels.imagenet_category)
+        print_results([preds_tf_lite[0],preds_tf_lite_int8[0]], efficientnet_lite_labels.imagenet_category)
     print('Script finished successfully.')
 
 
@@ -195,7 +197,7 @@ def recognize_from_video():
         # Inference
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
-        preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
+        preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
 
         plot_results(
             input_image, preds_tf_lite, efficientnet_lite_labels.imagenet_category
