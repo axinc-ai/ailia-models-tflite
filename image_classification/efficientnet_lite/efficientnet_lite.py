@@ -9,10 +9,10 @@ import efficientnet_lite_labels
 
 # import original modules
 sys.path.append('../../util')
-from utils import get_base_parser, update_parser  # noqa: E402
+from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
-from classifier_utils import plot_results, print_results  # noqa: E402
+from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
 
 
@@ -34,6 +34,11 @@ TTA_NAMES = ['none', '1_crop']
 # ======================
 parser = get_base_parser(
     'ImageNet classification Model', IMAGE_PATH, None
+)
+parser.add_argument(
+    '-w', '--write_prediction',
+    action='store_true',
+    help='Flag to output the prediction file.'
 )
 parser.add_argument(
     '--legacy',
@@ -83,6 +88,8 @@ def recognize_from_image():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    if args.profile:
+        interpreter.set_profile_mode(True)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -143,6 +150,16 @@ def recognize_from_image():
 
         print(f"=== {image_path} ===")
         print_results([preds_tf_lite[0],preds_tf_lite_int8[0]], efficientnet_lite_labels.imagenet_category)
+
+        # write prediction
+        if args.write_prediction:
+            savepath = get_savepath(args.savepath, image_path)
+            pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
+            write_predictions(pred_file, preds_tf_lite, efficientnet_lite_labels.imagenet_category)
+
+        if args.profile:
+            print(interpreter.get_summary())
+
     print('Script finished successfully.')
 
 
