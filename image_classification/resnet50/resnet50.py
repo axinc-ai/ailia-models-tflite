@@ -10,7 +10,7 @@ import resnet50_labels
 # import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
-from model_utils import check_and_download_models,format_input_tensor, get_output_tensor  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
