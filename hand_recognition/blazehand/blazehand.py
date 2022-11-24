@@ -116,6 +116,10 @@ def recognize_from_image():
     else:
         detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
         estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
+
+    if args.profile:
+        detector.set_profile_mode(True)
+
     detector.allocate_tensors()
     det_input_details = detector.get_input_details()
     det_output_details = detector.get_output_details()
@@ -223,6 +227,8 @@ def recognize_from_image():
             cv2.imwrite(savepath, src_img)
     logger.info('Script finished successfully.')
 
+    if args.profile:
+        print(detector.get_summary())
 
 def recognize_from_video():
     # net initialize
