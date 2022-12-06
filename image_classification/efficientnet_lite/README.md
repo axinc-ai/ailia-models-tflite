@@ -46,13 +46,23 @@ $ python3 efficientnet_lite.py --video VIDEO_PATH --savepath SAVE_VIDEO_PATH
 
 ### Reference
 
-[efficientnet-lite-keras](https://github.com/sebastian-sz/efficientnet-lite-keras)
+TensorFlow model
+- [efficientnet-lite-keras](https://github.com/sebastian-sz/efficientnet-lite-keras)
+
+Torch model
+- [pytorch-image-models](https://github.com/rwightman/pytorch-image-models/blob/main/timm/models/efficientnet.py#L167)
 
 
 ### Framework
-TensorFlow 2.6
+TensorFlow 2.6, Torch 1.13.0
 
 ### Netron
 
+TensorFlow model
 - [efficientnetliteb0_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_quant.tflite)
+- [efficientnetliteb0_quant_recalib.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_quant_recalib.tflite)
 - [efficientnetliteb0_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_float.tflite)
+
+Torch model
+- [efficientnetliteb0_torch_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_torch_quant.tflite)
+- [efficientnetliteb0_torch_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/efficientnetliteb0_torch_float.tflite)

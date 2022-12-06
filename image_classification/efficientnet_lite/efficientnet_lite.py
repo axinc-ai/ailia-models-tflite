@@ -46,6 +46,11 @@ parser.add_argument(
     help='Use legacy model. The default model was re-calibrated by 50000 images. If you specify legacy option, we use only 4 images for calibaraion.'
 )
 parser.add_argument(
+    '--torch',
+    action='store_true',
+    help='Use torch model. The default model was trained by tensorflow.'
+)
+parser.add_argument(
     '--tta', '-t', metavar='TTA',
     default='none', choices=TTA_NAMES,
     help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
@@ -66,15 +71,32 @@ if args.shape:
 # Parameters 2
 # ======================
 if args.float:
-    MODEL_NAME = 'efficientnetliteb0_float'
-else:
-    if args.legacy:
-        MODEL_NAME = 'efficientnetliteb0_quant'
+    if args.torch:
+        MODEL_NAME = 'efficientnetliteb0_torch_float'
     else:
-        MODEL_NAME = 'efficientnetliteb0_quant_recalib'
+        MODEL_NAME = 'efficientnetliteb0_float'
+else:
+    if args.torch:
+        MODEL_NAME = 'efficientnetliteb0_torch_quant'
+    else:
+        if args.legacy:
+            MODEL_NAME = 'efficientnetliteb0_quant'
+        else:
+            MODEL_NAME = 'efficientnetliteb0_quant_recalib'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/'
 
+# ======================
+# Pre processs
+# ======================
+
+def tensorflow_preprocess(x):
+    return x / 127.5 - 1
+
+def torch_preprocess(x):
+    mean=[0.485, 0.456, 0.406]
+    std=[0.229, 0.224, 0.225]
+    return (x / 255.0 - mean) / std
 
 # ======================
 # Main functions
@@ -125,8 +147,11 @@ def recognize_from_image():
             output_type=dtype,
             tta=args.tta
         )
-        if args.float or not args.legacy:
-            input_data = input_data / 127.5 - 1
+        if args.float or not args.legacy or args.torch:
+            if args.torch:
+                input_data = torch_preprocess(input_data)
+            else:
+                input_data = tensorflow_preprocess(input_data)
    
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
@@ -208,8 +233,11 @@ def recognize_from_video():
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type=normalize_type,
             bgr_to_rgb=bgr_to_rgb, output_type=np.int8
         )
-        if args.float or not args.legacy:
-            input_data = input_data / 127.5 - 1           
+        if args.float or not args.legacy or args.torch:
+            if args.torch:
+                input_data = torch_preprocess(input_data)
+            else:
+                input_data = tensorflow_preprocess(input_data)
 
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
