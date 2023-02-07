@@ -28,7 +28,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 # ======================
 MODEL_PARAMS = {#'yolox_nano': {'input_shape': [416, 416]},
                 'yolox_tiny': {'input_shape': [416, 416]},
-                #'yolox_s': {'input_shape': [640, 640]},
+                'yolox_s': {'input_shape': [640, 640]},
                 #'yolox_m': {'input_shape': [640, 640]},
                 #'yolox_l': {'input_shape': [640, 640]},
                 #'yolox_darknet': {'input_shape': [640, 640]},
@@ -64,7 +64,7 @@ parser = get_base_parser('yolox model', IMAGE_PATH, SAVE_IMAGE_PATH)
 parser.add_argument(
     '-m', '--model_name',
     default='yolox_tiny',
-    choices=['yolox_tiny'],
+    choices=['yolox_tiny', 'yolox_s'],
     help='Only yolox_tiny is available currently.'
 )
 parser.add_argument(
