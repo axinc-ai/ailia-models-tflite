@@ -107,7 +107,6 @@ def main():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
-    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
