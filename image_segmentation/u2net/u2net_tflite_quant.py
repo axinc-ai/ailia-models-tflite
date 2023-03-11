@@ -14,7 +14,7 @@ import webcamera_utils  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 from utils import get_base_parser, get_savepath, update_parser  # noqa: E402
 
-from u2net_utils import load_image, norm, save_result, transform  # noqa: E402
+from u2net_utils import imread, load_image, norm, save_result, transform  # noqa: E402
 
 logger = getLogger(__name__)
 
@@ -36,6 +36,11 @@ parser.add_argument(
     '-a', '--arch', metavar='ARCH',
     default='large', choices=MODEL_LISTS,
     help='model lists: ' + ' | '.join(MODEL_LISTS)
+)
+parser.add_argument(
+    '-c', '--composite',
+    action='store_true',
+    help='Composite input image and predicted alpha value'
 )
 parser.add_argument(
     '-o', '--opset', metavar='OPSET',
@@ -142,6 +147,13 @@ def main():
 
         logger.info(f'saved at : {SAVE_IMAGE_PATH}')
         save_result(real_tensor, SAVE_IMAGE_PATH, [h, w])
+
+        # composite
+        if args.composite:
+            image = imread(image_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+            image[:, :, 3] = cv2.resize(real_tensor[0], (w, h)) * 255
+            cv2.imwrite(SAVE_IMAGE_PATH, image)
 
     logger.info('Script finished successfully.')
 

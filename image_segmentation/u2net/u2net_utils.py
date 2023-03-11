@@ -51,22 +51,14 @@ def norm(pred):
     return (pred - mi) / (ma - mi)
 
 
-def save_result(pred_org, savepath, srcimg_shape):
+def save_result(pred, savepath, srcimg_shape):
     """
     Parameters
     ----------
     srcimg_shape: (h, w)
     """
-    # normalization
-    pred = cv2.resize(pred_org[0], (srcimg_shape[1], srcimg_shape[0]))
+
+    pred = cv2.resize(pred[0], (srcimg_shape[1], srcimg_shape[0]))
     pred = norm(pred)
-    # print(pr)
     cv2.imwrite(savepath, pred * 255)
-    # img = Image.fromarray(pred[0] * 255)
-    # img = img.resize(
-    #     (srcimg_shape[2], srcimg_shape[1]),
-    #     resample=Image.BILINEAR
-    # )
-    # img.save(savepath)
-    
-    
+
