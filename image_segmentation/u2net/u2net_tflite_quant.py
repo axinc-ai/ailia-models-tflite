@@ -28,7 +28,6 @@ IMAGE_SIZE = 320
 MODEL_LISTS = ['small', 'large']
 OPSET_LISTS = ['10', '11']
 
-
 # ======================
 # Arguemnt Parser Config
 # ======================
@@ -37,11 +36,6 @@ parser.add_argument(
     '-a', '--arch', metavar='ARCH',
     default='large', choices=MODEL_LISTS,
     help='model lists: ' + ' | '.join(MODEL_LISTS)
-)
-parser.add_argument(
-    '-c', '--composite',
-    action='store_true',
-    help='Composite input image and predicted alpha value'
 )
 parser.add_argument(
     '-o', '--opset', metavar='OPSET',
@@ -71,9 +65,14 @@ else:
     import ailia_tflite
 
 # ======================
-# Parameters 2
+# Model select
 # ======================
-MODEL_PATH = 'u2net_opset11_full_integer_quant.tflite'
+if args.opset == "10":
+    MODEL_PATH = 'u2net_full_integer_quant.tflite' if args.arch == 'large' else 'u2netp_full_integer_quant.tflite'
+else:
+    MODEL_PATH = 'u2net_opset11_full_integer_quant.tflite' \
+        if args.arch == 'large' else 'u2netp_opset11_full_integer_quant.tflite'
+
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/u2net/'
 
 
@@ -100,6 +99,8 @@ def get_input_tensor(tensor, input_details, idx):
 def main():
     # model files check and download
     check_and_download_models(MODEL_PATH, REMOTE_PATH)
+
+    # select inference engine
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
@@ -107,6 +108,7 @@ def main():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -140,13 +142,6 @@ def main():
 
         logger.info(f'saved at : {SAVE_IMAGE_PATH}')
         save_result(real_tensor, SAVE_IMAGE_PATH, [h, w])
-
-        # composite
-        if args.composite:
-            image = imread(image_path)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
-            image[:, :, 3] = cv2.resize(pred, (w, h)) * 255
-            cv2.imwrite(savepath, image)
 
     logger.info('Script finished successfully.')
 
