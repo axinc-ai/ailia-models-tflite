@@ -24,6 +24,7 @@ logger = getLogger(__name__)
 # ======================
 IMAGE_PATH = 'input.png'
 SAVE_IMAGE_PATH = 'output.png'
+SAVE_VIDEO_FRAME_PATH = 'video_frame.png' 
 IMAGE_SIZE = 320
 MODEL_LISTS = ['small', 'large']
 OPSET_LISTS = ['10', '11']
@@ -101,19 +102,56 @@ def get_input_tensor(tensor, input_details, idx):
 # Main functions
 # ======================
 
-def main():
-    # model files check and download
-    check_and_download_models(MODEL_PATH, REMOTE_PATH)
+def recognize_from_video(interpreter):
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
 
-    # select inference engine
-    if args.tflite:
-        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
-    else:
-        if args.flags or args.memory_mode:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
-        else:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    capture = webcamera_utils.get_capture(args.video)
+
+    # create video writer if savepath is specified as video format
+    f_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    f_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     
+    frame_shown = False
+    while(True):
+        print("new frame")
+        ret, frame = capture.read()
+        if not ret:
+            break
+        if frame_shown and cv2.getWindowProperty('frame', cv2.WND_PROP_VISIBLE) == 0:
+            break
+
+        if args.rgb and image.shape[2] == 3:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        input_data = transform(frame, (args.width, args.height))
+
+
+        inputs = get_input_tensor(input_data.astype(np.float32), input_details, 0)
+        interpreter.set_tensor(input_details[0]['index'], inputs)
+        interpreter.invoke()
+
+        details = output_details[0]
+        quant_params = details['quantization_parameters']
+        int_tensor = interpreter.get_tensor(details['index'])
+        real_tensor = int_tensor - quant_params['zero_points']
+        real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
+
+        # 各フレームごとに推論結果を重ねて保存
+        pred = norm(real_tensor[0])
+        if args.rgb and image.shape[2] == 3:
+            pred = cv2.cvtColor(pred, cv2.COLOR_RGB2BGR)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+        frame[:, :, 3] = cv2.resize(pred, (f_w, f_h)) * 255
+        cv2.imwrite(SAVE_VIDEO_FRAME_PATH, frame)
+
+    capture.release()
+    logger.info('Script finished successfully.')
+
+
+def recognize_from_image(interpreter):
+
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -137,7 +175,6 @@ def main():
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
 
-        # ここは仮
         details = output_details[0]
         quant_params = details['quantization_parameters']
         int_tensor = interpreter.get_tensor(details['index'])
@@ -156,6 +193,28 @@ def main():
             cv2.imwrite(SAVE_IMAGE_PATH, image)
 
     logger.info('Script finished successfully.')
+
+
+def main():
+
+    # model files check and download
+    check_and_download_models(MODEL_PATH, REMOTE_PATH)
+
+    # select inference engine
+    if args.tflite:
+        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    else:
+        if args.flags or args.memory_mode:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        else:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+    
+    if args.video is not None:
+        # video mode
+        recognize_from_video(interpreter)
+    else:
+        # image mode
+        recognize_from_image(interpreter)
 
 
 if __name__ == '__main__':
