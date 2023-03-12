@@ -1,6 +1,8 @@
 # HRNet
 ### Input
 
+<img src="test.jpg" width="320px">
+
 Ailia input shape: (512, 1024, 3) RGB order Range: [0, 255] 8-bit unsigned integer
 
 ### Output
