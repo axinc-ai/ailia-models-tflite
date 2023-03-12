@@ -181,16 +181,16 @@ def recognize_from_image(interpreter):
         real_tensor = int_tensor - quant_params['zero_points']
         real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
 
-
-        logger.info(f'saved at : {SAVE_IMAGE_PATH}')
-        save_result(real_tensor, SAVE_IMAGE_PATH, [h, w])
+        save_path = args.savepath
+        logger.info(f'saved at : {save_path}')
+        save_result(real_tensor, save_path, [h, w])
 
         # composite
         if args.composite:
             image = imread(image_path)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
             image[:, :, 3] = cv2.resize(real_tensor[0], (w, h)) * 255
-            cv2.imwrite(SAVE_IMAGE_PATH, image)
+            cv2.imwrite(save_path, image)
 
     logger.info('Script finished successfully.')
 
