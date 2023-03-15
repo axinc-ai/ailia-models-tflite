@@ -44,11 +44,7 @@ $ python3 midas.py --video VIDEO_PATH
 
 Tensorflow 2.11.0
 
-## Model Format
-
-Tensorflow 2.11.0
-
 ## Netron
 
-[midas_quant_recalib.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models/midas/midas.onnx.prototxt)
-[midas_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models/midas/midas_v2.1.onnx.prototxt)
+[midas_quant_recalib.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/midas/midas_quant_recalib.tflite)
+[midas_float.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/midas/midas_float.tflite)

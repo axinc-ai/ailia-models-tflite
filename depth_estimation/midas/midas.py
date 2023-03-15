@@ -50,12 +50,12 @@ else:
 # Parameters 2
 # ======================
 if args.float:
-    MODEL_NAME = 'midas_float'
+    MODEL_NAME = 'midas_float32'
 else:
-    MODEL_NAME = 'midas_quant_recalib'
+    MODEL_NAME = 'midas_full_integer_quant'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/midas/'## ここgst リモートからDLできるかも確認
+REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/midas/'
 
 
 # ======================
