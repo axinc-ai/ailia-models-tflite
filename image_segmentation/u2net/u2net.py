@@ -73,12 +73,19 @@ else:
 # ======================
 # Model select
 # ======================
-if args.opset == "10":
-    MODEL_PATH = 'u2net_full_integer_quant.tflite' if args.arch == 'large' else 'u2netp_full_integer_quant.tflite'
+if args.float:
+    model_param = 'float32'
 else:
-    MODEL_PATH = 'u2net_opset11_full_integer_quant.tflite' \
-        if args.arch == 'large' else 'u2netp_opset11_full_integer_quant.tflite'
-
+    model_param = 'full_integer_quant'
+if args.arch == 'large':
+    model_size = 'u2net'
+else:
+    model_size = 'u2netp'
+if args.opset == '10':
+    MODEL_PATH = f'{model_size}_{model_param}.tflite'
+else:
+    MODEL_PATH = f'{model_size}_opset11_{model_param}.tflite'
+    
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/u2net/'
 
 
@@ -144,7 +151,8 @@ def recognize_from_video(interpreter):
             pred = cv2.cvtColor(pred, cv2.COLOR_RGB2BGR)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
         frame[:, :, 3] = cv2.resize(pred, (f_w, f_h)) * 255
-        cv2.imwrite(SAVE_VIDEO_FRAME_PATH, frame)
+        
+        cv2.imshow('frame', frame)
 
     capture.release()
     logger.info('Script finished successfully.')
@@ -176,10 +184,14 @@ def recognize_from_image(interpreter):
         interpreter.invoke()
 
         details = output_details[0]
-        quant_params = details['quantization_parameters']
-        int_tensor = interpreter.get_tensor(details['index'])
-        real_tensor = int_tensor - quant_params['zero_points']
-        real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
+        dtype = details['dtype']
+        if dtype == np.uint8 or dtype == np.int8:
+            quant_params = details['quantization_parameters']
+            int_tensor = interpreter.get_tensor(details['index'])
+            real_tensor = int_tensor - quant_params['zero_points']
+            real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
+        else:
+            real_tensor = interpreter.get_tensor(details['index'])
 
         save_path = args.savepath
         logger.info(f'saved at : {save_path}')

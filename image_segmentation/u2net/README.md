@@ -47,6 +47,12 @@ Add the `--composite` option if you want to combine the input image with the cal
 $ python3 u2net.py --input IMAGE_PATH --savepath SAVE_IMAGE_PATH --opset 11 --composite
 ```
 
+Add the `--float` option if you want to use float32 model for higher precision.
+
+```bash
+$ python3 u2net.py --input IMAGE_PATH --savepath SAVE_IMAGE_PATH --opset 11 --float
+```
+
 ### Reference
 
 [U^2-Net: Going Deeper with Nested U-Structure for Salient Object Detection](https://github.com/NathanUA/U-2-Net)
@@ -57,7 +63,14 @@ TensorFlow 2.10.0
 
 ### Netron
 
+量子化モデル
 - [u2net_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2net_full_integer_quant.tflite)
 - [u2net_opset11_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2net_opset11_full_integer_quant.tflite)
 - [u2netp_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2netp_full_integer_quant.tflite)
 - [u2netp_opset11_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2netp_opset11_full_integer_quant.tflite)
+
+floatモデル
+- [u2net_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2net_float32.tflite)
+- [u2net_opset11_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2net_opset11_float32.tflite)
+- [u2netp_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2netp_float32.tflite)
+- [u2netp_opset11_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/u2net/u2netp_opset11_float32.tflite)
