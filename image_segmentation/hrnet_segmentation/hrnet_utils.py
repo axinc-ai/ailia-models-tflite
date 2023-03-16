@@ -51,7 +51,7 @@ def smooth_output(preds: np.ndarray, height: int, width: int) -> np.ndarray:
     result = np.zeros((1, 19, height, width))
     for i in range(19):
         result[0, i] = cv2.resize(
-            preds[..., i].astype(np.uint8),
+            preds[..., i].astype(np.float32),
             (width, height),
             interpolation=cv2.INTER_LINEAR
         )
