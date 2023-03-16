@@ -25,10 +25,9 @@ SAVE_IMAGE_PATH = 'output.png'
 IMAGE_HEIGHT = 512
 IMAGE_WIDTH = 1024
 MODEL_NAMES = ['HRNetV2-W48', 'HRNetV2-W18-Small-v1', 'HRNetV2-W18-Small-v2']
-# MODEL_PATH = "model_float16_quant.tflite"
-# MODEL_PATH = "/Users/daisukeakagawa/work/ailia/hrnet/models/HRNetV2-W18-Small-v2/HRNetV2-W18-Small-v2_saved_model/model_float16_quant.tflite"
-MODEL_PATH = "HRNetV2-W48/output_quant.tflite"
-NORMALIZE_TYPE="127.5"
+# MODEL_PATH = "/Users/daisukeakagawa/Downloads/HRNetV2-W48_int8.tflite"
+MODEL_PATH = "/Users/daisukeakagawa/Downloads/HRNetV2-W48_int8_oneimage.tflite"
+NORMALIZE_TYPE="255"
 
 
 # ======================
@@ -128,7 +127,6 @@ def recognize_from_image():
             interpreter.invoke()
 
         preds_tf_lite = interpreter.get_tensor(output_details[0]["index"])[0]
-        # TODO Normal outputにするにはテンソルの形状を合わせる必要あり
         preds_tf_lite = smooth_output(preds_tf_lite, IMAGE_HEIGHT, IMAGE_WIDTH)
         savepath = get_savepath(args.savepath, image_path)
         logger.info(f'saved at : {savepath}')
