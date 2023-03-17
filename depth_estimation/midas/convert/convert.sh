@@ -1,0 +1,2 @@
+#!/bin/bash
+python openvino2tensorflow.py --model_path openvino/384x384/FP32/midas.xml --model_output_path saved_model_384x384 --output_saved_model --output_h5 --output_pb --output_no_quant_float32_tflite --output_weight_quant_tflite --output_float16_quant_tflite --output_full_integer_quant_tflite
