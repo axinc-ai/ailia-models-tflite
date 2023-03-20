@@ -4,13 +4,13 @@ import time
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-from hrnet_utils import smooth_output, save_pred
+from hrnet_utils import smooth_output, save_pred, gen_preds_img_np, gen_preds_img
 
 
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
-from image_utils import load_image  # noqa: E402
+from image_utils import load_image, preprocess_image  # noqa: E402
 import webcamera_utils  # noqa: E402
 
 from logging import getLogger
@@ -25,8 +25,7 @@ SAVE_IMAGE_PATH = 'output.png'
 IMAGE_HEIGHT = 512
 IMAGE_WIDTH = 1024
 MODEL_NAMES = ['HRNetV2-W48', 'HRNetV2-W18-Small-v1', 'HRNetV2-W18-Small-v2']
-# MODEL_PATH = "/Users/daisukeakagawa/Downloads/HRNetV2-W48_int8.tflite"
-MODEL_PATH = "/Users/daisukeakagawa/Downloads/HRNetV2-W48_int8_oneimage.tflite"
+MODEL_PATH = "/Users/daisukeakagawa/work/ailia/hrnet_models/models_preprocess_divide255/HRNetV2-W18-Small-v2_int8_all.tflite"
 NORMALIZE_TYPE="255"
 
 
@@ -51,6 +50,19 @@ parser.add_argument(
     help='result image will be smoother by applying bilinear upsampling'
 )
 args = update_parser(parser)
+
+
+# ======================
+# MODEL PARAMETERS
+# ======================
+# if args.float:
+#     MODEL_NAME = args.arch
+# else:
+#     MODEL_NAME = args.arch + "_integer_quant"
+# 
+# 
+# MODEL_PATH = f'{MODEL_NAME}.tflite'
+# REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/hrnet_segmentation/'
 
 
 if args.tflite:
@@ -165,34 +177,40 @@ def recognize_from_video():
 
     while True:
         ret, frame = capture.read()
+
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
 
-        input_image, input_data = webcamera_utils.preprocess_frame(
-            frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type=NORMALIZE_TYPE
+        input_data = preprocess_image(
+            frame, 
+            (IMAGE_HEIGHT, IMAGE_WIDTH), 
+            NORMALIZE_TYPE, 
+            batch_dim=True,
+            keep_aspect_ratio=True,
+            reverse_color_channel=True,
+            chan_first=False,
+            output_type=np.float32,
+            return_scale_pad=False,
+            tta="none"
         )
+        input_data = format_input_tensor(input_data, input_details, 0)
 
         # inference
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
+        preds_tf_lite = smooth_output(preds_tf_lite, IMAGE_HEIGHT, IMAGE_WIDTH)
+        preds_tf_lite = gen_preds_img_np(preds_tf_lite, IMAGE_HEIGHT, IMAGE_WIDTH)
 
-        # if args.float:
-        #     preds_tf_lite = preds_tf_lite[:,:,0]
+        cv2.imshow("Inference result", preds_tf_lite)
+        cv2.imshow("Original frame", frame)
 
-        # postprocessing
-        # seg_img = preds_tf_lite.astype(np.uint8)
-        # seg_img = label_to_color_image(seg_img)
-        # org_h, org_w = input_image.shape[:2]
-        seg_img = cv2.resize(seg_img, (org_w, org_h))
-        seg_img = cv2.cvtColor(seg_img, cv2.COLOR_RGB2BGR)
-        seg_overlay = cv2.addWeighted(input_image, 1.0, seg_img, 0.9, 0)
-
-        cv2.imshow('frame', seg_overlay)
+        if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
+            break
 
         # save results
         if writer is not None:
-            writer.write(seg_overlay)
+            writer.write(preds_tf_lite)
 
     capture.release()
     cv2.destroyAllWindows()

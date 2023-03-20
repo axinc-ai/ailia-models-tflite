@@ -59,6 +59,13 @@ def smooth_output(preds: np.ndarray, height: int, width: int) -> np.ndarray:
     return result
 
 
+def gen_preds_img_np(preds, height, width):
+    gen_img = gen_preds_img(preds, height, width)
+    gen_img.save("tmp.png")
+    return cv2.imread("tmp.png")
+
+
+
 def gen_preds_img(preds, height, width):
     palette = get_palette(256)
     preds = np.asarray(np.argmax(preds, axis=1), dtype=np.uint8)
