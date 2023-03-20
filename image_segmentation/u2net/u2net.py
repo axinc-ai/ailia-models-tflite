@@ -122,9 +122,8 @@ def recognize_from_video(interpreter):
     
     frame_shown = False
     while(True):
-        print("new frame")
         ret, frame = capture.read()
-        if not ret:
+        if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
         if frame_shown and cv2.getWindowProperty('frame', cv2.WND_PROP_VISIBLE) == 0:
             break
@@ -133,7 +132,6 @@ def recognize_from_video(interpreter):
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         input_data = transform(frame, (args.width, args.height))
-
 
         inputs = get_input_tensor(input_data.astype(np.float32), input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
@@ -154,10 +152,15 @@ def recognize_from_video(interpreter):
         pred = norm(real_tensor[0])
         if args.rgb and image.shape[2] == 3:
             pred = cv2.cvtColor(pred, cv2.COLOR_RGB2BGR)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
-        frame[:, :, 3] = cv2.resize(pred, (f_w, f_h)) * 255
-        
-        # cv2.imshow('frame', frame)
+
+        pred = cv2.resize(pred, (f_w, f_h))
+
+        frame[:, :, 0] = frame[:, :, 0] * pred + 64 * (1 - pred)
+        frame[:, :, 1] = frame[:, :, 1] * pred + 177 * (1 - pred)
+        frame[:, :, 2] = frame[:, :, 2] * pred
+
+        cv2.imshow('frame', frame.astype(np.uint8))
+        frame_shown = True
 
     capture.release()
     logger.info('Script finished successfully.')

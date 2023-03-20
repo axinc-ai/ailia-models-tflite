@@ -53,6 +53,7 @@ pip3 install .
 | | Model | Reference | Exported From | Supported Ailia Version |
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="image_segmentation/deeplabv3plus/output.png" width=128px>](image_segmentation/deeplabv3plus/) | [DeepLabv3+](/image_segmentation/deeplabv3plus/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/master/026_mobile-deeplabv3-plus/03_integer_quantization)| TensorFlow | 1.0 |
+| [<img src="image_segmentation/u2net/output.png" width=128px>](image_segmentation/u2net/) | [u2net](/image_segmentation/u2net/) | [U^2-Net: Going Deeper with Nested U-Structure for Salient Object Detection](https://github.com/NathanUA/U-2-Net)| TensorFlow | 1.1 |
 
 ## Object detection
 
