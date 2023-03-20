@@ -1,5 +1,3 @@
-#★ yolox チュートリアルからコピペ
-# https://github.com/axinc-ai/ailia-models-tflite/issues/41
 
 import numpy as np
 import sys
