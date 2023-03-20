@@ -140,10 +140,15 @@ def recognize_from_video(interpreter):
         interpreter.invoke()
 
         details = output_details[0]
-        quant_params = details['quantization_parameters']
-        int_tensor = interpreter.get_tensor(details['index'])
-        real_tensor = int_tensor - quant_params['zero_points']
-        real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
+        dtype = details['dtype']
+        if dtype == np.uint8 or dtype == np.int8:
+            quant_params = details['quantization_parameters']
+            int_tensor = interpreter.get_tensor(details['index'])
+            real_tensor = int_tensor - quant_params['zero_points']
+            real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
+        else:
+            real_tensor = interpreter.get_tensor(details['index'])
+
 
         # 各フレームごとに推論結果を重ねて保存
         pred = norm(real_tensor[0])
@@ -152,7 +157,7 @@ def recognize_from_video(interpreter):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
         frame[:, :, 3] = cv2.resize(pred, (f_w, f_h)) * 255
         
-        cv2.imshow('frame', frame)
+        # cv2.imshow('frame', frame)
 
     capture.release()
     logger.info('Script finished successfully.')
