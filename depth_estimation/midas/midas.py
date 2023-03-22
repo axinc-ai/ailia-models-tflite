@@ -112,7 +112,7 @@ def recognize_from_image(interpreter):
             (IMAGE_HEIGHT,IMAGE_WIDTH),
             normalize_type='ImageNet',
             gen_input_ailia_tflite=True,
-            bgr_to_rgb=False,
+            bgr_to_rgb=True,
             output_type=dtype,
             keep_aspect_ratio=False,
         )
