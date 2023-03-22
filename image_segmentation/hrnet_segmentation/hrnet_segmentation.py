@@ -1,10 +1,9 @@
 import sys
 import time
 
-import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-from hrnet_utils import smooth_output, save_pred, gen_preds_img_np, gen_preds_img
+from hrnet_utils import smooth_output, save_pred, gen_preds_img_np
 
 
 sys.path.append('../../util')
@@ -130,7 +129,7 @@ def recognize_from_image():
                 interpreter.set_tensor(input_details[0]["index"], input_data)
                 interpreter.invoke()
                 end = int(round(time.time() * 1000))
-                avertage_time = average_time + (end - start)
+                average_time = average_time + (end - start)
                 logger.info(f'\tailia processing time {end - start} ms')
 
             logger.info(f"\taverage time {average_time / args.benchmark_count} ms")
@@ -207,7 +206,7 @@ def recognize_from_video():
 
         # save results
         if writer is not None:
-             writer.write(preds_tf_lite)
+            writer.write(preds_tf_lite)
 
     capture.release()
     cv2.destroyAllWindows()
@@ -217,12 +216,14 @@ def recognize_from_video():
 
     logger.info('Script finished successfully.')
 
+
 def main():
     # check_and_download_models()
     if args.video is not None:
         recognize_from_video()
     else:
         recognize_from_image()
+
 
 if __name__ == "__main__":
     main()

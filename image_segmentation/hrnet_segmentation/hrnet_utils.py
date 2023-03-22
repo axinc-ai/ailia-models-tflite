@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import cv2
 from PIL import Image
@@ -73,9 +71,6 @@ def apply_palette_to_np_img(img, palette):
     return result_img
 
 
-
-# TODO gen_preds_imgを介さないようにする
-# TODO LUTを使って色変換できないか？
 def gen_preds_img_np(preds, height, width):
     palette = get_palette(256)
     preds = np.asarray(np.argmax(preds, axis=1), dtype=np.uint8)
@@ -83,7 +78,6 @@ def gen_preds_img_np(preds, height, width):
     pred = convert_label(preds[0], inverse=True)
     pred = apply_palette_to_np_img(pred, palette)
     return pred
-
 
 
 def gen_preds_img(preds, height, width):
