@@ -68,6 +68,7 @@ if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
+    print(ailia_tflite)
 
 
 if args.shape:
