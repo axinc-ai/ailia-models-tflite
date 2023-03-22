@@ -59,10 +59,30 @@ def smooth_output(preds: np.ndarray, height: int, width: int) -> np.ndarray:
     return result
 
 
+def apply_palette_to_np_img(img, palette):
+    h, w = img.shape[:2]
+    result_img = np.zeros((h, w, 3)).astype(np.uint8)
+
+    for i in range(256):
+        r = palette[i*3]
+        g = palette[i*3+1]
+        b = palette[i*3+2]
+        apply_idx = np.where(img == i)
+        result_img[apply_idx] = [b, g, r]
+
+    return result_img
+
+
+
+# TODO gen_preds_imgを介さないようにする
+# TODO LUTを使って色変換できないか？
 def gen_preds_img_np(preds, height, width):
-    gen_img = gen_preds_img(preds, height, width)
-    gen_img.save("tmp.png")
-    return cv2.imread("tmp.png")
+    palette = get_palette(256)
+    preds = np.asarray(np.argmax(preds, axis=1), dtype=np.uint8)
+    # for now, we only expects one image per batch
+    pred = convert_label(preds[0], inverse=True)
+    pred = apply_palette_to_np_img(pred, palette)
+    return pred
 
 
 

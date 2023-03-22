@@ -205,12 +205,9 @@ def recognize_from_video():
         cv2.imshow("Inference result", preds_tf_lite)
         cv2.imshow("Original frame", frame)
 
-        if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
-            break
-
         # save results
         if writer is not None:
-            writer.write(preds_tf_lite)
+             writer.write(preds_tf_lite)
 
     capture.release()
     cv2.destroyAllWindows()
