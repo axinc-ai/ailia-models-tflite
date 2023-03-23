@@ -25,11 +25,26 @@ If you pass 0 as an argument to VIDEO_PATH, you can use the webcam input instead
 
 `$ python3 hrnet_segmentation.py --video VIDEO_PATH --savepath SAVE_VIDEO_PATH`
 
+We have three pretrained-model:
+  - HRNetV2-W48
+  - HRNetV2-W18-Small-v1
+  - HRNetV2-W18-Small-v2 (default) 
+
+You can specify the architecture you want following --arch / -a option.
+
+`$ python3 hrnet_segmentation.py --arch HRNetV2-W48`
+
+Two versions of the model are provided: full integer quantization (8-bit) and full precision floating point (32-bit). 
+By default, the full integer quantization is used but the user can select the other version by passing the --float flag.
+
+`$ python3 hrnet_segmentation.py --float`
+
 
 ### Reference
 [https://github.com/HRNet/HRNet-Semantic-Segmentation](https://github.com/HRNet/HRNet-Semantic-Segmentation)
 
 ### Framework
+Tensorflow 2.11.0
 
 ### Netron
 - [HRNetV2-W48_integer_quant](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/hrnet/HRNetV2-W48_integer_quant.tflite)
