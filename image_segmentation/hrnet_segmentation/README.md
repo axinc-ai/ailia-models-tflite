@@ -28,3 +28,9 @@ If you pass 0 as an argument to VIDEO_PATH, you can use the webcam input instead
 ### Reference
 ### Framework
 ### Netron
+- [HRNetV2-W48_integer_quant](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/hrnet/HRNetV2-W48_integer_quant.tflite)
+- [HRNetV2-W48](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/hrnet/HRNetV2-W48.tflite)
+- [HRNetV2-W18-Small-v1_integer_quant](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/hrnet/HRNetV2-W18-Small-v1_integer_quant.tflite)
+- [HRNetV2-W18-Small-v1](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/hrnet/HRNetV2-W18-Small-v1.tflite)
+- [HRNetV2-W18-Small-v2_integer_quant](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/hrnet/HRNetV2-W18-Small-v2_integer_quant.tflite)
+- [HRNetV2-W18-Small-v2](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/hrnet/HRNetV2-W18-Small-v2.tflite)
