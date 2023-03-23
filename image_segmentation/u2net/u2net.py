@@ -128,7 +128,7 @@ def recognize_from_video(interpreter):
         if frame_shown and cv2.getWindowProperty('frame', cv2.WND_PROP_VISIBLE) == 0:
             break
 
-        if args.rgb and image.shape[2] == 3:
+        if args.rgb and frame.shape[2] == 3:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         input_data = transform(frame, (args.width, args.height))
@@ -150,8 +150,8 @@ def recognize_from_video(interpreter):
 
         # 各フレームごとに推論結果を重ねて保存
         pred = norm(real_tensor[0])
-        if args.rgb and image.shape[2] == 3:
-            pred = cv2.cvtColor(pred, cv2.COLOR_RGB2BGR)
+        if args.rgb and frame.shape[2] == 3:
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
         pred = cv2.resize(pred, (f_w, f_h))
 
