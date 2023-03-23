@@ -24,7 +24,6 @@ SAVE_IMAGE_PATH = 'output.png'
 IMAGE_HEIGHT = 512
 IMAGE_WIDTH = 1024
 MODEL_NAMES = ['HRNetV2-W48', 'HRNetV2-W18-Small-v1', 'HRNetV2-W18-Small-v2']
-MODEL_PATH = "/Users/daisukeakagawa/work/ailia/hrnet_models/models_preprocess_divide255/HRNetV2-W18-Small-v2_int8_all.tflite"
 NORMALIZE_TYPE="255"
 
 
@@ -54,21 +53,20 @@ args = update_parser(parser)
 # ======================
 # MODEL PARAMETERS
 # ======================
-# if args.float:
-#     MODEL_NAME = args.arch
-# else:
-#     MODEL_NAME = args.arch + "_integer_quant"
-# 
-# 
-# MODEL_PATH = f'{MODEL_NAME}.tflite'
-# REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/hrnet_segmentation/'
+if args.float:
+    MODEL_NAME = args.arch
+else:
+    MODEL_NAME = args.arch + "_integer_quant"
+
+
+MODEL_PATH = f'{MODEL_NAME}.tflite'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/hrnet/'
 
 
 if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
-    print(ailia_tflite)
 
 
 if args.shape:
@@ -219,7 +217,7 @@ def recognize_from_video():
 
 
 def main():
-    # check_and_download_models()
+    check_and_download_models(MODEL_PATH, REMOTE_PATH)
     if args.video is not None:
         recognize_from_video()
     else:
