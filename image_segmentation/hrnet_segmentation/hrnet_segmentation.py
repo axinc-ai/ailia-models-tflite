@@ -201,7 +201,6 @@ def recognize_from_video():
         preds_tf_lite = gen_preds_img_np(preds_tf_lite, IMAGE_HEIGHT, IMAGE_WIDTH)
 
         cv2.imshow("Inference result", preds_tf_lite)
-        cv2.imshow("Original frame", frame)
 
         # save results
         if writer is not None:
