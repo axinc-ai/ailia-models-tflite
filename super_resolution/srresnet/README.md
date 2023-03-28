@@ -15,7 +15,7 @@ Ailia output shape : (1,3,256,256)
 Range : [0, 1.0]
 
 ## Usage
-Automatically downloads the onnx and prototxt files on the first run.
+Automatically downloads the tflite files on the first run.
 It is necessary to be connected to the Internet while downloading.
 
 For the sample image,
@@ -35,8 +35,6 @@ If you pass `0` as an argument to VIDEO_PATH, you can use the webcam input inste
 $ python3 srresnet.py --video VIDEO_PATH
 ```
 
-The default setting is to use the optimized model and weights, but you can also switch to the normal model by using the `--normal` option.
-
 Image Input only: Instead of resizing input image to (64 * 64) when loading, you can try padding mode using `--padding` option.
 
 ## Reference
@@ -45,15 +43,11 @@ Image Input only: Instead of resizing input image to (64 * 64) when loading, you
 
 ## Framework
 
-Pytorch 1.2.0
-
-## Model Format
-
-ONNX opset = 10
+TensorFlow 2.12.0
 
 ## Netron
 
-[srresnet.onnx.prototxt](https://netron.app/?url=https://storage.googleapis.com/ailia-models/srresnet/srresnetn.onnx.prototxt)
+[srresnet.opt_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/srresnet/srresnet.opt_float32.tflite)
 
-[srresnet.opt.onnx.prototxt](https://netron.app/?url=https://storage.googleapis.com/ailia-models/srresnet/srresnet.opt.onnx.prototxt)
+[srresnet.opt_full_integer_quant.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/srresnet/srresnet.opt_full_integer_quant.tflite)
 
