@@ -54,4 +54,5 @@ TensorFlow 2.12.0
 ## Netron
 
 [googlenet_float32.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/googlenet/googlenet_float32.tflite)
+
 [googlenet_quant_recalib.tflite](https://netron.app/?url=https://storage.googleapis.com/ailia-models-tflite/googlenet/googlenet_quant_recalib.tflite)
