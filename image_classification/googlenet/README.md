@@ -4,8 +4,8 @@
 
 ![Input](pizza.jpg)
 
-Ailia input shape: (224, 224, 4)  
-Range : [0.0, 255.0]  (np.uint8)
+Ailia input shape: (224, 224, 3)  
+Range : [0.0, 255.0] 
 
 ## Output
 
