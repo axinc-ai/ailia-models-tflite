@@ -45,8 +45,9 @@ $ python3 midas.py -v21 --model_type small
 
 Two versions of the model are provided: full integer quantization (8-bit) and full precision floating point (32-bit). 
 By default, the full integer quantization is used but the user can select the other version by passing the --float flag.
-
-`$ python3 midas.py --float`
+```bash
+$ python3 midas.py --float
+```
 
 ## Reference
 
