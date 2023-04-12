@@ -50,6 +50,8 @@ $ python3 vgg16.py --video VIDEO_PATH
 
 [Very Deep Convolutional Networks for Large-Scale Image Recognition]( https://arxiv.org/abs/1409.1556 )
 
+[VGG16 - Torchvision]( https://pytorch.org/vision/main/models/generated/torchvision.models.vgg16.html )
+
 [Keras Applications : VGG16]( https://keras.io/applications/#vgg16 )
 
 [keras2caffe]( https://github.com/uhfband/keras2caffe)
