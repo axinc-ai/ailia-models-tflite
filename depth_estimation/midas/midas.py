@@ -21,12 +21,14 @@ logger = getLogger(__name__)
 # ======================
 # Parameters
 # ======================
-REMOTE_PATH = 'https://storage.googleapis.com/ailia-models/midas/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/midas/'
 
 IMAGE_PATH = 'input.jpg'
 SAVE_IMAGE_PATH = 'input_depth.png'
 IMAGE_HEIGHT = 384
 IMAGE_WIDTH = 384
+IMAGE_HEIGHT_SMALL = 256
+IMAGE_WIDTH_SMALL = 256
 IMAGE_MULTIPLE_OF = 32
 
 
@@ -34,6 +36,10 @@ IMAGE_MULTIPLE_OF = 32
 # Arguemnt Parser Config
 # ======================
 parser = get_base_parser('MiDaS model', IMAGE_PATH, SAVE_IMAGE_PATH)
+parser.add_argument(
+    '-v21', '--version21', dest='v21', action='store_true',
+    help='Use model version 2.1.'
+)
 parser.add_argument(
     '-t', '--model_type', default='large', choices=('large', 'small'),
     help='model type: large or small. small can be specified only for version 2.1 model.'
@@ -50,9 +56,19 @@ else:
 # Parameters 2
 # ======================
 if args.float:
-    MODEL_NAME = 'midas_float32'
+    if args.model_type == 'large':
+        MODEL_NAME = 'midas_v2.1_float'
+    else:
+        MODEL_NAME = 'midas_v2.1_small_float'
+    if not args.v21:
+        MODEL_NAME = 'midas_float'
 else:
-    MODEL_NAME = 'midas_full_integer_quant'
+    if args.model_type == 'large':
+        MODEL_NAME = 'midas_v2.1_quant_recalib'
+    else:
+        MODEL_NAME = 'midas_v2.1_small_quant_recalib'
+    if not args.v21:
+        MODEL_NAME = 'midas_quant_recalib'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/midas/'
@@ -92,24 +108,27 @@ def midas_resize(image, target_height, target_width):
 
 def recognize_from_image(interpreter):
 
+    h, w = (IMAGE_HEIGHT, IMAGE_WIDTH) if not args.v21 or args.model_type == 'large' \
+               else (IMAGE_HEIGHT_SMALL, IMAGE_WIDTH_SMALL)
+
     src = cv2.imread(IMAGE_PATH, cv2.IMREAD_COLOR)
-    h, w, c = src.shape
+    src_h, src_w, c = src.shape
 
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
-    
+
     # input image loop
     for image_path in args.input:
         logger.info(image_path)
 
         # prepare input data
         input_data = None
-        dtype = np.int8
+        dtype = float
         if args.float:
             dtype = np.float32
         image = load_image( 
             image_path,
-            (IMAGE_HEIGHT,IMAGE_WIDTH),
+            (h, w),
             normalize_type='ImageNet',
             gen_input_ailia_tflite=True,
             bgr_to_rgb=True,
@@ -125,10 +144,9 @@ def recognize_from_image(interpreter):
         logger.info('Start inference...')
         
         interpreter.set_tensor(input_details[0]['index'], inputs)
-        interpreter.invoke() #★
+        interpreter.invoke()
 
         preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
-        
 
         depth_min = preds_tf_lite.min()
         depth_max = preds_tf_lite.max()
@@ -140,17 +158,19 @@ def recognize_from_image(interpreter):
             out = 0
 
         out = out.transpose(1, 2, 0)
-        out, scale, padding = resize_image(out, (h, w), keep_aspect_ratio=False)
+        out, scale, padding = resize_image(out, (src_h, src_w), keep_aspect_ratio=False)
 
         savepath = get_savepath(args.savepath, image_path, ext='.png')
         logger.info(f'saved at : {savepath}')
         cv2.imwrite(savepath, out.astype("uint16"))
 
-
     logger.info('Script finished successfully.')
 
 
 def recognize_from_video(interpreter):
+
+    h, w = (IMAGE_HEIGHT, IMAGE_WIDTH) if not args.v21 or args.model_type == 'large' \
+               else (IMAGE_HEIGHT_SMALL, IMAGE_WIDTH_SMALL)
 
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -162,7 +182,7 @@ def recognize_from_video(interpreter):
     f_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
 
     zero_frame = np.zeros((f_h,f_w,3))
-    resized_img = midas_resize(zero_frame, IMAGE_HEIGHT, IMAGE_WIDTH)
+    resized_img = midas_resize(zero_frame, h, w)
     save_h, save_w = resized_img.shape[0], resized_img.shape[1]
 
     output_frame = np.zeros((save_h,save_w*2,3))
@@ -187,22 +207,21 @@ def recognize_from_video(interpreter):
             break
         
         frame_mini, scale, padding = resize_image(frame, (save_h, save_w), keep_aspect_ratio=False)
-        frame_resize, scale, padding = resize_image(frame, (IMAGE_HEIGHT, IMAGE_WIDTH), keep_aspect_ratio=False)
+        frame_resize, scale, padding = resize_image(frame, (h, w), keep_aspect_ratio=False)
 
         # prepare input data
-        dtype = np.int8
+        dtype = float
         if args.float:
             dtype = np.float32
         input_image, input_data = preprocess_frame(
-            frame_resize, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='ImageNet',
-            bgr_to_rgb=False, output_type=dtype
+            frame_resize, h, w, normalize_type='ImageNet',
+            bgr_to_rgb=True, output_type=dtype
         )
 
         inputs = format_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
         preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
-
 
         # normalize to 16bit
         depth_min = preds_tf_lite.min()
@@ -247,7 +266,7 @@ def main():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags) #★
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:
@@ -260,7 +279,6 @@ def main():
     else:
         # image mode
         recognize_from_image(interpreter)
-
 
 if __name__ == '__main__':
     main()
