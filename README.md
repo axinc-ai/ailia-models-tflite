@@ -20,6 +20,12 @@ pip3 install .
 
 # Models
 
+## Depth estimation
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="depth_estimation/midas/input_depth.png" width=128px>](depth_estimation/midas/) | [Midas](/depth_estimation/midas/) | [Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-shot Cross-dataset Transfer](https://github.com/intel-isl/MiDaS) | Pytorch | 1.1.7 |
+
 ## Face detection
 
 | | Model | Reference | Exported From | Supported Ailia Version |
