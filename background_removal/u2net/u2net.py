@@ -1,7 +1,6 @@
 import sys
 import time
 
-import ailia
 import cv2
 import numpy as np
 
@@ -11,7 +10,7 @@ sys.path.append('../../util')
 from logging import getLogger  # noqa: E402
 
 import webcamera_utils  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from utils import get_base_parser, get_savepath, update_parser  # noqa: E402
 
 from u2net_utils import imread, load_image, norm, save_result, transform  # noqa: E402
@@ -89,21 +88,6 @@ else:
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/u2net/'
 
 
-# ======================
-# Utils
-# ======================
-
-def get_input_tensor(tensor, input_details, idx):
-    details = input_details[idx]
-    dtype = details['dtype']
-    if dtype == np.uint8 or dtype == np.int8:
-        quant_params = details['quantization_parameters']
-        input_tensor = tensor / quant_params['scales'] + quant_params['zero_points']
-        input_tensor = input_tensor.clip(0, 255)
-        return input_tensor.astype(dtype)
-    else:
-        return tensor
-
 
 # ======================
 # Main functions
@@ -133,7 +117,7 @@ def recognize_from_video(interpreter):
 
         input_data = transform(frame, (args.width, args.height))
 
-        inputs = get_input_tensor(input_data.astype(np.float32), input_details, 0)
+        inputs = format_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
 
@@ -147,8 +131,6 @@ def recognize_from_video(interpreter):
         else:
             real_tensor = interpreter.get_tensor(details['index'])
 
-
-        # 各フレームごとに推論結果を重ねて保存
         pred = norm(real_tensor[0])
         if args.rgb and frame.shape[2] == 3:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -187,7 +169,7 @@ def recognize_from_image(interpreter):
         # inference
         logger.info('Start inference...')
 
-        inputs = get_input_tensor(input_data.astype(np.float32), input_details, 0)
+        inputs = format_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
 

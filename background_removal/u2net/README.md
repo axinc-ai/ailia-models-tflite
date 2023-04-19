@@ -59,7 +59,7 @@ $ python3 u2net.py --input IMAGE_PATH --savepath SAVE_IMAGE_PATH --opset 11 --fl
 
 
 ### Framework
-TensorFlow 2.10.0
+TensorFlow 2.12.0
 
 ### Netron
 

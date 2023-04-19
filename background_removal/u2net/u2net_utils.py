@@ -5,6 +5,12 @@ import cv2
 import numpy as np
 from PIL import Image
 
+sys.path.append('../../util')
+# logger
+from logging import getLogger  # noqa: E402
+
+logger = getLogger(__name__)
+
 def imread(filename, flags=cv2.IMREAD_COLOR):
     if not os.path.isfile(filename):
         logger.error(f"File does not exist: {filename}")
@@ -31,7 +37,6 @@ def transform(image, scaled_size):
     tmpImg[:, :, 0] = (image[:, :, 0]-0.485)/0.229
     tmpImg[:, :, 1] = (image[:, :, 1]-0.456)/0.224
     tmpImg[:, :, 2] = (image[:, :, 2]-0.406)/0.225
-    # return tmpImg.transpose((2, 0, 1))[np.newaxis, :, :, :]
     return tmpImg[np.newaxis, :, :, :]
 
 
