@@ -20,6 +20,18 @@ pip3 install .
 
 # Models
 
+## Background removal
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="background_removal/u2net/output.png" width=128px>](background_removal/u2net/) | [u2net](/background_removal/u2net/) | [U^2-Net: Going Deeper with Nested U-Structure for Salient Object Detection](https://github.com/NathanUA/U-2-Net)| TensorFlow | 1.1 |
+
+## Depth estimation
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="depth_estimation/midas/input_depth.png" width=128px>](depth_estimation/midas/) | [Midas](/depth_estimation/midas/) | [Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-shot Cross-dataset Transfer](https://github.com/intel-isl/MiDaS) | Pytorch | 1.1.7 |
+
 ## Face detection
 
 | | Model | Reference | Exported From | Supported Ailia Version |
@@ -47,13 +59,14 @@ pip3 install .
 | [<img src="image_classification/resnet50/clock.jpg" width=128px>](image_classification/resnet50/) | [ResNet50](/image_classification/resnet50/) | [tf.keras.applications.resnet50.ResNet50](https://www.tensorflow.org/api_docs/python/tf/keras/applications/resnet50/ResNet50) | Keras | 1.0 |
 | [<img src="image_classification/efficientnet_lite/clock.jpg" width=128px>](image_classification/efficientnet_lite/) | [EfficientnetLite](/image_classification/efficientnet_lite/) | [efficientnet-lite-keras](https://github.com/sebastian-sz/efficientnet-lite-keras) | Keras | 1.0 |
 | [<img src="image_classification/squeezenet/clock.jpg" width=128px>](image_classification/squeezenet/) | [SqueezeNet](/image_classification/squeezenet/) | [keras_squeezenet2](https://github.com/daviddexter/keras_squeezenet2) | Keras | 1.0 |
+| [<img src="image_classification/vgg16/clock.jpg" width=128px>](image_classification/vgg16/) | [vgg16](/image_classification/vgg16/) | [VGG16 - Torchvision]( https://pytorch.org/vision/main/models/generated/torchvision.models.vgg16.html ) | Pytorch | 1.1.7 for int8, 1.1.8 for float |
 
 ## Image segmentation
 
 | | Model | Reference | Exported From | Supported Ailia Version |
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="image_segmentation/deeplabv3plus/output.png" width=128px>](image_segmentation/deeplabv3plus/) | [DeepLabv3+](/image_segmentation/deeplabv3plus/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/master/026_mobile-deeplabv3-plus/03_integer_quantization)| TensorFlow | 1.0 |
-| [<img src="image_segmentation/u2net/output.png" width=128px>](image_segmentation/u2net/) | [u2net](/image_segmentation/u2net/) | [U^2-Net: Going Deeper with Nested U-Structure for Salient Object Detection](https://github.com/NathanUA/U-2-Net)| TensorFlow | 1.1 |
+| [<img src="image_segmentation/hrnet_segmentation/output.png" width=128px>](image_segmentation/hrnet_segmentation/) | [HRNet-Semantic-Segmentation](/image_segmentation/hrnet_segmentation/) | [HRNet-Semantic-Segmentation](https://github.com/HRNet/HRNet-Semantic-Segmentation)| TensorFlow | 1.1 |
 
 ## Object detection
 
