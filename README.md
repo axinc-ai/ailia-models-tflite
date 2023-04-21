@@ -20,6 +20,12 @@ pip3 install .
 
 # Models
 
+## Background removal
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="background_removal/u2net/output.png" width=128px>](background_removal/u2net/) | [u2net](/background_removal/u2net/) | [U^2-Net: Going Deeper with Nested U-Structure for Salient Object Detection](https://github.com/NathanUA/U-2-Net)| TensorFlow | 1.1 |
+
 ## Depth estimation
 
 | | Model | Reference | Exported From | Supported Ailia Version |
