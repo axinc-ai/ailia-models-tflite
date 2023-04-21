@@ -22,7 +22,7 @@ logger = getLogger(__name__)
 # ======================
 # PARAMETERS 1
 # ======================
-IMAGE_PATH = 'pizza.jpg'
+IMAGE_PATH = 'clock.jpg'
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 
