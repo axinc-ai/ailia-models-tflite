@@ -39,6 +39,7 @@ Two versions of the model are provided: full integer quantization (8-bit) and fu
 By default, the full integer quantization is used but the user can select the other version by passing the --float flag.
 ```bash
 $ python3 midas.py --float
+```
 
 ## Reference
 
