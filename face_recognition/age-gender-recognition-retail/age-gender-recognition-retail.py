@@ -135,7 +135,7 @@ def recognize_image(interpreter_agender, interpreter_det, input_data, image):
             img = cv2.resize(crop_img, (IMAGE_SIZE, IMAGE_SIZE))
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = np.expand_dims(img, axis=0)
-            img = np.transpose(img, [0, 1, 3, 2])
+            img = np.transpose(img, [0, 2, 3, 1])
 
             img = img.astype(np.float32)
             if not args.float:
@@ -233,7 +233,7 @@ def recognize_from_image(interpreter_agender, interpreter_det):
         )
 
         img = np.expand_dims(img, axis=0)
-        img = np.transpose(img, [0, 1, 3, 2])
+        img = np.transpose(img, [0, 2, 3, 1])
 
         inputs = format_input_tensor(img, input_details_agender, 0)
 
