@@ -43,6 +43,7 @@ pip3 install .
 | | Model | Reference | Exported From | Supported Ailia Version |
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="face_recognition/facemesh/output.png" width=128px>](face_recognition/facemesh/) | [Face Mesh](/face_recognition/facemesh/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/032_FaceMesh/04_full_integer_quantization) | TensorFlow | 1.0 |
+| [<img src="face_recognition/face_classification/lenna.png" width=128px>](face_recognition/face_classification/) | [face_classification](/face_recognition/face_classification/) | [Real-time face detection and emotion/gender classification](https://github.com/oarriaga/face_classification) | TensorFlow | 1.1.1 |
 
 ## Hand recognition
 
