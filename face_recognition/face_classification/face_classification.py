@@ -128,7 +128,7 @@ def recognize_from_image(interpreter_emo, interpreter_gen):
             image_path,
             (IMAGE_HEIGHT, IMAGE_WIDTH),
             rgb=True,
-            normalize_type='ImageNet',
+            normalize_type='127.5',
             gen_input_ailia_tflite=False,
             output_type=dtype,
         )
@@ -245,6 +245,7 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
         input_image, input_data = webcamera_utils.preprocess_frame(
             frame, IMAGE_HEIGHT_DET, IMAGE_WIDTH_DET, normalize_type='127.5'
         )
+        render_image = input_image.copy()
 
         # inference
         interpreter_det.set_tensor(input_details_det[0]['index'], input_data)
@@ -264,15 +265,15 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
             for obj in detection:
                 # get detected face
                 crop_img, top_left, bottom_right = crop_blazeface(
-                    obj, FACE_MARGIN, frame
+                    obj, FACE_MARGIN, input_image
                 )
 
                 if crop_img.shape[0] <= 0 or crop_img.shape[1] <= 0:
                     continue
 
                 dtype = np.float32
-                input_image, input_data = webcamera_utils.preprocess_frame(
-                crop_img, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='ImageNet',
+                input_image2, input_data = webcamera_utils.preprocess_frame(
+                crop_img, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='127.5',
                 bgr_to_rgb=False, output_type=dtype
                 )
 
@@ -338,9 +339,9 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
                 LABEL_WIDTH = 400
                 LABEL_HEIGHT = 20
                 color = (255, 255, 255)
-                cv2.rectangle(frame, top_left, bottom_right, color, thickness=2)
+                cv2.rectangle(render_image, top_left, bottom_right, color, thickness=2)
                 cv2.rectangle(
-                    frame,
+                    render_image,
                     top_left,
                     (top_left[0]+LABEL_WIDTH, top_left[1]+LABEL_HEIGHT),
                     color,
@@ -351,7 +352,7 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
                 color = (0, 0, 0)
                 fontScale = 0.5
                 cv2.putText(
-                    frame,
+                    render_image,
                     emotion_text + " " + gender_text,
                     text_position,
                     cv2.FONT_HERSHEY_SIMPLEX,
@@ -360,14 +361,14 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
                     1,
                 )
 
-                # show result
-                cv2.imshow('frame', frame)
-                frame_shown = True
-                time.sleep(SLEEP_TIME)
+        # show result
+        cv2.imshow('frame', render_image)
+        frame_shown = True
+        time.sleep(SLEEP_TIME)
 
-                # save results
-                if writer is not None:
-                    writer.write(frame)
+        # save results
+        if writer is not None:
+            writer.write(render_image)
 
     capture.release()
     cv2.destroyAllWindows()
