@@ -50,7 +50,7 @@ else:
 if args.float:
     MODEL_NAME = 'googlenet_float32'
 else:
-    MODEL_NAME = 'googlenet_quant_recalib.tflite'
+    MODEL_NAME = 'googlenet_quant_recalib'
 MODEL_PATH = f'{MODEL_NAME}.tflite'
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/googlenet/'
 
@@ -75,9 +75,7 @@ def recognize_from_image(interpreter):
 
         # prepare input data
         input_data = None
-        dtype = np.int8
-        if args.float:
-            dtype = np.float32
+        dtype = np.float32
         input_data = load_image(
             image_path,
             (IMAGE_HEIGHT, IMAGE_WIDTH),
@@ -141,9 +139,7 @@ def recognize_from_video(interpreter):
         if frame_shown and cv2.getWindowProperty('frame', cv2.WND_PROP_VISIBLE) == 0:
             break
 
-        dtype = np.int8
-        if args.float:
-            dtype = np.float32
+        dtype = np.float32
         input_image, input_data = webcamera_utils.preprocess_frame(
             frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='255',
             bgr_to_rgb=True, output_type=dtype
