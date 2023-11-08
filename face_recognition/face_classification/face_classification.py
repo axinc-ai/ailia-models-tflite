@@ -390,8 +390,8 @@ def main():
     if args.tflite:
         interpreter_emo = tf.lite.Interpreter(model_path=EMOTION_MODEL_PATH)
     else:
-        if args.flags or args.memory_mode:
-            interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        if args.flags or args.memory_mode or args.env_id:
+            interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
         else:
             interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH)
     if args.profile:
@@ -402,8 +402,8 @@ def main():
     if args.tflite:
         interpreter_gen = tf.lite.Interpreter(model_path=GENDER_MODEL_PATH)
     else:
-        if args.flags or args.memory_mode:
-            interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        if args.flags or args.memory_mode or args.env_id:
+            interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
         else:
             interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH)
     if args.profile:
@@ -418,7 +418,7 @@ def main():
         if args.tflite:
             interpreter_det = tf.lite.Interpreter(model_path=FACE_MODEL_PATH)
         else:
-            if args.flags or args.memory_mode:
+            if args.flags or args.memory_mode or args.env_id:
                 interpreter_det = ailia_tflite.Interpreter(model_path=FACE_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
             else:
                 interpreter_det = ailia_tflite.Interpreter(model_path=FACE_MODEL_PATH)

@@ -108,15 +108,7 @@ def draw_landmarks(img, points, connections=[], color=(0, 0, 255), size=2):
 # ======================
 # Main functions
 # ======================
-def recognize_from_image():
-    # net initialize
-    if args.tflite:
-        detector = tf.lite.Interpreter(model_path=DETECTOR_MODEL_PATH)
-        estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
-    else:
-        detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
-        estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
-
+def recognize_from_image(detector, estimator):
     if args.profile:
         detector.set_profile_mode(True)
 
@@ -230,14 +222,7 @@ def recognize_from_image():
     if args.profile:
         print(detector.get_summary())
 
-def recognize_from_video():
-    # net initialize
-    if args.tflite:
-        detector = tf.lite.Interpreter(model_path=DETECTOR_MODEL_PATH)
-        estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
-    else:
-        detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
-        estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
+def recognize_from_video(detector, estimator):
     detector.allocate_tensors()
     det_input_details = detector.get_input_details()
     det_output_details = detector.get_output_details()
@@ -378,12 +363,24 @@ def main():
         LANDMARK_MODEL_PATH, LANDMARK_REMOTE_PATH
     )
 
+    # net initialize
+    if args.tflite:
+        detector = tf.lite.Interpreter(model_path=DETECTOR_MODEL_PATH)
+        estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
+    else:
+        if args.memory_mode or args.flags or args.env_id:
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+        else:
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
+
     if args.video is not None:
         # video mode
-        recognize_from_video()
+        recognize_from_video(detector, estimator)
     else:
         # image mode
-        recognize_from_image()
+        recognize_from_image(detector, estimator)
 
 
 if __name__ == '__main__':
