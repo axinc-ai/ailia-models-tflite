@@ -111,9 +111,9 @@ def recognize_from_image():
         detector = tf.lite.Interpreter(model_path=DETECTOR_MODEL_PATH)
         estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     else:
-        if args.memory_mode or args.flags:
-            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
-            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        if args.memory_mode or args.flags or args.env_id:
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
         else:
             detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
             estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)

@@ -460,8 +460,8 @@ def main():
     if args.tflite:
         interpreter_pose = tf.lite.Interpreter(model_path=POSE_MODEL_PATH)
     else:
-        if args.flags or args.memory_mode:
-            interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        if args.flags or args.memory_mode or args.env_id:
+            interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
         else:
             interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH)
     interpreter_pose.allocate_tensors()
@@ -470,8 +470,8 @@ def main():
     if args.tflite:
         interpreter_detect = tf.lite.Interpreter(model_path=DETECT_MODEL_PATH)
     else:
-        if args.flags or args.memory_mode:
-            interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        if args.flags or args.memory_mode or args.env_id:
+            interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
         else:
             interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH)
     interpreter_detect.allocate_tensors()
