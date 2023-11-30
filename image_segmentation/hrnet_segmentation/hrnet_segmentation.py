@@ -3,92 +3,116 @@ import time
 
 import cv2
 import numpy as np
+from hrnet_utils import smooth_output, save_pred, gen_preds_img_np
 
-from deeplab_utils import *
 
-# import original modules
 sys.path.append('../../util')
 from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
-from image_utils import load_image  # noqa: E402
-from classifier_utils import plot_results, print_results  # noqa: E402
+from image_utils import load_image, preprocess_image  # noqa: E402
 import webcamera_utils  # noqa: E402
 
-# logger
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 logger = getLogger(__name__)
 
 
 # ======================
 # Parameters
 # ======================
-IMAGE_PATH = 'couple.jpg'
+IMAGE_PATH = 'test.png'
 SAVE_IMAGE_PATH = 'output.png'
-
-IMAGE_HEIGHT = 256
-IMAGE_WIDTH = 256
+IMAGE_HEIGHT = 512
+IMAGE_WIDTH = 1024
+MODEL_NAMES = ['HRNetV2-W48', 'HRNetV2-W18-Small-v1', 'HRNetV2-W18-Small-v2']
+NORMALIZE_TYPE="255"
 
 
 # ======================
-# Argument Parser Config
+# Arguemnt Parser Config
 # ======================
 parser = get_base_parser(
-    'DeepLab is a state-of-art deep learning model '
-    'for semantic image segmentation.', IMAGE_PATH, SAVE_IMAGE_PATH
+    'High-Resolution networks for semantic segmentations.',
+    IMAGE_PATH,
+    SAVE_IMAGE_PATH,
+)
+parser.add_argument(
+    '-a', '--arch', metavar="ARCH",
+    default='HRNetV2-W18-Small-v2',
+    choices=MODEL_NAMES,
+    help='model architecture:  ' + ' | '.join(MODEL_NAMES) +
+         ' (default: HRNetV2-W18-Small-v2)'
+)
+parser.add_argument(
+    '--smooth',  # '-s' has already been reserved for '--savepath'
+    action='store_true',
+    help='result image will be smoother by applying bilinear upsampling'
 )
 args = update_parser(parser)
+
+
+# ======================
+# MODEL PARAMETERS
+# ======================
+if args.float:
+    MODEL_NAME = args.arch
+else:
+    MODEL_NAME = args.arch + "_integer_quant"
+
+
+MODEL_PATH = f'{MODEL_NAME}.tflite'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/hrnet/'
+
 
 if args.tflite:
     import tensorflow as tf
 else:
     import ailia_tflite
 
+
 if args.shape:
     IMAGE_HEIGHT = args.shape
     IMAGE_WIDTH = args.shape
-
-# ======================
-# MODEL PARAMETERS
-# ======================
-if args.float:
-    MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256'
-else:
-    MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256_integer_quant'
-MODEL_PATH = f'{MODEL_NAME}.tflite'
-REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/deeplabv3plus/'
 
 
 # ======================
 # Main functions
 # ======================
-def segment_from_image():
+def recognize_from_image():
     # net initialize
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(
+                model_path=MODEL_PATH, 
+                memory_mode=args.memory_mode, 
+                flags=args.flags
+            )
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
     if args.shape:
-        logger.info(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
-        interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
+        logger.info(f'update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}')
+        interpreter.resize_tensor_input(
+            input_details[0]["index"], 
+            [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]
+        )
         interpreter.allocate_tensors()
-
-    logger.info('Start inference...')
+ 
+    logger.info("Start inference...")
 
     for image_path in args.input:
         # prepare input data
-        org_img = cv2.imread(image_path)
+        logger.info(image_path)
         input_data = load_image(
             image_path,
             (IMAGE_HEIGHT, IMAGE_WIDTH),
-            normalize_type='127.5',
-            gen_input_ailia_tflite=True,
+            normalize_type=NORMALIZE_TYPE,
+            gen_input_ailia_tflite=True
         )
 
         # quantize input data
@@ -96,46 +120,42 @@ def segment_from_image():
 
         # inference
         if args.benchmark:
-            logger.info('BENCHMARK mode')
+            logger.info("BENCHMARK mode")
             average_time = 0
+
             for i in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
-                interpreter.set_tensor(input_details[0]['index'], input_data)
+                interpreter.set_tensor(input_details[0]["index"], input_data)
                 interpreter.invoke()
                 end = int(round(time.time() * 1000))
                 average_time = average_time + (end - start)
                 logger.info(f'\tailia processing time {end - start} ms')
-            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
+
+            logger.info(f"\taverage time {average_time / args.benchmark_count} ms")
         else:
-            interpreter.set_tensor(input_details[0]['index'], input_data)
+            interpreter.set_tensor(input_details[0]["index"], input_data)
             interpreter.invoke()
-        preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
 
-        # postprocessing
-        if args.float:
-            preds_tf_lite = preds_tf_lite[:,:,0]
-        seg_img = preds_tf_lite.astype(np.uint8)
-        seg_img = label_to_color_image(seg_img)
-        org_h, org_w = org_img.shape[:2]
-        seg_img = cv2.resize(seg_img, (org_w, org_h))
-        seg_img = cv2.cvtColor(seg_img, cv2.COLOR_RGB2BGR)
-        seg_overlay = cv2.addWeighted(org_img, 1.0, seg_img, 0.9, 0)
-
+        preds_tf_lite = interpreter.get_tensor(output_details[0]["index"])[0]
+        preds_tf_lite = smooth_output(preds_tf_lite, IMAGE_HEIGHT, IMAGE_WIDTH)
         savepath = get_savepath(args.savepath, image_path)
-        logger.info(f'saved at : {savepath}')        
-        cv2.imwrite(args.savepath, seg_overlay)
-    logger.info('Script finished successfully.')
+        logger.info(f'saved at : {savepath}')
+        save_pred(preds_tf_lite, savepath, IMAGE_HEIGHT, IMAGE_WIDTH)
 
 
-def segment_from_video():
-    # net initialize
+def recognize_from_video():
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(
+                model_path=MODEL_PATH, 
+                memory_mode=args.memory_mode, 
+                flags=args.flags
+            )
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -153,54 +173,55 @@ def segment_from_video():
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
+
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
 
-        input_image, input_data = webcamera_utils.preprocess_frame(
-            frame, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='127.5'
+        input_data = preprocess_image(
+            frame, 
+            (IMAGE_HEIGHT, IMAGE_WIDTH), 
+            NORMALIZE_TYPE, 
+            batch_dim=True,
+            keep_aspect_ratio=True,
+            reverse_color_channel=True,
+            chan_first=False,
+            output_type=np.float32,
+            return_scale_pad=False,
+            tta="none"
         )
+        input_data = format_input_tensor(input_data, input_details, 0)
 
         # inference
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
-        if args.float:
-            preds_tf_lite = preds_tf_lite[:,:,0]
+        preds_tf_lite = smooth_output(preds_tf_lite, IMAGE_HEIGHT, IMAGE_WIDTH)
+        preds_tf_lite = gen_preds_img_np(preds_tf_lite, IMAGE_HEIGHT, IMAGE_WIDTH)
 
-        # postprocessing
-        seg_img = preds_tf_lite.astype(np.uint8)
-        seg_img = label_to_color_image(seg_img)
-        org_h, org_w = input_image.shape[:2]
-        seg_img = cv2.resize(seg_img, (org_w, org_h))
-        seg_img = cv2.cvtColor(seg_img, cv2.COLOR_RGB2BGR)
-        seg_overlay = cv2.addWeighted(input_image, 1.0, seg_img, 0.9, 0)
-
-        cv2.imshow('frame', seg_overlay)
+        cv2.imshow("Inference result", preds_tf_lite)
 
         # save results
         if writer is not None:
-            writer.write(seg_overlay)
+            writer.write(preds_tf_lite)
 
     capture.release()
     cv2.destroyAllWindows()
+
     if writer is not None:
         writer.release()
+
     logger.info('Script finished successfully.')
 
 
 def main():
-    # model files check and download
     check_and_download_models(MODEL_PATH, REMOTE_PATH)
-
     if args.video is not None:
-        # video mode
-        segment_from_video()
+        recognize_from_video()
     else:
-        # image mode
-        segment_from_image()
+        recognize_from_image()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

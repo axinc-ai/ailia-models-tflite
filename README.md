@@ -20,6 +20,18 @@ pip3 install .
 
 # Models
 
+## Background removal
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="background_removal/u2net/output.png" width=128px>](background_removal/u2net/) | [u2net](/background_removal/u2net/) | [U^2-Net: Going Deeper with Nested U-Structure for Salient Object Detection](https://github.com/NathanUA/U-2-Net)| TensorFlow | 1.1 |
+
+## Depth estimation
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="depth_estimation/midas/input_depth.png" width=128px>](depth_estimation/midas/) | [Midas](/depth_estimation/midas/) | [Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-shot Cross-dataset Transfer](https://github.com/intel-isl/MiDaS) | Pytorch | 1.1.7 |
+
 ## Face detection
 
 | | Model | Reference | Exported From | Supported Ailia Version |
@@ -31,6 +43,7 @@ pip3 install .
 | | Model | Reference | Exported From | Supported Ailia Version |
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="face_recognition/facemesh/output.png" width=128px>](face_recognition/facemesh/) | [Face Mesh](/face_recognition/facemesh/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/032_FaceMesh/04_full_integer_quantization) | TensorFlow | 1.0 |
+| [<img src="face_recognition/face_classification/lenna.png" width=128px>](face_recognition/face_classification/) | [face_classification](/face_recognition/face_classification/) | [Real-time face detection and emotion/gender classification](https://github.com/oarriaga/face_classification) | TensorFlow | 1.1.1 |
 
 ## Hand recognition
 
@@ -47,12 +60,14 @@ pip3 install .
 | [<img src="image_classification/resnet50/clock.jpg" width=128px>](image_classification/resnet50/) | [ResNet50](/image_classification/resnet50/) | [tf.keras.applications.resnet50.ResNet50](https://www.tensorflow.org/api_docs/python/tf/keras/applications/resnet50/ResNet50) | Keras | 1.0 |
 | [<img src="image_classification/efficientnet_lite/clock.jpg" width=128px>](image_classification/efficientnet_lite/) | [EfficientnetLite](/image_classification/efficientnet_lite/) | [efficientnet-lite-keras](https://github.com/sebastian-sz/efficientnet-lite-keras) | Keras | 1.0 |
 | [<img src="image_classification/squeezenet/clock.jpg" width=128px>](image_classification/squeezenet/) | [SqueezeNet](/image_classification/squeezenet/) | [keras_squeezenet2](https://github.com/daviddexter/keras_squeezenet2) | Keras | 1.0 |
+| [<img src="image_classification/vgg16/clock.jpg" width=128px>](image_classification/vgg16/) | [vgg16](/image_classification/vgg16/) | [VGG16 - Torchvision]( https://pytorch.org/vision/main/models/generated/torchvision.models.vgg16.html ) | Pytorch | 1.1.7 for int8, 1.1.9 for float |
 
 ## Image segmentation
 
 | | Model | Reference | Exported From | Supported Ailia Version |
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="image_segmentation/deeplabv3plus/output.png" width=128px>](image_segmentation/deeplabv3plus/) | [DeepLabv3+](/image_segmentation/deeplabv3plus/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/master/026_mobile-deeplabv3-plus/03_integer_quantization)| TensorFlow | 1.0 |
+| [<img src="image_segmentation/hrnet_segmentation/output.png" width=128px>](image_segmentation/hrnet_segmentation/) | [HRNet-Semantic-Segmentation](/image_segmentation/hrnet_segmentation/) | [HRNet-Semantic-Segmentation](https://github.com/HRNet/HRNet-Semantic-Segmentation)| TensorFlow | 1.1 |
 
 ## Object detection
 
@@ -61,6 +76,12 @@ pip3 install .
 | [<img src="object_detection/yolov3-tiny/output.png" width=128px>](object_detection/yolov3-tiny/) | [YOLOv3 tiny](/object_detection/yolov3-tiny/) | [tensorflow-yolov4-tflite](https://github.com/hunglc007/tensorflow-yolov4-tflite) | TensorFlow | 1.0 |
 | [<img src="object_detection/yolox/output.jpg" width=128px>](object_detection/yolox/) | [YOLOX](/object_detection/yolox/) | [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) | Pytorch | 1.1.1 |
 | [<img src="object_detection/efficientdet_lite/output.jpg" width=128px>](object_detection/efficientdet_lite/) | [EfficientDetLite](/object_detection/efficientdet_lite/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/103_EfficientDet_lite) | TensorFlow | 1.1.3 |
+
+## Pose estimation
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="pose_estimation/pose_resnet/output.png" width=128px>](pose_estimation/pose_resnet/) | [pose_resnet](/pose_estimation/pose_resnet/) | [Simple Baselines for Human Pose Estimation and Tracking](https://github.com/microsoft/human-pose-estimation.pytorch) | Pytorch | 1.1.7 for int8, 1.1.9 for float |
 
 ## Super resolution
 
