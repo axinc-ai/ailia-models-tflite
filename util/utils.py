@@ -123,6 +123,10 @@ def get_base_parser(
         '--float', action='store_true',
         help='use float model.'
     )
+    parser.add_argument(
+        '-e', '--env_id', type=int, default=0,
+        help='set environment id. 0 = CPU, 1 = NNAPI, 2 = MMALIB, 3 = MMALIB_COMPATIBLE, 4 = QNN'
+    )
     return parser
 
 

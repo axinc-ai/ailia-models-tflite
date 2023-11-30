@@ -206,8 +206,8 @@ def main():
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
-        if args.flags or args.memory_mode:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+        if args.flags or args.memory_mode or args.env_id:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     
