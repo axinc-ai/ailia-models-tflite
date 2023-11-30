@@ -2,7 +2,7 @@
 
 ## Input
 
-![Input](pizza.jpg)
+![Input](clock.jpg)
 
 Ailia input shape: (224, 224, 3)  
 Range : [0.0, 255.0] 
@@ -11,14 +11,17 @@ Range : [0.0, 255.0]
 
 ```
 + idx=0
-  category=963[pizza, pizza pie ]
-  prob=7.1925835609436035            
+  category=409[analog clock ]
+  prob=11.58469009399414
+  value=141
 + idx=1
-  category=926[hot pot, hotpot ] 
-  prob=6.819923400878906
+  category=892[wall clock ]
+  prob=10.812376976013184
+  value=135
 + idx=2
-  category=567[frying pan, frypan, skillet ]
-  prob=6.660032272338867
+  category=426[barometer ]
+  prob=8.752877235412598
+  value=119
 ```
 
 ## Usage
