@@ -61,6 +61,7 @@ pip3 install .
 | [<img src="image_classification/efficientnet_lite/clock.jpg" width=128px>](image_classification/efficientnet_lite/) | [EfficientnetLite](/image_classification/efficientnet_lite/) | [efficientnet-lite-keras](https://github.com/sebastian-sz/efficientnet-lite-keras) | Keras | 1.0.0 |
 | [<img src="image_classification/squeezenet/clock.jpg" width=128px>](image_classification/squeezenet/) | [SqueezeNet](/image_classification/squeezenet/) | [keras_squeezenet2](https://github.com/daviddexter/keras_squeezenet2) | Keras | 1.0.0 |
 | [<img src="image_classification/vgg16/clock.jpg" width=128px>](image_classification/vgg16/) | [vgg16](/image_classification/vgg16/) | [VGG16 - Torchvision]( https://pytorch.org/vision/main/models/generated/torchvision.models.vgg16.html ) | Pytorch | 1.1.7 for int8, 1.1.9 for float |
+| [<img src="image_classification/googlenet/clock.jpg" width=128px>](image_classification/googlenet/) | [googlenet](/image_classification/googlenet/) | [GOOGLENET]( https://pytorch.org/hub/pytorch_vision_googlenet/) | Pytorch | 1.1.10 |
 
 ## Image segmentation
 
