@@ -8,7 +8,10 @@ cd ../../image_classification/mobilenetv1; python3 mobilenetv1.py ${OPTION}
 cd ../../image_classification/mobilenetv2; python3 mobilenetv2.py ${OPTION}
 cd ../../image_classification/resnet50; python3 resnet50.py ${OPTION}
 cd ../../image_classification/resnet50; python3 resnet50.py ${OPTION} --float
+cd ../../image_classification/googlenet; python3 googlenet.py ${OPTION}
 cd ../../image_segmentation/deeplabv3plus; python3 deeplabv3plus.py ${OPTION}
 cd ../../object_detection/yolov3-tiny; python3 yolov3-tiny.py ${OPTION}
 cd ../../object_detection/yolox; python3 yolox.py ${OPTION}
 cd ../../object_detection/efficientdet_lite; python3 efficientdet_lite.py ${OPTION}
+cd ../../super_resolution/srresnet; python3 srresnet.py ${OPTION}
+cd ../../super_resolution/espcn; python3 espcn.py ${OPTION}
