@@ -1,7 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 
 def sigmoid(x):
@@ -11,44 +9,27 @@ def sigmoid(x):
 def plot_detections(
         img, detections, with_keypoints=True, save_image_path='result.png'
 ):
-    fig, ax = plt.subplots(1, figsize=(10, 10))
-    ax.grid(False)
-    ax.imshow(img)
-
-    # if detections.ndim == 1:
-    # detections = np.expand_dims(detections, axis=0)
+    img = (img * 255).astype(np.uint8)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
     for i in range(detections.shape[0]):
-        ymin = detections[i, 0] * img.shape[0]
-        xmin = detections[i, 1] * img.shape[1]
-        ymax = detections[i, 2] * img.shape[0]
-        xmax = detections[i, 3] * img.shape[1]
+        ymin = int(detections[i, 0] * img.shape[0])
+        xmin = int(detections[i, 1] * img.shape[1])
+        ymax = int(detections[i, 2] * img.shape[0])
+        xmax = int(detections[i, 3] * img.shape[1])
 
-        rect = patches.Rectangle(
-            (xmin, ymin),
-            xmax - xmin,
-            ymax - ymin,
-            linewidth=1,
-            edgecolor="r",
-            facecolor="none", 
-            alpha=detections[i, 16]
-        )
-        ax.add_patch(rect)
+        color = (0, 0, 255)
+        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), color, 1)
 
         if with_keypoints:
             for k in range(6):
-                kp_x = detections[i, 4 + k*2    ] * img.shape[1]
-                kp_y = detections[i, 4 + k*2 + 1] * img.shape[0]
-                circle = patches.Circle(
-                    (kp_x, kp_y),
-                    radius=0.5,
-                    linewidth=1, 
-                    edgecolor="lightskyblue",
-                    facecolor="none", 
-                    alpha=detections[i, 16]
-                )
-                ax.add_patch(circle)
-    plt.savefig(save_image_path)
+                kp_x = int(detections[i, 4 + k*2    ] * img.shape[1])
+                kp_y = int(detections[i, 4 + k*2 + 1] * img.shape[0])
+
+                color = (255, 128, 128)
+                cv2.circle(img, (kp_x, kp_y), 2, color, 1)
+
+    cv2.imwrite(save_image_path, img.astype(np.uint8))
 
 
 def decode_boxes(raw_boxes, anchors):
