@@ -82,16 +82,13 @@ def get_real_tensor(interpreter, output_details, idx):
 # Main functions
 # ======================
 
-import PIL
-from PIL import Image, ImageFilter
-
 def recognize_from_image():
     logger.info('Start inference...')
 
     for test_img_path in args.input:
         img = cv2.imread(test_img_path)
-        ycbcr = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
-        y, cb, cr = ycbcr[:,:,0], ycbcr[:,:,1], ycbcr[:,:,2]
+        ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+        y, cr, cb = ycrcb[:,:,0], ycrcb[:,:,1], ycrcb[:,:,2]
 
         y = np.expand_dims(y, axis=2)
         y = y.astype("float32") / 255.0
@@ -137,19 +134,16 @@ def recognize_from_image():
         out_img_y = out_img_y.reshape((np.shape(out_img_y)[0], np.shape(out_img_y)[1]))
         
         out_img_y = out_img_y.astype(np.uint8)
-        out_img_cb = cv2.resize(cb, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
         out_img_cr = cv2.resize(cr, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
+        out_img_cb = cv2.resize(cb, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
 
         out_img = np.zeros((out_img_y.shape[1], out_img_y.shape[0], 3)).astype(np.uint8)
         out_img[:, :, 0] = out_img_y
-        out_img[:, :, 1] = out_img_cb
-        out_img[:, :, 2] = out_img_cr
+        out_img[:, :, 1] = out_img_cr
+        out_img[:, :, 2] = out_img_cb
 
-        out_img = cv2.cvtColor(out_img, cv2.COLOR_YUV2BGR)
+        out_img = cv2.cvtColor(out_img, cv2.COLOR_YCrCb2BGR)
 
-        #out_img = PIL.Image.merge("YCbCr", (out_img_y, out_img_cb, out_img_cr)).convert(
-        #    "RGB"
-        #)
         savepath = get_savepath(args.savepath, test_img_path)
         cv2.imwrite(savepath, out_img)
     logger.info('Script finished successfully.')
