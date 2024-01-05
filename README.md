@@ -94,3 +94,11 @@ pip3 install .
 # Options
 
 You can benchmark with the -b option. You can use the official TensorFlow Lite with the --tflite option.
+
+# Launchar
+
+You can use cui launchar.
+
+```
+python3 launchar.py
+```

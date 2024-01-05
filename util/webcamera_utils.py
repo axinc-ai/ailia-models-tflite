@@ -133,7 +133,7 @@ def get_writer(savepath, height, width, fps=20, rgb=True):
     return writer
 
 
-def get_capture(video):
+def get_capture(video, width = 0, height = 0):
     """
     Get cv2.VideoCapture
 
@@ -162,5 +162,10 @@ def get_capture(video):
         # if file path is given, open video file
         if check_file_existance(video):
             capture = cv2.VideoCapture(video)
+
+    if width != 0:
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+    if height != 0:
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
     return capture

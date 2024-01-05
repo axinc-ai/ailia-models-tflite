@@ -277,7 +277,7 @@ def recognize_from_video():
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    capture = get_capture(args.video)
+    capture = get_capture(args.video, args.camera_width, args.camera_height)
 
     # create video writer if savepath is specified as video format
     if args.savepath != SAVE_IMAGE_PATH:

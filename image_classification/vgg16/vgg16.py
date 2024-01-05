@@ -112,7 +112,7 @@ def recognize_from_video(interpreter):
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    capture = webcamera_utils.get_capture(args.video)
+    capture = webcamera_utils.get_capture(args.video, args.camera_width, args.camera_height)
 
     # create video writer if savepath is specified as video format
     if args.savepath is not None:
@@ -151,7 +151,7 @@ def recognize_from_video(interpreter):
         plot_results(
             input_image, preds_tf_lite, vgg16_labels.imagenet_category
         )
-        cv2.imshow('frame', frame)
+        cv2.imshow('frame', input_image)
         frame_shown = True
         time.sleep(SLEEP_TIME)
 

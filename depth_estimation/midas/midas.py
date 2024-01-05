@@ -175,7 +175,7 @@ def recognize_from_video(interpreter):
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    capture = get_capture(args.video)
+    capture = get_capture(args.video, args.camera_width, args.camera_height)
 
     # allocate output buffer
     f_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))

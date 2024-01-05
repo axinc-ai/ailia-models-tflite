@@ -211,7 +211,7 @@ def recognize_from_image_tiling(interpreter):
 
 def recognize_from_video(interpreter):
 
-    capture = webcamera_utils.get_capture(args.video)
+    capture = webcamera_utils.get_capture(args.video, args.camera_width, args.camera_height)
 
     # create video writer if savepath is specified as video format
     if args.savepath != SAVE_IMAGE_PATH:
