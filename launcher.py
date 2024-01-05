@@ -87,7 +87,8 @@ def get_options():
                 options.append(str(args_dict[key]))
 
     if args.input == None and args.video == None:
-        options = ["-v","0"]
+        options.append("-v")
+        options.append("0")
     
     return options
 
@@ -95,7 +96,6 @@ def run_model(model):
     options = get_options()
     
     cmd = sys.executable
-    print(cmd)
     cmd = [cmd, model["model"]+".py"] + options
 
     print(" ".join(cmd))
