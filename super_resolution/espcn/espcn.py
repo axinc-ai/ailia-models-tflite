@@ -85,24 +85,14 @@ def get_real_tensor(interpreter, output_details, idx):
 import PIL
 from PIL import Image, ImageFilter
 
-def get_lowres_image(img, upscale_factor):
-    """Return low-resolution image to use as model input."""
-    return img.resize(
-        (img.size[0] // upscale_factor, img.size[1] // upscale_factor),
-        PIL.Image.BICUBIC,
-    )
-
 def recognize_from_image():
     logger.info('Start inference...')
 
     for test_img_path in args.input:
-        upscale_factor = 3
+        img = cv2.imread(test_img_path)
+        ycbcr = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+        y, cb, cr = ycbcr[:,:,0], ycbcr[:,:,1], ycbcr[:,:,2]
 
-        img = Image.open(test_img_path)
-        lowres_input = get_lowres_image(img, upscale_factor)
-        ycbcr = img.convert("YCbCr")
-        y, cb, cr = ycbcr.split()
-        y = np.asarray(y)
         y = np.expand_dims(y, axis=2)
         y = y.astype("float32") / 255.0
         input_data = np.expand_dims(y, axis=0)
@@ -145,14 +135,23 @@ def recognize_from_image():
         # Restore the image in RGB color space.
         out_img_y = out_img_y.clip(0, 255)
         out_img_y = out_img_y.reshape((np.shape(out_img_y)[0], np.shape(out_img_y)[1]))
-        out_img_y = PIL.Image.fromarray(np.uint8(out_img_y), mode="L")
-        out_img_cb = cb.resize(out_img_y.size, PIL.Image.BICUBIC)
-        out_img_cr = cr.resize(out_img_y.size, PIL.Image.BICUBIC)
-        out_img = PIL.Image.merge("YCbCr", (out_img_y, out_img_cb, out_img_cr)).convert(
-            "RGB"
-        )
+        
+        out_img_y = out_img_y.astype(np.uint8)
+        out_img_cb = cv2.resize(cb, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
+        out_img_cr = cv2.resize(cr, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
+
+        out_img = np.zeros((out_img_y.shape[1], out_img_y.shape[0], 3)).astype(np.uint8)
+        out_img[:, :, 0] = out_img_y
+        out_img[:, :, 1] = out_img_cb
+        out_img[:, :, 2] = out_img_cr
+
+        out_img = cv2.cvtColor(out_img, cv2.COLOR_YUV2BGR)
+
+        #out_img = PIL.Image.merge("YCbCr", (out_img_y, out_img_cb, out_img_cr)).convert(
+        #    "RGB"
+        #)
         savepath = get_savepath(args.savepath, test_img_path)
-        out_img.save(savepath)
+        cv2.imwrite(savepath, out_img)
     logger.info('Script finished successfully.')
 
 
