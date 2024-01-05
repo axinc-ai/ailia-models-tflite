@@ -10,7 +10,8 @@ Ailia input shape: (128, 128, 3)
 Range: [-1, 1]
 
 ### Output
-![output_image](result.png)
+
+<img src="result.png" width="320px">
 
 ### Usage
 Automatically downloads the tflite file on the first run.
