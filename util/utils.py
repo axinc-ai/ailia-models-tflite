@@ -127,6 +127,16 @@ def get_base_parser(
         '-e', '--env_id', type=int, default=0,
         help='set environment id. 0 = CPU, 1 = NNAPI, 2 = MMALIB, 3 = MMALIB_COMPATIBLE, 4 = QNN'
     )
+    parser.add_argument(
+        '-cw', '--camera_width',
+        default=0, type=int,
+        help='set camera width'
+    )
+    parser.add_argument(
+        '-ch', '--camera_height',
+        default=0, type=int,
+        help='set camera height'
+    )
     return parser
 
 

@@ -225,7 +225,7 @@ def recognize_from_video():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
 
-    capture = webcamera_utils.get_capture(args.video)
+    capture = webcamera_utils.get_capture(args.video, args.camera_width, args.camera_height)
 
     # create video writer if savepath is specified as video format
     if args.savepath != SAVE_IMAGE_PATH:

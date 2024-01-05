@@ -137,7 +137,7 @@ def recognize_from_image():
         out_img_cr = cv2.resize(cr, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
         out_img_cb = cv2.resize(cb, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
 
-        out_img = np.zeros((out_img_y.shape[1], out_img_y.shape[0], 3)).astype(np.uint8)
+        out_img = np.zeros((out_img_y.shape[0], out_img_y.shape[1], 3)).astype(np.uint8)
         out_img[:, :, 0] = out_img_y
         out_img[:, :, 1] = out_img_cr
         out_img[:, :, 2] = out_img_cb
@@ -150,7 +150,92 @@ def recognize_from_image():
 
 
 def recognize_from_video():
-    logger.info("Video mode is not implemented")
+
+    capture = webcamera_utils.get_capture(args.video, args.camera_width, args.camera_height)
+
+    # create video writer if savepath is specified as video format
+    if args.savepath != SAVE_IMAGE_PATH:
+        logger.warning(
+            'currently, video results cannot be output correctly...'
+        )
+        f_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        f_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        writer = webcamera_utils.get_writer(args.savepath, f_h, f_w)
+    else:
+        writer = None
+
+    # net initialize
+    if args.tflite:
+        interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    else:
+        if args.flags or args.memory_mode or args.env_id:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+        else:
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+
+    i_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)) // 4
+    i_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)) // 4
+
+    interpreter.resize_tensor_input(0, (1, i_h, i_w, 1))
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    frame_shown = False
+    while(True):
+        ret, frame = capture.read()
+        if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
+            break
+        if frame_shown and cv2.getWindowProperty('frame', cv2.WND_PROP_VISIBLE) == 0:
+            break
+
+        h, w = frame.shape[0], frame.shape[1]
+        frame = frame[h//2:h//2+i_h, w//2:w//2+i_w, :]
+
+        ycrcb = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
+        y, cr, cb = ycrcb[:,:,0], ycrcb[:,:,1], ycrcb[:,:,2]
+
+        y = np.expand_dims(y, axis=2)
+        y = y.astype("float32") / 255.0
+        input_data = np.expand_dims(y, axis=0)
+
+        interpreter.set_tensor(input_details[0]['index'], input_data)
+        interpreter.invoke()
+        out_img_y = get_real_tensor(interpreter, output_details, 0)
+        out_img_y = out_img_y[0,:,:,0]
+
+        #out_img_y = cv2.resize(y, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC)
+        
+        out_img_y *= 255.0
+
+        # Restore the image in RGB color space.
+        out_img_y = out_img_y.clip(0, 255)
+        out_img_y = out_img_y.reshape((np.shape(out_img_y)[0], np.shape(out_img_y)[1]))
+        
+        out_img_y = out_img_y.astype(np.uint8)
+
+        out_img_cr = cv2.resize(cr, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
+        out_img_cb = cv2.resize(cb, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
+
+        out_img = np.zeros((out_img_y.shape[0], out_img_y.shape[1], 3)).astype(np.uint8)
+        out_img[:, :, 0] = out_img_y
+        out_img[:, :, 1] = out_img_cr
+        out_img[:, :, 2] = out_img_cb
+
+        out_img = cv2.cvtColor(out_img, cv2.COLOR_YCrCb2BGR)
+
+        cv2.imshow('frame', out_img)
+        frame_shown = True
+        # # save results
+        # if writer is not None:
+        #     writer.write(output_img)
+
+    capture.release()
+    cv2.destroyAllWindows()
+    if writer is not None:
+        writer.release()
+    logger.info('Script finished successfully.')
+
 
 
 def main():

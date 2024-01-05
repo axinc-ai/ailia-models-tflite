@@ -386,7 +386,7 @@ def recognize_from_video(interpreter_pose, interpreter_detect):
     input_details = interpreter_detect.get_input_details()
     output_details = interpreter_detect.get_output_details()
 
-    capture = webcamera_utils.get_capture(args.video)
+    capture = webcamera_utils.get_capture(args.video, args.camera_width, args.camera_height)
     if args.savepath != SAVE_IMAGE_PATH:
         f_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
         f_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))

@@ -235,7 +235,7 @@ def recognize_from_video(detector, estimator):
     tracked_hands = np.array([0.0] * num_hands)
     rois = [None] * num_hands
 
-    capture = get_capture(args.video)
+    capture = get_capture(args.video, args.camera_width, args.camera_height)
 
     # create video writer if savepath is specified as video format
     if args.savepath != SAVE_IMAGE_PATH:

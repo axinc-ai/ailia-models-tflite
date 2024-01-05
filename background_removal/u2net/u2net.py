@@ -98,7 +98,7 @@ def recognize_from_video(interpreter):
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    capture = webcamera_utils.get_capture(args.video)
+    capture = webcamera_utils.get_capture(args.video, args.camera_width, args.camera_height)
 
     # create video writer if savepath is specified as video format
     f_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
