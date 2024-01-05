@@ -217,7 +217,7 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
     input_details_det = interpreter_det.get_input_details()
     output_details_det = interpreter_det.get_output_details()
 
-    capture = webcamera_utils.get_capture(args.video)
+    capture = webcamera_utils.get_capture(args.video, args.camera_width, args.camera_height)
 
     # create video writer if savepath is specified as video format
     if args.savepath is not None:

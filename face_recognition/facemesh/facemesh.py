@@ -12,6 +12,7 @@ from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
+from facemesh_const import FACEMESH_TESSELATION
 
 # logger
 from logging import getLogger   # noqa: E402
@@ -101,6 +102,19 @@ def draw_landmarks(img, points, color=(0, 0, 255), size=2):
         x, y = int(x), int(y)
         cv2.circle(img, (x, y), size, color, thickness=cv2.FILLED)
 
+
+def draw_face_landmarks(
+        image,
+        landmark_list,
+        size = 1):
+    for connection in FACEMESH_TESSELATION:
+        start_idx = connection[0]
+        end_idx = connection[1]
+        sx, sy = int(landmark_list[start_idx][0]), int(landmark_list[start_idx][1])
+        ex, ey = int(landmark_list[end_idx][0]), int(landmark_list[end_idx][1])
+        cv2.line(
+            image, (sx,sy), (ex,ey),
+            (0, 255, 0), size)
 
 # ======================
 # Main functions
@@ -201,7 +215,8 @@ def recognize_from_image():
         for i in range(len(landmarks)):
             landmark, face_flag = landmarks[i], expit(confidences[i])
             if face_flag > 0:
-                draw_landmarks(src_img, landmark[:, :2], size=1)
+                #draw_landmarks(src_img, landmark[:, :2], size=1)
+                draw_face_landmarks(src_img, landmark[:, :2], size=1)
 
         savepath = get_savepath(args.savepath, image_path)
         logger.info(f'saved at : {savepath}')
@@ -294,7 +309,8 @@ def recognize_from_video():
             for i in range(len(landmarks)):
                 landmark, face_flag = landmarks[i], expit(confidences[i])
                 if face_flag > 0:
-                    draw_landmarks(frame, landmark[:, :2], size=1)
+                    #draw_landmarks(frame, landmark[:, :2], size=1)
+                    draw_face_landmarks(frame, landmark[:, :2], size=1)
 
         visual_img = frame
         if args.video == '0': # Flip horizontally if camera
