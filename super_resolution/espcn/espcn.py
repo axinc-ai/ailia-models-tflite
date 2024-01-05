@@ -199,19 +199,19 @@ def recognize_from_video():
         y = y.astype("float32") / 255.0
         input_data = np.expand_dims(y, axis=0)
 
-        interpreter.set_tensor(input_details[0]['index'], input_data)
+        inputs = get_input_tensor(input_data, input_details, 0)
+
+        interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
         out_img_y = get_real_tensor(interpreter, output_details, 0)
         out_img_y = out_img_y[0,:,:,0]
-
-        #out_img_y = cv2.resize(y, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC)
         
         out_img_y *= 255.0
 
         # Restore the image in RGB color space.
         out_img_y = out_img_y.clip(0, 255)
         out_img_y = out_img_y.reshape((np.shape(out_img_y)[0], np.shape(out_img_y)[1]))
-        
+
         out_img_y = out_img_y.astype(np.uint8)
 
         out_img_cr = cv2.resize(cr, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
@@ -223,6 +223,9 @@ def recognize_from_video():
         out_img[:, :, 2] = out_img_cb
 
         out_img = cv2.cvtColor(out_img, cv2.COLOR_YCrCb2BGR)
+
+        #bilinear_img = cv2.resize(frame, (out_img_y.shape[1], out_img_y.shape[0]))
+        #out_img[:, 0:out_img.shape[1]//2, :] = bilinear_img[:, 0:out_img.shape[1]//2, :]
 
         cv2.imshow('frame', out_img)
         frame_shown = True
