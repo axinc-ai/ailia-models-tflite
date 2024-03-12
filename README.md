@@ -78,6 +78,7 @@ pip3 install .
 | [<img src="object_detection/yolox/output.jpg" width=128px>](object_detection/yolox/) | [YOLOX](/object_detection/yolox/) | [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) | Pytorch | 1.1.1 |
 | [<img src="object_detection/efficientdet_lite/output.jpg" width=128px>](object_detection/efficientdet_lite/) | [EfficientDetLite](/object_detection/efficientdet_lite/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/main/103_EfficientDet_lite) | TensorFlow | 1.1.3 |
 
+
 ## Pose estimation
 
 | | Model | Reference | Exported From | Supported Ailia Version |
@@ -102,3 +103,7 @@ You can use cui launchar.
 ```
 python3 launchar.py
 ```
+
+# i.MX8 Support Status
+
+[See NXP](NXP.md)
