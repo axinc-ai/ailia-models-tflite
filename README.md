@@ -8,7 +8,7 @@ ailia TFLite Runtime is a TensorFlow Lite compatible inference engine. Written i
 
 # Install
 
-## NEW - ailia SDK can now be installed with "pip3 install ailia" ! 
+## NEW - ailia TFLite Runtime can now be installed with "pip3 install ailia_tflite" ! 
 
 Run the following command. The Python version is compatible with Windows, macOS, and Linux. It is also planned to support Arm Linux in the future.
 
