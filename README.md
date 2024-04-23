@@ -4,18 +4,16 @@ Quantized tflite models for ailia TFLite Runtime
 
 # About ailia TFLite Runtime
 
-ailia TFLite Runtime is a TensorFlow Lite compatible inference engine. Written in C99, it supports inference in Non-OS and RTOS. It also supports high-speed inference using Intel MKL on a PC, and operates 360 times faster than the official TensorFlow Lite using Int8 models. Currently, we are developing Android NNAPI support and Unity Plugin, which will be available in the 1Q of 2023.
+ailia TFLite Runtime is a TensorFlow Lite compatible inference engine. Written in C99, it supports inference in Non-OS and RTOS. It also supports high-speed inference using Intel MKL on a PC, and operates 360 times faster than the official TensorFlow Lite using Int8 models.
 
 # Install
 
-Get the ailia TFLite Runtime package from [download link](https://axip-console.appspot.com/trial/terms/AILIA-TFLITE).
-Place the license file to python folder.
+## NEW - ailia SDK can now be installed with "pip3 install ailia" ! 
+
 Run the following command.
 
 ```
-cd ailia_tflite_runtime/python
-python3 bootstrap.py
-pip3 install .
+pip3 install ailia_tflite
 ```
 
 # Models
