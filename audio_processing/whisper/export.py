@@ -8,6 +8,8 @@ from datasets import load_dataset
 from transformers import WhisperProcessor, WhisperFeatureExtractor, TFWhisperForConditionalGeneration, WhisperTokenizer
 
 generate_saved_model = False
+generate_tflite_model = False
+
 quantize = True
 
 feature_extractor = WhisperFeatureExtractor.from_pretrained("openai/whisper-tiny.en")
@@ -94,22 +96,23 @@ def representative_dataset():
       yield [attention, input_ids, input_features]
 
 # Convert the model
-if not quantize:
-  converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_dir)
-  converter.target_spec.supported_ops = [
-    tf.lite.OpsSet.TFLITE_BUILTINS, # enable TensorFlow Lite ops.
-    tf.lite.OpsSet.SELECT_TF_OPS # enable TensorFlow ops.
-  ]
-  converter.optimizations = [tf.lite.Optimize.DEFAULT]
-  tflite_model = converter.convert()
-else:
-  converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_dir)
-  converter.optimizations = [tf.lite.Optimize.DEFAULT]
-  converter.representative_dataset = representative_dataset
-  converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8, tf.lite.OpsSet.SELECT_TF_OPS]
-  converter.inference_input_type = tf.float32
-  converter.inference_output_type = tf.float32 # int32 can not selected for int8
-  tflite_quant_model = converter.convert()
+if generate_tflite_model:
+  if not quantize:
+    converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_dir)
+    converter.target_spec.supported_ops = [
+      tf.lite.OpsSet.TFLITE_BUILTINS, # enable TensorFlow Lite ops.
+      tf.lite.OpsSet.SELECT_TF_OPS # enable TensorFlow ops.
+    ]
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    tflite_model = converter.convert()
+  else:
+    converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_dir)
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.representative_dataset = representative_dataset
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8, tf.lite.OpsSet.SELECT_TF_OPS]
+    converter.inference_input_type = tf.float32
+    converter.inference_output_type = tf.float32 # int32 can not selected for int8
+    tflite_model = converter.convert()
 
 # Save the model
 if quantize:
@@ -117,17 +120,32 @@ if quantize:
 else:
   tflite_model_path = 'whisper-tiny-en-float.tflite'
 
-with open(tflite_model_path, 'wb') as f:
-    f.write(tflite_model)
+if generate_tflite_model:
+  with open(tflite_model_path, 'wb') as f:
+      f.write(tflite_model)
 
 # %%
 # loaded model... now with generate!  
 interpreter = tf.lite.Interpreter(tflite_model_path)
 
-tflite_generate = interpreter.get_signature_runner()
-generated_ids = tflite_generate(input_features=input_features)["sequences"]
-print(generated_ids)
-transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-print(transcription)
+if quantize:
+  interpreter.allocate_tensors()
+  for i in range(450):
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    attention = tf.constant(0, shape=(1, 1), dtype=tf.int32)
+    input_ids = tf.constant(0, shape=(1, 1), dtype=tf.int32)
+    interpreter.set_tensor(input_details[0]['index'], attention)
+    interpreter.set_tensor(input_details[1]['index'], input_ids)
+    interpreter.set_tensor(input_details[2]['index'], input_features)
+    interpreter.invoke()
+    generated_ids = interpreter.get_tensor(output_details[0]['index'])
+    print(generated_ids)
+else:
+  tflite_generate = interpreter.get_signature_runner()
+  generated_ids = tflite_generate(input_features=input_features)["sequences"]
+  print(generated_ids)
+  transcription = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+  print(transcription)
 
 
