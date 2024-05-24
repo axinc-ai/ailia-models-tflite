@@ -125,7 +125,7 @@ def get_base_parser(
     )
     parser.add_argument(
         '-e', '--env_id', type=int, default=0,
-        help='set environment id. 0 = CPU, 1 = NNAPI, 2 = MMALIB, 3 = MMALIB_COMPATIBLE, 4 = QNN'
+        help='set environment id. 0 = CPU, 1 = NNAPI, 2 = MMALIB, 3 = MMALIB_COMPATIBLE, 4 = QNN, 5 = DELEGATE'
     )
     parser.add_argument(
         '-cw', '--camera_width',
@@ -136,6 +136,10 @@ def get_base_parser(
         '-ch', '--camera_height',
         default=0, type=int,
         help='set camera height'
+    )
+    parser.add_argument(
+        '--delegate_path', type=str, default=None,
+        help='external delegate file path'
     )
     return parser
 
@@ -241,3 +245,9 @@ def get_savepath(arg_path, src_path, prefix='', post_fix='_res', ext=None):
             arg_path, prefix + src_base + post_fix + new_ext
         )
     return new_path
+
+def delegate_obj(delegate_path):
+    if delegate_path is None:
+        return None
+    else:
+        return [ailia_tflite.load_delegate(delegate_path)]
