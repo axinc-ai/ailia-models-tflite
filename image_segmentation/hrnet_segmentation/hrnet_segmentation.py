@@ -7,7 +7,7 @@ from hrnet_utils import smooth_output, save_pred, gen_preds_img_np
 
 
 sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath  # noqa: E402
+from utils import get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -82,12 +82,13 @@ def recognize_from_image():
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
-        if args.flags or args.memory_mode or args.env_id or args.env_id:
+        if args.flags or args.memory_mode or args.env_id or args.env_id or args.delegate_path is not None:
             interpreter = ailia_tflite.Interpreter(
                 model_path=MODEL_PATH, 
                 memory_mode=args.memory_mode, 
                 flags=args.flags,
-                env_id = args.env_id
+                env_id = args.env_id,
+                experimental_delegates = delegate_obj(args.delegate_path)
             )
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
