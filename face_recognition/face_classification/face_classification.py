@@ -15,7 +15,7 @@ from logging import getLogger  # noqa: E402
 import webcamera_utils  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
-from utils import get_base_parser, update_parser  # noqa: E402
+from utils import get_base_parser, update_parser, delegate_obj  # noqa: E402
 
 logger = getLogger(__name__)
 
@@ -390,8 +390,8 @@ def main():
     if args.tflite:
         interpreter_emo = tf.lite.Interpreter(model_path=EMOTION_MODEL_PATH)
     else:
-        if args.flags or args.memory_mode or args.env_id:
-            interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+        if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
+            interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
         else:
             interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH)
     if args.profile:
@@ -402,8 +402,8 @@ def main():
     if args.tflite:
         interpreter_gen = tf.lite.Interpreter(model_path=GENDER_MODEL_PATH)
     else:
-        if args.flags or args.memory_mode or args.env_id:
-            interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+        if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
+            interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
         else:
             interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH)
     if args.profile:
