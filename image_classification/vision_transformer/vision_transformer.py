@@ -47,7 +47,6 @@ parser.add_argument(
 )
 args = update_parser(parser)
 # for debug
-args.float = True
 args.tflite = True
 
 if args.tflite:
@@ -99,16 +98,13 @@ def recognize_from_image():
     for image_path in args.input:
         # prepare input data
         input_data = None
-        dtype = np.int8
-        if args.float:
-            dtype = np.float32
         image = load_image(
             image_path,
             (IMAGE_HEIGHT, IMAGE_WIDTH),
             normalize_type='127.5',
             gen_input_ailia_tflite=True,
             bgr_to_rgb=True,
-            output_type=dtype,
+            output_type=np.float32, # float
             tta=args.tta
         )
         if input_data is None:
