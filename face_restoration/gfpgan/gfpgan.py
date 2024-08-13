@@ -92,6 +92,7 @@ def recognize_from_image():
         rgb = rgb.astype("float32") / 255.0
         rgb = (rgb - 0.5) / 0.5
         input_data = np.expand_dims(rgb, axis=0)
+        input_data = np.transpose(input_data, (0, 3, 1, 2))
 
         # net initialize
         if args.tflite:
@@ -127,9 +128,10 @@ def recognize_from_image():
 
         out_img = out_img + 1
         out_img *= 127.5
+        out_img = out_img.clip(0, 255)
         out_img = out_img.astype(np.uint8)
-
-        out_img = cv2.cvtColor(out_img, cv2.RGB2BGR)
+        out_img = np.transpose(out_img, (0, 2, 3, 1))
+        out_img = out_img[0,:,:,::-1]
 
         savepath = get_savepath(args.savepath, test_img_path)
         cv2.imwrite(savepath, out_img)
@@ -183,6 +185,7 @@ def recognize_from_video():
         y = y.astype("float32") / 255.0
         y = (y - 0.5) / 0.5
         input_data = np.expand_dims(y, axis=0)
+        input_data = np.transpose(input_data, (0, 3, 1, 2))
 
         inputs = get_input_tensor(input_data, input_details, 0)
 
@@ -192,13 +195,10 @@ def recognize_from_video():
         
         out_img = out_img + 1
         out_img *= 127.5
-
-        # Restore the image in RGB color space.
         out_img = out_img.clip(0, 255)
-        out_img = cv2.cvtColor(out_img, cv2.COLOR_RGB2BGR)
-
-        #bilinear_img = cv2.resize(frame, (out_img_y.shape[1], out_img_y.shape[0]))
-        #out_img[:, 0:out_img.shape[1]//2, :] = bilinear_img[:, 0:out_img.shape[1]//2, :]
+        out_img = out_img.astype(np.uint8)
+        out_img = np.transpose(out_img, (0, 2, 3, 1))
+        out_img = out_img[0,:,:,::-1]
 
         cv2.imshow('frame', out_img)
         frame_shown = True
