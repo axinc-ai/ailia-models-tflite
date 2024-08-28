@@ -3,15 +3,11 @@ import os
 import time
 from logging import getLogger
 
-import numpy as np
 import cv2
-
-import ailia
 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import ailia
 
 # import original modules
 sys.path.append('../../util')
@@ -25,9 +21,9 @@ logger = getLogger(__name__)
 # Parameters
 # ======================
 
-WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_hiera_l.onnx'
-WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_hiera_l.onnx'
-WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_hiera_l.onnx'
+WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_hiera_l.tflite'
+WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_hiera_l.tflite'
+WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_hiera_l.tflite'
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/segment-anything-2/'
 
 IMAGE_PATH = 'truck.jpg'
