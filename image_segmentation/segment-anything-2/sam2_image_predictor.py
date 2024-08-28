@@ -39,13 +39,21 @@ class SAM2ImagePredictor:
         image_encoder.set_tensor(input_details[0]["index"], img)
         image_encoder.invoke()
 
-        vision_features = image_encoder.get_tensor(output_details[0]["index"])
+        vision_features = image_encoder.get_tensor(output_details[4]["index"]) # 4 or 6
         vision_pos_enc_0 = image_encoder.get_tensor(output_details[1]["index"])
-        vision_pos_enc_1 = image_encoder.get_tensor(output_details[2]["index"])
+        vision_pos_enc_1 = image_encoder.get_tensor(output_details[5]["index"])
         vision_pos_enc_2 = image_encoder.get_tensor(output_details[3]["index"])
-        backbone_fpn_0 = image_encoder.get_tensor(output_details[4]["index"])
-        backbone_fpn_1 = image_encoder.get_tensor(output_details[5]["index"])
+        backbone_fpn_0 = image_encoder.get_tensor(output_details[0]["index"])
+        backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
         backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
+
+        print("vision_features", vision_features.shape)
+        print("vision_pos_enc_0", vision_pos_enc_0.shape)
+        print("vision_pos_enc_1", vision_pos_enc_1.shape)
+        print("vision_pos_enc_2", vision_pos_enc_2.shape)
+        print("backbone_fpn_0", backbone_fpn_0.shape)
+        print("backbone_fpn_1", backbone_fpn_1.shape)
+        print("backbone_fpn_2", backbone_fpn_2.shape)
 
         backbone_out = {"vision_features":vision_features,
                         "vision_pos_enc":[vision_pos_enc_0, vision_pos_enc_1, vision_pos_enc_2],
@@ -206,9 +214,9 @@ class SAM2ImagePredictor:
         prompt_encoder.set_tensor(input_details[1]["index"], masks_enable)
         prompt_encoder.invoke()
 
-        sparse_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
-        dense_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
-        dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
+        sparse_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
+        dense_embeddings = prompt_encoder.get_tensor(output_details[2]["index"])
+        dense_pe = prompt_encoder.get_tensor(output_details[0]["index"])
 
         # Predict masks
         batched_mode = (
@@ -221,33 +229,43 @@ class SAM2ImagePredictor:
 
         image_feature = features["image_embed"]
 
+        print("concat_points", concat_points[0].shape)
+        print("sparse_embeddings", sparse_embeddings.shape)
 
         mask_decoder.allocate_tensors()
         input_details = mask_decoder.get_input_details()
         output_details = mask_decoder.get_output_details()
-        #interpreter.resize_tensor_input(
-        #    input_details[0]["index"], 
-        #    [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]
-        #)
-        #image_encoder.allocate_tensors()
+        mask_decoder.resize_tensor_input(
+            input_details[1]["index"], 
+            [1, sparse_embeddings.shape[1], 256]
+        )
+        mask_decoder.allocate_tensors()
 
-        batched_mode_np = np.zeros((1), dtype=bool)
-        if batched_mode:
-            batched_mode_np[0] = True
+        #batched_mode_np = np.zeros((1), dtype=bool)
+        #if batched_mode:
+        #    batched_mode_np[0] = True
+        
+        print("high_res_features[0]", high_res_features[0].shape)
+        print("high_res_features[1]", high_res_features[1].shape)
 
         mask_decoder.set_tensor(input_details[3]["index"], image_feature)
         mask_decoder.set_tensor(input_details[6]["index"], dense_pe)
         mask_decoder.set_tensor(input_details[1]["index"], sparse_embeddings)
         mask_decoder.set_tensor(input_details[2]["index"], dense_embeddings)
-        mask_decoder.set_tensor(input_details[5]["index"], batched_mode_np)
-        mask_decoder.set_tensor(input_details[0]["index"], high_res_features[1])
+        mask_decoder.set_tensor(input_details[5]["index"], batched_mode)
+        mask_decoder.set_tensor(input_details[0]["index"], high_res_features[0])
         mask_decoder.set_tensor(input_details[4]["index"], high_res_features[1])
         mask_decoder.invoke()
 
-        masks = mask_decoder.get_tensor(output_details[0]["index"])
-        iou_pred = mask_decoder.get_tensor(output_details[1]["index"])
-        sam_tokens_out = mask_decoder.get_tensor(output_details[2]["index"])
-        object_score_logits = mask_decoder.get_tensor(output_details[3]["index"])
+        masks = mask_decoder.get_tensor(output_details[2]["index"])
+        iou_pred = mask_decoder.get_tensor(output_details[0]["index"])
+        sam_tokens_out = mask_decoder.get_tensor(output_details[3]["index"])
+        object_score_logits = mask_decoder.get_tensor(output_details[1]["index"])
+
+        print("masks", masks.shape)
+        print("iou_pred", iou_pred.shape)
+        print("sam_tokens_out", sam_tokens_out.shape)
+        print("object_score_logits", object_score_logits.shape)
 
         low_res_masks, iou_predictions, _, _  = self.forward_postprocess(masks, iou_pred, sam_tokens_out, object_score_logits, multimask_output)
 
