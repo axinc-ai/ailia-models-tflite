@@ -194,16 +194,16 @@ class SAM2ImagePredictor:
         prompt_encoder.allocate_tensors()
         input_details = prompt_encoder.get_input_details()
         output_details = prompt_encoder.get_output_details()
-        #interpreter.resize_tensor_input(
-        #    input_details[0]["index"], 
-        #    [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]
-        #)
-        #image_encoder.allocate_tensors()
+        prompt_encoder.resize_tensor_input(
+            input_details[2]["index"], 
+            [1, concat_points[0].shape[1], 2]
+        )
+        prompt_encoder.allocate_tensors()
 
-        prompt_encoder.set_tensor(input_details[0]["index"], concat_points[0])
-        prompt_encoder.set_tensor(input_details[1]["index"], concat_points[1])
-        prompt_encoder.set_tensor(input_details[2]["index"], mask_input_dummy)
-        prompt_encoder.set_tensor(input_details[3]["index"], masks_enable)
+        prompt_encoder.set_tensor(input_details[2]["index"], concat_points[0])
+        prompt_encoder.set_tensor(input_details[3]["index"], concat_points[1])
+        prompt_encoder.set_tensor(input_details[0]["index"], mask_input_dummy)
+        prompt_encoder.set_tensor(input_details[1]["index"], masks_enable)
         prompt_encoder.invoke()
 
         sparse_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
@@ -231,12 +231,17 @@ class SAM2ImagePredictor:
         #)
         #image_encoder.allocate_tensors()
 
-        mask_decoder.set_tensor(input_details[0]["index"], image_feature)
-        mask_decoder.set_tensor(input_details[1]["index"], dense_pe)
-        mask_decoder.set_tensor(input_details[2]["index"], sparse_embeddings)
-        mask_decoder.set_tensor(input_details[3]["index"], dense_embeddings)
-        mask_decoder.set_tensor(input_details[4]["index"], high_res_features[0])
-        mask_decoder.set_tensor(input_details[5]["index"], high_res_features[1])
+        batched_mode_np = np.zeros((1), dtype=bool)
+        if batched_mode:
+            batched_mode_np[0] = True
+
+        mask_decoder.set_tensor(input_details[3]["index"], image_feature)
+        mask_decoder.set_tensor(input_details[6]["index"], dense_pe)
+        mask_decoder.set_tensor(input_details[1]["index"], sparse_embeddings)
+        mask_decoder.set_tensor(input_details[2]["index"], dense_embeddings)
+        mask_decoder.set_tensor(input_details[5]["index"], batched_mode_np)
+        mask_decoder.set_tensor(input_details[0]["index"], high_res_features[1])
+        mask_decoder.set_tensor(input_details[4]["index"], high_res_features[1])
         mask_decoder.invoke()
 
         masks = mask_decoder.get_tensor(output_details[0]["index"])
