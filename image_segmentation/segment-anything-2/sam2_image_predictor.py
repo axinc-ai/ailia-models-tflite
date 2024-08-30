@@ -206,6 +206,10 @@ class SAM2ImagePredictor:
             input_details[2]["index"], 
             [1, concat_points[0].shape[1], 2]
         )
+        prompt_encoder.resize_tensor_input(
+            input_details[3]["index"], 
+            [1, concat_points[1].shape[1]]
+        )
         prompt_encoder.allocate_tensors()
 
         prompt_encoder.set_tensor(input_details[2]["index"], concat_points[0])
@@ -215,8 +219,8 @@ class SAM2ImagePredictor:
         prompt_encoder.invoke()
 
         sparse_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
-        dense_embeddings = prompt_encoder.get_tensor(output_details[2]["index"])
-        dense_pe = prompt_encoder.get_tensor(output_details[0]["index"])
+        dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
+        dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
 
         # Predict masks
         batched_mode = (
@@ -229,8 +233,13 @@ class SAM2ImagePredictor:
 
         image_feature = features["image_embed"]
 
-        print("concat_points", concat_points[0].shape)
+        print("coords", concat_points[0].shape)
+        print("labels", concat_points[1].shape)
+        print("masks", mask_input_dummy.shape)
+
         print("sparse_embeddings", sparse_embeddings.shape)
+        print("dense_embeddings", dense_embeddings.shape)
+        print("dense_pe", dense_pe.shape)
 
         mask_decoder.allocate_tensors()
         input_details = mask_decoder.get_input_details()
