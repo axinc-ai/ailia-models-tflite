@@ -6,7 +6,10 @@ import cv2
 import hashlib
 import sys
 
-sys.path.append('../../util')
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
 from model_utils import format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import normalize_image
 

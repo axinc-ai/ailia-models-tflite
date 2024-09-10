@@ -6,14 +6,15 @@ import time
 import cv2
 import numpy as np
 
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, delegate_obj  # noqa: E402
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
-from nms_utils import nms
 
-# logger
 from logging import getLogger   # noqa: E402
 logger = getLogger(__name__)
 
@@ -95,6 +96,7 @@ elif args.model == 'automl':
         MODEL_PATH = f'efficientdet-lite0_integer_quant_automl.tflite'
     DETECTION_SIZE = 320
 
+MODEL_PATH = file_abs_path(__file__, MODEL_PATH)
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
 
 
@@ -358,9 +360,7 @@ def recognize_from_video():
 
 def main():
     # model files check and download
-    check_and_download_models(
-        MODEL_PATH, REMOTE_PATH
-    )
+    check_and_download_models(MODEL_PATH, REMOTE_PATH)
 
     if args.video is not None:
         # video mode

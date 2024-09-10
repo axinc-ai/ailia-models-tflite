@@ -5,13 +5,15 @@ import cv2
 import numpy as np
 
 # import original modules
-sys.path.append('../../util')
-# logger
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
 from logging import getLogger  # noqa: E402
 
 import webcamera_utils  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
-from utils import get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
 
 from u2net_utils import imread, load_image, norm, save_result, transform  # noqa: E402
 
@@ -84,7 +86,8 @@ if args.opset == '10':
     MODEL_PATH = f'{model_size}_{model_param}.tflite'
 else:
     MODEL_PATH = f'{model_size}_opset11_{model_param}.tflite'
-    
+
+MODEL_PATH = file_abs_path(__file__, MODEL_PATH)
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/u2net/'
 
 

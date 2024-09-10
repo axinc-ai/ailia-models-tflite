@@ -7,8 +7,11 @@ import numpy as np
 import squeezenet_labels
 
 # import original modules
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, delegate_obj  # noqa: E402
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results  # noqa: E402
@@ -50,7 +53,7 @@ if args.float:
     MODEL_NAME = 'squeezenet_float'
 else:
     MODEL_NAME = 'squeezenet_quant'
-MODEL_PATH = f'{MODEL_NAME}.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/squeezenet/'
 
 

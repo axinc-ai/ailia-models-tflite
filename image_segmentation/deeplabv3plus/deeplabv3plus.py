@@ -7,14 +7,15 @@ import numpy as np
 from deeplab_utils import *
 
 # import original modules
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
-from classifier_utils import plot_results, print_results  # noqa: E402
 import webcamera_utils  # noqa: E402
 
-# logger
 from logging import getLogger   # noqa: E402
 logger = getLogger(__name__)
 
@@ -54,7 +55,7 @@ if args.float:
     MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256'
 else:
     MODEL_NAME = 'deeplab_v3_plus_mnv2_decoder_256_integer_quant'
-MODEL_PATH = f'{MODEL_NAME}.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/deeplabv3plus/'
 
 

@@ -6,14 +6,16 @@ import cv2
 import numpy as np
 
 # import original modules
-sys.path.append('../../util')
-# logger
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
 from logging import getLogger  # noqa: E402
 
 import webcamera_utils  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
-from utils import get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
+from utils import file_abs_path, get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
 
 logger = getLogger(__name__)
 
@@ -58,7 +60,7 @@ if args.float:
     MODEL_NAME = 'srresnet.opt_float32'
 else:
     MODEL_NAME = 'srresnet.opt_full_integer_quant'
-MODEL_PATH = f'{MODEL_NAME}.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/srresnet/'
 
 

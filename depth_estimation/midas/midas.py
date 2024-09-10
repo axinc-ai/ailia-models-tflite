@@ -6,13 +6,15 @@ import cv2
 import numpy as np
 
 # import original modules
-sys.path.append('../../util')
-# logger
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
 from logging import getLogger  # noqa: E402
 
-from image_utils import resize_image, load_image, normalize_image  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor, get_output_tensor #★  # noqa: E402
-from utils import get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
+from image_utils import resize_image, load_image  # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor # noqa: E402
+from utils import file_abs_path, get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
 from webcamera_utils import get_capture, get_writer, preprocess_frame  # noqa: E402
 
 logger = getLogger(__name__)
@@ -69,8 +71,7 @@ else:
         MODEL_NAME = 'midas_v2.1_small_quant_recalib'
     if not args.v21:
         MODEL_NAME = 'midas_quant_recalib'
-MODEL_PATH = f'{MODEL_NAME}.tflite'
-
+MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/midas/'
 
 

@@ -4,8 +4,10 @@ import os
 import cv2
 import numpy as np
 
-sys.path.append('../../util')
-# logger
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
 from logging import getLogger  # noqa: E402
 
 logger = getLogger(__name__)

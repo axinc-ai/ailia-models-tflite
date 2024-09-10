@@ -6,15 +6,17 @@ import time
 import cv2
 import numpy as np
 
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 from nms_utils import nms
-from detector_utils import plot_results, write_predictions
+from detector_utils import write_predictions
 
-# logger
 from logging import getLogger   # noqa: E402
 logger = getLogger(__name__)
 
@@ -78,10 +80,7 @@ if args.shape:
 # Parameters 2
 # ======================
 MODEL_NAME = 'yolov3-tiny'
-if args.float:
-    MODEL_PATH = f'yolov3-tiny-416.tflite'
-else:
-    MODEL_PATH = f'yolov3-tiny-416_full_integer_quant.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}-416{"" if args.float else "_full_integer_quant"}.tflite')
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
 
 
@@ -333,9 +332,7 @@ def recognize_from_video():
 
 def main():
     # model files check and download
-    check_and_download_models(
-        MODEL_PATH, REMOTE_PATH
-    )
+    check_and_download_models(MODEL_PATH, REMOTE_PATH)
 
     if args.video is not None:
         # video mode

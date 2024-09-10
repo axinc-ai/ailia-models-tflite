@@ -6,8 +6,11 @@ import cv2
 import mobilenetv2ssdlite_utils as mut
 
 # import original modules
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, delegate_obj  # noqa: E402
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from detector_utils import plot_results  # noqa: E402
@@ -38,7 +41,7 @@ else:
 # Parameters 2
 # ======================
 MODEL_NAME = 'ssdlite_mobilenet_v2_coco_300_integer_quant_with_postprocess'
-MODEL_PATH = f'{MODEL_NAME}.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/mobilenetssd/'
 
 

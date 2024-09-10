@@ -7,7 +7,10 @@ import numpy as np
 import const
 
 # import original modules
-sys.path.append('../../util')
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
 from model_utils import format_input_tensor, get_output_tensor  # noqa: E402
 
 

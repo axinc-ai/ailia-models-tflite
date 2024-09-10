@@ -9,14 +9,15 @@ from yolox_utils import preproc as preprocess
 from yolox_utils import postprocess, filter_predictions
 
 # import original modules
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
 from model_utils import check_and_download_models, format_input_tensor, \
     get_output_tensor
 from detector_utils import plot_results, write_predictions
 import webcamera_utils
 
-# logger
 from logging import getLogger
 
 logger = getLogger(__name__)
@@ -106,7 +107,7 @@ else:
     stem = f'{MODEL_NAME}_full_integer_quant'
 if not args.normal:
     stem += '.opt'
-MODEL_PATH = f'{stem}.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{stem}.tflite')
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
 
 HEIGHT = MODEL_PARAMS[MODEL_NAME]['input_shape'][0]

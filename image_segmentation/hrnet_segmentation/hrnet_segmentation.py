@@ -6,8 +6,11 @@ import numpy as np
 from hrnet_utils import smooth_output, save_pred, gen_preds_img_np
 
 
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
+import os
+es = os.path.abspath(__file__).split('/')
+util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+sys.path.append(util_path)
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 import webcamera_utils  # noqa: E402
@@ -59,7 +62,7 @@ else:
     MODEL_NAME = args.arch + "_integer_quant"
 
 
-MODEL_PATH = f'{MODEL_NAME}.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/hrnet/'
 
 
