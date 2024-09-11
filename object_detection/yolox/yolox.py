@@ -9,8 +9,13 @@ from yolox_utils import preproc as preprocess
 from yolox_utils import postprocess, filter_predictions
 
 # import original modules
-es = os.path.abspath(__file__).split('/')
-util_path = os.path.join('/', *es[:es.index('ailia-models-tflite') + 1], 'util')
+REPO_NAME = "ailia-models-tflite"
+path_elements = os.path.abspath(__file__).split('/')
+assert REPO_NAME in path_elements, """
+    It seems you renamed the repo,
+    please name it back to `ailia-models-tflite`,
+    or update the REPO_NAME varibale to reflect the change you did"""
+util_path = os.path.join('/', *path_elements[:path_elements.index(REPO_NAME) + 1], 'util')
 sys.path.append(util_path)
 from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
 from model_utils import check_and_download_models, format_input_tensor, \
