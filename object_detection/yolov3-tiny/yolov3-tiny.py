@@ -85,7 +85,11 @@ if args.shape:
 # Parameters 2
 # ======================
 MODEL_NAME = 'yolov3-tiny'
-MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}-416{"" if args.float else "_full_integer_quant"}.tflite')
+if args.float:
+    MODEL_PATH = f'{MODEL_NAME}-416.tflite'
+else:
+    MODEL_PATH = f'{MODEL_NAME}-416_full_integer_quant.tflite'
+MODEL_PATH = file_abs_path(__file__, MODEL_PATH)
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{MODEL_NAME}/'
 
 
