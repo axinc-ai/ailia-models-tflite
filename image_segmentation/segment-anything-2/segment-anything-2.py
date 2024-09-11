@@ -152,6 +152,7 @@ def get_input_point():
     input_box = None
     if box:
         input_box = np.array(box)
+    
     return input_point, input_label, input_box
 
 
@@ -236,8 +237,10 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
             if os.path.splitext(p)[-1] in [".jpg", ".jpeg", ".JPG", ".JPEG"]
         ]
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
-        input_point = np.array([[210, 350], [250, 220]], dtype=np.float32)
-        input_label = np.array([1, 1], np.int32)
+        #input_point = np.array([[210, 350], [250, 220]], dtype=np.float32)
+        #input_label = np.array([1, 1], np.int32)
+        input_point = np.array([[210, 350]], dtype=np.float32) # tflite版は1pointのみ対応
+        input_label = np.array([1], np.int32)
         input_box = None
         video_width = 960
         video_height = 540
