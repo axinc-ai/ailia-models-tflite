@@ -10,9 +10,9 @@ import facemesh_utils as fut
 import os
 REPO_NAME = "ailia-models-tflite"
 path_elements = os.path.abspath(__file__).split('/')
-assert REPO_NAME in path_elements, """
+assert REPO_NAME in path_elements, f"""
     It seems you renamed the repo,
-    please name it back to `ailia-models-tflite`,
+    please name it back to `{REPO_NAME}`,
     or update the REPO_NAME varibale to reflect the change you did"""
 util_path = os.path.join('/', *path_elements[:path_elements.index(REPO_NAME) + 1], 'util')
 sys.path.append(util_path)
