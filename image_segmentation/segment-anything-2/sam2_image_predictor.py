@@ -18,8 +18,8 @@ class SAM2ImagePredictor:
 
     def set_image(self, image, image_encoder):
         img = np.expand_dims(image, 0)
-        img = np.transpose(img, (0, 3, 1, 2))
         img = img.astype(np.float32)
+        #print(img.shape)
 
         image_encoder.allocate_tensors()
         input_details = image_encoder.get_input_details()
