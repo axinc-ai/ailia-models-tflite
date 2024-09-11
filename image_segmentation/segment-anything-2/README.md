@@ -1,15 +1,28 @@
 # Segment Anything 2
 
-## Input
+## Image mode
+
+### Input
 
 ![Input](truck.jpg)
 
 (Image from https://github.com/facebookresearch/segment-anything/blob/main/notebooks/images/truck.jpg)
 
-## Output
+### Output
 
-- 1 positive point
 ![Output](output.png)
+
+## Video mode
+
+### Input
+
+![Input](demo/00000.jpg)
+
+(Image from https://github.com/facebookresearch/segment-anything-2/tree/main/notebooks/videos/bedroom)
+
+### Output
+
+![Output](video_4.png)
 
 ## Usage
 Automatically downloads the onnx and prototxt files on the first run.
@@ -18,6 +31,21 @@ It is necessary to be connected to the Internet while downloading.
 For the sample image,
 ```bash
 $ python3 segment-anything-2.py
+```
+
+For the sample video,
+```bash
+$ python3 segment-anything-2.py -v demo
+```
+
+For the webcam,
+```bash
+$ python3 segment-anything-2.py -v 0 --pos 960 540
+```
+
+Improve performance,
+```bash
+$ python3 segment-anything-2.py -v 0 --num_mask_mem 2 --max_obj_ptrs_in_encoder 2
 ```
 
 If you want to specify the input image, put the image path after the `--input` option.  
@@ -50,7 +78,7 @@ $ python3 segment-anything-2.py --pos 500 375 --pos 1125 625
 $ python3 segment-anything-2.py --box 425 600 700 875 --neg 575 750
 ```
 
-By adding the `--model_type` option, you can specify model type which is selected from "hiera_l", "hiera_b+", "hiera_s", and "hiera_t". (default is hiera_l)
+By adding the `--model_type` option, you can specify model type which is selected from "hiera_l",  "hiera_b+",  "hiera_s", and "hiera_t". (default is hiera_l)
 ```bash
 $ python3 segment-anything-2.py --model_type hiera_l
 ```
@@ -65,7 +93,7 @@ Pytorch
 
 ## Model Format
 
-ONNX opset=17
+tflite
 
 ## Netron
 

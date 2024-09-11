@@ -16,14 +16,8 @@ class SAM2ImagePredictor:
         values = np.clip(values, a*std, b*std)       
         return values
 
-    def set_image(self, image, image_encoder, onnx):
-        img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        img = img.astype(np.float32)
-        img = img / 255.0
-        img = img - [0.485, 0.456, 0.406]
-        img = img / [0.229, 0.224, 0.225]
-        img = cv2.resize(img, (1024, 1024))
-        img = np.expand_dims(img, 0)
+    def set_image(self, image, image_encoder):
+        img = np.expand_dims(image, 0)
         img = np.transpose(img, (0, 3, 1, 2))
         img = img.astype(np.float32)
 
