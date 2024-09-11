@@ -944,7 +944,7 @@ class SAM2VideoPredictor():
             input_details = image_encoder.get_input_details()
             output_details = image_encoder.get_output_details()
 
-            image_encoder.set_tensor(input_details[0]["index"], image)
+            image_encoder.set_tensor(input_details[0]["index"], image.astype(np.float32))
             image_encoder.invoke()
 
             vision_features = image_encoder.get_tensor(output_details[4]["index"])

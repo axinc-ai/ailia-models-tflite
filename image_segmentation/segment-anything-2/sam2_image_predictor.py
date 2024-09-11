@@ -11,6 +11,8 @@ from typing import Optional
 from typing import Tuple
 
 class SAM2ImagePredictor:
+    debug = False
+
     def trunc_normal(self, size, std=0.02, a=-2, b=2):
         values = np.random.normal(loc=0., scale=std, size=size)
         values = np.clip(values, a*std, b*std)       
@@ -41,13 +43,14 @@ class SAM2ImagePredictor:
         backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
         backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
 
-        print("vision_features", vision_features.shape)
-        print("vision_pos_enc_0", vision_pos_enc_0.shape)
-        print("vision_pos_enc_1", vision_pos_enc_1.shape)
-        print("vision_pos_enc_2", vision_pos_enc_2.shape)
-        print("backbone_fpn_0", backbone_fpn_0.shape)
-        print("backbone_fpn_1", backbone_fpn_1.shape)
-        print("backbone_fpn_2", backbone_fpn_2.shape)
+        if self.debug:
+            print("vision_features", vision_features.shape)
+            print("vision_pos_enc_0", vision_pos_enc_0.shape)
+            print("vision_pos_enc_1", vision_pos_enc_1.shape)
+            print("vision_pos_enc_2", vision_pos_enc_2.shape)
+            print("backbone_fpn_0", backbone_fpn_0.shape)
+            print("backbone_fpn_1", backbone_fpn_1.shape)
+            print("backbone_fpn_2", backbone_fpn_2.shape)
 
         backbone_out = {"vision_features":vision_features,
                         "vision_pos_enc":[vision_pos_enc_0, vision_pos_enc_1, vision_pos_enc_2],
@@ -248,8 +251,9 @@ class SAM2ImagePredictor:
         #if batched_mode:
         #    batched_mode_np[0] = True
         
-        print("high_res_features[0]", high_res_features[0].shape)
-        print("high_res_features[1]", high_res_features[1].shape)
+        if self.debug:
+            print("high_res_features[0]", high_res_features[0].shape)
+            print("high_res_features[1]", high_res_features[1].shape)
 
         mask_decoder.set_tensor(input_details[3]["index"], image_feature)
         mask_decoder.set_tensor(input_details[6]["index"], dense_pe)
@@ -265,10 +269,11 @@ class SAM2ImagePredictor:
         sam_tokens_out = mask_decoder.get_tensor(output_details[3]["index"])
         object_score_logits = mask_decoder.get_tensor(output_details[1]["index"])
 
-        print("masks", masks.shape)
-        print("iou_pred", iou_pred.shape)
-        print("sam_tokens_out", sam_tokens_out.shape)
-        print("object_score_logits", object_score_logits.shape)
+        if self.debug:
+            print("masks", masks.shape)
+            print("iou_pred", iou_pred.shape)
+            print("sam_tokens_out", sam_tokens_out.shape)
+            print("object_score_logits", object_score_logits.shape)
 
         low_res_masks, iou_predictions, _, _  = self.forward_postprocess(masks, iou_pred, sam_tokens_out, object_score_logits, multimask_output)
 
