@@ -118,7 +118,7 @@ def recognize_from_image():
             preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
 
         # postprocessing
-        detections = but.postprocess(preds_tf_lite(__file__, "anchors.npy"))
+        detections = but.postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         savepath = get_savepath(args.savepath, image_path)
         logger.info(f'saved at : {savepath}')        

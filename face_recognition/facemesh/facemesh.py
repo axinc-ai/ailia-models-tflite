@@ -173,7 +173,7 @@ def recognize_from_image():
         else:
             preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
             preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
-        detections = fut.detector_postprocess(preds_tf_lite(__file__, "anchors.npy"))
+        detections = fut.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         if detections[0].size != 0:
             imgs, affines, box = fut.estimator_preprocess(

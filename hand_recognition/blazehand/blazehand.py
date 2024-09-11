@@ -168,7 +168,7 @@ def recognize_from_image(detector, estimator):
         else:
             preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
             preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
-        detections = but.detector_postprocess(preds_tf_lite(__file__, "anchors.npy"))
+        detections = but.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         # Hand landmark estimation
         presence = [0, 0]  # [left, right]
