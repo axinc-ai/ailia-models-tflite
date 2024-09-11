@@ -1348,8 +1348,6 @@ class SAM2VideoPredictor():
             mask_input_dummy = sam_mask_prompt
             masks_enable = np.array([1], dtype=np.int64)
         
-        self.debug = True
-
         if self.debug:
             print("begin prompt encoder onnx")
 
@@ -1359,8 +1357,6 @@ class SAM2VideoPredictor():
         prompt_encoder.allocate_tensors()
         input_details = prompt_encoder.get_input_details()
         output_details = prompt_encoder.get_output_details()
-        print(input_details)
-        print(sam_point_coords.shape[1])
         prompt_encoder.resize_tensor_input(
             input_details[2]["index"], 
             [1, sam_point_coords.shape[1], 2]
@@ -1426,11 +1422,11 @@ class SAM2VideoPredictor():
 
         low_res_multimasks, ious, sam_output_tokens, object_score_logits  = self.forward_postprocess(masks, iou_pred, sam_tokens_out, object_score_logits, multimask_output)
 
-        print(low_res_multimasks.shape)
-        print(ious.shape)
-        print(sam_output_tokens.shape)
-        print(object_score_logits.shape)
-
+        if self.debug:
+            print(low_res_multimasks.shape)
+            print(ious.shape)
+            print(sam_output_tokens.shape)
+            print(object_score_logits.shape)
 
         if self.pred_obj_scores:
             is_obj_appearing = object_score_logits > 0
@@ -1474,7 +1470,7 @@ class SAM2VideoPredictor():
         output_details = mlp.get_output_details()
         mlp.allocate_tensors()
 
-        mlp.set_tensor(input_details[0]["index"], sam_output_token)
+        mlp.set_tensor(input_details[0]["index"], sam_output_token.astype(np.float32))
         mlp.invoke()
 
         obj_ptr = mlp.get_tensor(output_details[0]["index"])
@@ -1809,8 +1805,6 @@ class SAM2VideoPredictor():
             estimation_time = (end - start)
             logger.info(f'\tmemory_attention processing {estimation_time} ms')
 
-        pix_feat_with_mem = pix_feat_with_mem[0]
-        
         # reshape the output (HW)BC => BCHW
         pix_feat_with_mem = np.transpose(pix_feat_with_mem, (1, 2, 0)).reshape(B, C, H, W)
         return pix_feat_with_mem
@@ -1857,8 +1851,8 @@ class SAM2VideoPredictor():
         output_details = memory_encoder.get_output_details()
         memory_encoder.allocate_tensors()
 
-        memory_encoder.set_tensor(input_details[0]["index"], pix_feat)
-        memory_encoder.set_tensor(input_details[1]["index"], mask_for_mem)
+        memory_encoder.set_tensor(input_details[0]["index"], pix_feat.astype(np.float32))
+        memory_encoder.set_tensor(input_details[1]["index"], mask_for_mem.astype(np.float32))
         memory_encoder.invoke()
 
         vision_features = memory_encoder.get_tensor(output_details[1]["index"])
