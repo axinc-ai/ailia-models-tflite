@@ -1,26 +1,33 @@
-import colorsys
+import os
 import sys
+import colorsys
 import random
 import time
+from logging import getLogger   # noqa: E402
 
 import cv2
 import numpy as np
 
-import os
-REPO_NAME = "ailia-models-tflite"
-path_elements = os.path.abspath(__file__).split('/')
-assert REPO_NAME in path_elements, f"""
-    It seems you renamed the repo,
-    please name it back to `{REPO_NAME}`,
-    or update the REPO_NAME varibale to reflect the change you did"""
-util_path = os.path.join('/', *path_elements[:path_elements.index(REPO_NAME) + 1], 'util')
-sys.path.append(util_path)
+
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+
 from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 
-from logging import getLogger   # noqa: E402
+
 logger = getLogger(__name__)
 
 

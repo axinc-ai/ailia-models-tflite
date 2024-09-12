@@ -1,3 +1,4 @@
+import os
 import enum
 import sys
 import time
@@ -5,23 +6,26 @@ import time
 import cv2
 import numpy as np
 
-import efficientnet_lite_labels
 
-# import original modules
-import os
-REPO_NAME = "ailia-models-tflite"
-path_elements = os.path.abspath(__file__).split('/')
-assert REPO_NAME in path_elements, f"""
-    It seems you renamed the repo,
-    please name it back to `{REPO_NAME}`,
-    or update the REPO_NAME varibale to reflect the change you did"""
-util_path = os.path.join('/', *path_elements[:path_elements.index(REPO_NAME) + 1], 'util')
-sys.path.append(util_path)
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+
 from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
+import efficientnet_lite_labels
 
 
 # ======================
