@@ -1,11 +1,12 @@
 ################################################################################
-### namedtuple
+### namedtuple  # noqa: E266
 ################################################################################
 
 try:
     from _collections import _tuplegetter
 except ImportError:
     _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
+
 
 def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
     """Returns a new subclass of tuple with named fields.
@@ -41,10 +42,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
-            if (not name.isidentifier()
-                or _iskeyword(name)
-                or name.startswith('_')
-                or name in seen):
+            if (not name.isidentifier() or _iskeyword(name) or name.startswith('_') or name in seen):
                 field_names[index] = f'_{index}'
             seen.add(name)
 
@@ -176,4 +174,3 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         result.__module__ = module
 
     return result
-

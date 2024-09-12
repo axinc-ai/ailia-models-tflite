@@ -16,6 +16,7 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
@@ -59,8 +60,7 @@ parser.add_argument(
 parser.add_argument(
     '--tta', '-t', metavar='TTA',
     default='none', choices=TTA_NAMES,
-    help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
-          ' (default: none)')
+    help=('tta scheme: ' + ' | '.join(TTA_NAMES) + ' (default: none)')
 )
 args = update_parser(parser)
 
@@ -84,7 +84,7 @@ else:
     else:
         MODEL_NAME = 'mobilenetv2_quant_recalib'
 MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/mobilenetv2/'
 
 
 # ======================
@@ -96,7 +96,7 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:
@@ -153,7 +153,7 @@ def recognize_from_image():
 
         preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
 
-        print_results([preds_tf_lite[0], preds_tf_lite_int8[0]],  mobilenetv2_labels.imagenet_category)
+        print_results([preds_tf_lite[0], preds_tf_lite_int8[0]], mobilenetv2_labels.imagenet_category)
 
         # write prediction
         if args.write_prediction:
@@ -173,7 +173,7 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -197,7 +197,7 @@ def recognize_from_video():
     if args.float or not args.legacy:
         dtype = np.float32
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break

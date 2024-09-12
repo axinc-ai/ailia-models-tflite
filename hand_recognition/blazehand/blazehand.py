@@ -17,6 +17,7 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
@@ -70,11 +71,11 @@ if args.shape:
 DETECTION_MODEL_NAME = 'blazepalm'
 LANDMARK_MODEL_NAME = 'blazehand'
 if args.float:
-    DETECTOR_MODEL_PATH = f'palm_detection_builtin.tflite'
-    LANDMARK_MODEL_PATH = f'hand_landmark_new_256x256_float32.tflite'
+    DETECTOR_MODEL_PATH = 'palm_detection_builtin.tflite'
+    LANDMARK_MODEL_PATH = 'hand_landmark_new_256x256_float32.tflite'
 else:
-    DETECTOR_MODEL_PATH = f'palm_detection_builtin_256_full_integer_quant.tflite'
-    LANDMARK_MODEL_PATH = f'hand_landmark_new_256x256_full_integer_quant.tflite'
+    DETECTOR_MODEL_PATH = 'palm_detection_builtin_256_full_integer_quant.tflite'
+    LANDMARK_MODEL_PATH = 'hand_landmark_new_256x256_full_integer_quant.tflite'
 DETECTOR_MODEL_PATH = file_abs_path(__file__, DETECTOR_MODEL_PATH)
 LANDMARK_MODEL_PATH = file_abs_path(__file__, LANDMARK_MODEL_PATH)
 DETECTOR_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{DETECTION_MODEL_NAME}/'
@@ -95,6 +96,7 @@ def get_input_tensor(tensor, input_details, idx):
     else:
         return tensor
 
+
 def get_real_tensor(interpreter, output_details, idx):
     details = output_details[idx]
     if details['dtype'] == np.uint8 or details['dtype'] == np.int8:
@@ -106,6 +108,7 @@ def get_real_tensor(interpreter, output_details, idx):
         real_tensor = interpreter.get_tensor(details['index'])
     return real_tensor
 
+
 def draw_landmarks(img, points, connections=[], color=(0, 0, 255), size=2):
     for connection in connections:
         x0, y0 = points[connection[0]]
@@ -116,7 +119,7 @@ def draw_landmarks(img, points, connections=[], color=(0, 0, 255), size=2):
     for point in points:
         x, y = point
         x, y = int(x), int(y)
-        cv2.circle(img, (x, y), size+1, color, thickness=cv2.FILLED)
+        cv2.circle(img, (x, y), size + 1, color, thickness=cv2.FILLED)
 
 
 # ======================
@@ -173,11 +176,11 @@ def recognize_from_image(detector, estimator):
 
         preds_tf_lite = {}
         if args.float:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x2944x18 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x2944x1 classificators
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   # 1x2944x18 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   # 1x2944x1 classificators
         else:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   # 1x2944x18 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   # 1x2944x1 classificators
         detections = but.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         # Hand landmark estimation
@@ -187,12 +190,12 @@ def recognize_from_image(detector, estimator):
                 src_img, detections, scale, pad
             )
 
-            landmarks = np.zeros((0,63))
-            flags = np.zeros((0,1,1,1))
-            handedness = np.zeros((0,1,1,1))
+            landmarks = np.zeros((0, 63))
+            flags = np.zeros((0, 1, 1, 1))
+            handedness = np.zeros((0, 1, 1, 1))
 
             for img_id in range(len(imgs)):
-                est_input = get_input_tensor(np.expand_dims(imgs[img_id],axis=0), est_input_details, 0)
+                est_input = get_input_tensor(np.expand_dims(imgs[img_id], axis=0), est_input_details, 0)
                 estimator.set_tensor(est_input_details[0]['index'], est_input)
                 estimator.invoke()
 
@@ -212,11 +215,11 @@ def recognize_from_image(detector, estimator):
             for i in range(len(flags)):
                 landmark, flag, handed = landmarks[i], flags[i], handedness[i]
                 if flag > 0.75:
-                    if handed > 0.5: # Right handedness when not flipped camera input
+                    if handed > 0.5:  # Right handedness when not flipped camera input
                         presence[0] = 1
                     else:
                         presence[1] = 1
-                    draw_landmarks(src_img, landmark[:,:2], but.HAND_CONNECTIONS, size=2)
+                    draw_landmarks(src_img, landmark[:, :2], but.HAND_CONNECTIONS, size=2)
 
             if presence[0] and presence[1]:
                 hand_presence = 'Left and right'
@@ -229,12 +232,13 @@ def recognize_from_image(detector, estimator):
             logger.info(f'Hand presence: {hand_presence}')
 
             savepath = get_savepath(args.savepath, image_path)
-            logger.info(f'saved at : {savepath}')        
+            logger.info(f'saved at : {savepath}')
             cv2.imwrite(savepath, src_img)
     logger.info('Script finished successfully.')
 
     if args.profile:
         print(detector.get_summary())
+
 
 def recognize_from_video(detector, estimator):
     detector.allocate_tensors()
@@ -259,7 +263,7 @@ def recognize_from_video(detector, estimator):
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -284,11 +288,11 @@ def recognize_from_video(detector, estimator):
             detector.invoke()
             preds_tf_lite = {}
             if args.float:
-                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x2944x18 regressors
-                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x2944x1 classificators
+                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   # 1x2944x18 regressors
+                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   # 1x2944x1 classificators
             else:
-                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
-                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
+                preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   # 1x2944x18 regressors
+                preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   # 1x2944x1 classificators
             detections = but.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
             if detections[0].size > 0:
                 tracking = True
@@ -301,14 +305,14 @@ def recognize_from_video(detector, estimator):
                 affines[i] = affine[0]
 
         # Hand landmark estimation
-        presence = [0, 0] # [left, right]
+        presence = [0, 0]  # [left, right]
         if tracking:
-            landmarks = np.zeros((0,63))
-            hand_flags = np.zeros((0,1,1,1))
-            handedness = np.zeros((0,1,1,1))
+            landmarks = np.zeros((0, 63))
+            hand_flags = np.zeros((0, 1, 1, 1))
+            handedness = np.zeros((0, 1, 1, 1))
 
             for img_id in range(len(roi_imgs)):
-                est_input = get_input_tensor(np.expand_dims(roi_imgs[img_id],axis=0), est_input_details, 0)
+                est_input = get_input_tensor(np.expand_dims(roi_imgs[img_id], axis=0), est_input_details, 0)
                 estimator.set_tensor(est_input_details[0]['index'], est_input)
                 estimator.invoke()
 
@@ -329,7 +333,7 @@ def recognize_from_video(detector, estimator):
             for i in range(n_imgs):
                 landmark, hand_flag, handed = landmarks[i], hand_flags[i], handedness[i]
                 if hand_flag > thresh:
-                    if handed > 0.5: # Right handedness when not flipped camera input
+                    if handed > 0.5:  # Right handedness when not flipped camera input
                         presence[0] = 1
                     else:
                         presence[1] = 1
@@ -350,8 +354,8 @@ def recognize_from_video(detector, estimator):
             text = 'No hand'
 
         visual_img = frame
-        if args.video == '0': # Flip horizontally if camera
-            visual_img = np.ascontiguousarray(frame[:,::-1,:])
+        if args.video == '0':  # Flip horizontally if camera
+            visual_img = np.ascontiguousarray(frame[:, ::-1, :])
 
         cv2.putText(visual_img, text, (8, 24), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2)
         cv2.imshow('frame', visual_img)
@@ -383,8 +387,8 @@ def main():
         estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     else:
         if args.memory_mode or args.flags or args.env_id or args.delegate_path is not None:
-            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
-            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
             estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)

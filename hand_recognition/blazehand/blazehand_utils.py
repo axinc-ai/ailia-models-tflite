@@ -24,7 +24,7 @@ num_keypoints = 7
 # mediapipe/graphs/hand_tracking/subgraphs/hand_detection_cpu.pbtxt
 kp1 = 0
 kp2 = 2
-theta0 = np.pi/2
+theta0 = np.pi / 2
 dscale = 2.6
 dy = -0.5
 
@@ -58,10 +58,10 @@ def resize_pad(img):
         padh = 256 - h1
         padw = 0
         scale = size0[0] / h1
-    padh1 = padh//2
-    padh2 = padh//2 + padh % 2
-    padw1 = padw//2
-    padw2 = padw//2 + padw % 2
+    padh1 = padh // 2
+    padh2 = padh // 2 + padh % 2
+    padw1 = padw // 2
+    padw2 = padw // 2 + padw % 2
     img1 = cv2.resize(img, (w1, h1))
     img1 = np.pad(img1, ((padh1, padh2), (padw1, padw2), (0, 0)))
     pad = (int(padh1 * scale), int(padw1 * scale))
@@ -87,7 +87,7 @@ def decode_boxes(raw_boxes, anchors):
     boxes[..., 3] = x_center + w / 2.  # xmax
 
     for k in range(num_keypoints):
-        offset = 4 + k*2
+        offset = 4 + k * 2
         keypoint_x = raw_boxes[..., offset] / x_scale * anchors[:, 2] + anchors[:, 0]
         keypoint_y = raw_boxes[..., offset + 1] / y_scale * anchors[:, 3] + anchors[:, 1]
         boxes[..., offset] = keypoint_x
@@ -173,7 +173,7 @@ def jaccard(box_a, box_b):
     inter = intersect(box_a, box_b)
     area_a = np.repeat(
         np.expand_dims(
-            (box_a[:, 2]-box_a[:, 0]) * (box_a[:, 3]-box_a[:, 1]),
+            (box_a[:, 2] - box_a[:, 0]) * (box_a[:, 3] - box_a[:, 1]),
             axis=1
         ),
         inter.shape[1],
@@ -181,7 +181,7 @@ def jaccard(box_a, box_b):
     )  # [A,B]
     area_b = np.repeat(
         np.expand_dims(
-            (box_b[:, 2]-box_b[:, 0]) * (box_b[:, 3]-box_b[:, 1]),
+            (box_b[:, 2] - box_b[:, 0]) * (box_b[:, 3] - box_b[:, 1]),
             axis=0
         ),
         inter.shape[0],
@@ -245,7 +245,7 @@ def weighted_non_max_suppression(detections):
         weighted_detection = detection.copy()
         if len(overlapping) > 1:
             coordinates = detections[overlapping, :num_coords]
-            scores = detections[overlapping, num_coords:num_coords+1]
+            scores = detections[overlapping, num_coords:num_coords + 1]
             total_score = scores.sum()
             weighted = (coordinates * scores).sum(axis=0) / total_score
             weighted_detection[:num_coords] = weighted
@@ -299,7 +299,7 @@ def detector_postprocess(preds_ailia, anchor_path='anchors.npy'):
     filtered_detections = []
     for i in range(len(detections)):
         faces = weighted_non_max_suppression(detections[i])
-        faces = np.stack(faces) if len(faces) > 0 else np.zeros((0, num_coords+1))
+        faces = np.stack(faces) if len(faces) > 0 else np.zeros((0, num_coords + 1))
         filtered_detections.append(faces)
 
     return filtered_detections
@@ -327,11 +327,11 @@ def detection2roi(detection, detection2roi_method='box'):
     elif detection2roi_method == 'alignment':
         # compute box center and scale
         # use mediapipe/calculators/util/alignment_points_to_rects_calculator.cc
-        xc = detection[:, 4+2*kp1]
-        yc = detection[:, 4+2*kp1+1]
-        x1 = detection[:, 4+2*kp2]
-        y1 = detection[:, 4+2*kp2+1]
-        scale = np.sqrt(((xc-x1)**2 + (yc-y1)**2)) * 2
+        xc = detection[:, 4 + 2 * kp1]
+        yc = detection[:, 4 + 2 * kp1 + 1]
+        x1 = detection[:, 4 + 2 * kp2]
+        y1 = detection[:, 4 + 2 * kp2 + 1]
+        scale = np.sqrt(((xc - x1) ** 2 + (yc - y1) ** 2)) * 2
     else:
         raise NotImplementedError(
             "detection2roi_method [%s] not supported" % detection2roi_method)
@@ -340,18 +340,18 @@ def detection2roi(detection, detection2roi_method='box'):
     scale *= dscale
 
     # compute box rotation
-    x0 = detection[:, 4+2*kp1]
-    y0 = detection[:, 4+2*kp1+1]
-    x1 = detection[:, 4+2*kp2]
-    y1 = detection[:, 4+2*kp2+1]
-    theta = np.arctan2(y0-y1, x0-x1) - theta0
+    x0 = detection[:, 4 + 2 * kp1]
+    y0 = detection[:, 4 + 2 * kp1 + 1]
+    x1 = detection[:, 4 + 2 * kp2]
+    y1 = detection[:, 4 + 2 * kp2 + 1]
+    theta = np.arctan2(y0 - y1, x0 - x1) - theta0
     return xc, yc, scale, theta
 
 
 def extract_roi(frame, xc, yc, theta, scale):
     # take points on unit square and transform them according to the roi
     points = np.array([[-1, -1, 1, 1], [-1, 1, -1, 1]]).reshape(1, 2, 4)
-    points = points * scale.reshape(-1, 1, 1)/2
+    points = points * scale.reshape(-1, 1, 1) / 2
     theta = theta.reshape(-1, 1, 1)
     R = np.concatenate((
         np.concatenate((np.cos(theta), -np.sin(theta)), 2),
@@ -363,7 +363,7 @@ def extract_roi(frame, xc, yc, theta, scale):
     # use the points to compute the affine transform that maps
     # these points back to the output square
     res = resolution
-    points1 = np.array([[0, 0, res-1], [0, res-1, 0]], dtype='float32').T
+    points1 = np.array([[0, 0, res - 1], [0, res - 1, 0]], dtype='float32').T
     affines = []
     imgs = []
     for i in range(points.shape[0]):
@@ -403,8 +403,10 @@ def denormalize_landmarks(normalized_landmarks, affines):
         landmarks[i, :, :2] = landmark
     return landmarks
 
+
 def normalize_radians(angle):
-  return angle - 2 * np.pi * np.floor((angle - (-np.pi)) / (2 * np.pi))
+    return angle - 2 * np.pi * np.floor((angle - (-np.pi)) / (2 * np.pi))
+
 
 def compute_rotation(landmarks):
     kWristJoint = 0
@@ -424,13 +426,14 @@ def compute_rotation(landmarks):
     rotation = normalize_radians(kTargetAngle - np.arctan2(-(y1 - y0), x1 - x0))
     return rotation
 
+
 def landmarks2roi(landmarks, affine):
     """
     Inputs:
         landmarks: normalized cropped hand image landmarks
         affine: Affine transform matrix to get original coordinates from
             cropped image coordinates
-    
+
     Outputs:
         ROI x center, y center, scale (width = height), theta (rotation)
         in original image coordinates
@@ -443,12 +446,12 @@ def landmarks2roi(landmarks, affine):
     rotation = compute_rotation(partial_landmarks)
     c, s = np.cos(rotation), np.sin(rotation)
     rot_mat = np.array([
-        [ c, -s],
-        [ s,  c]
+        [c, -s],
+        [s, +c]
     ])
     rev_rot_mat = np.array([
-        [ c,  s],
-        [-s,  c]
+        [+c, s],
+        [-s, c]
     ])
 
     # Find boundaries of landmarks.
@@ -477,17 +480,17 @@ def landmarks2roi(landmarks, affine):
     projected_max_x, projected_max_y = projected_center + projected_wh / 2
 
     projected_corners = np.array([
-        [projected_min_x, projected_min_y], # top left
-        [projected_max_x, projected_min_y], # top right
-        [projected_min_x, projected_max_y], # bottom left
-        [projected_max_x, projected_max_y]  # bottom right
+        [projected_min_x, projected_min_y],  # top left
+        [projected_max_x, projected_min_y],  # top right
+        [projected_min_x, projected_max_y],  # bottom left
+        [projected_max_x, projected_max_y]   # bottom right
     ])
 
     # Corners in cropped hand image coordinates
     cropped_corners = (projected_corners @ rot_mat.T) + axis_aligned_center[None] * resolution
 
     # Compute ROI in original image coordinates
-    corners = (affine[:,:2] @ cropped_corners.T + affine[:,2:]).T
+    corners = (affine[:, :2] @ cropped_corners.T + affine[:, 2:]).T
     x_center, y_center = corners.mean(axis=0)
     scale_orig = np.linalg.norm(corners[1] - corners[0])
     theta = np.arctan2(corners[1, 1] - corners[0, 1], corners[1, 0] - corners[0, 0])

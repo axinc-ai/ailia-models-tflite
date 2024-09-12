@@ -33,8 +33,8 @@ def normalize_image(image, normalize_type='255'):
     elif normalize_type == 'Caffe':
         mean = np.asarray([103.939, 116.779, 123.68], dtype=np.float32)
         image = image - mean
-        image = np.minimum(image,127)
-        image = np.maximum(image,-128)
+        image = np.minimum(image, 127)
+        image = np.maximum(image, -128)
         return image
     elif normalize_type == 'ImageNet':
         mean = np.array([0.485, 0.456, 0.406])
@@ -86,18 +86,18 @@ def resize_image(img, out_size, keep_aspect_ratio=True):
 
     return resized, scale, padding
 
-def preprocess_image(
-        img,
-        out_size,
-        normalize_type,
-        keep_aspect_ratio=True,
-        reverse_color_channel=False,
-        chan_first=True,
-        batch_dim=True,
-        output_type=np.float32,
-        return_scale_pad=False,
-        tta="none"
-    ):
+
+def preprocess_image(img,
+                     out_size,
+                     normalize_type,
+                     keep_aspect_ratio=True,
+                     reverse_color_channel=False,
+                     chan_first=True,
+                     batch_dim=True,
+                     output_type=np.float32,
+                     return_scale_pad=False,
+                     tta="none"
+                     ):
     """
     Preprocess the image with various operations.
 
@@ -128,7 +128,7 @@ def preprocess_image(
     return_scale_pad: bool (default: False)
         If true, returns the scale (scale_height, scale_width) and padding
         (top, bottom, left, right) used when resizing.
-        (y_original, x_original) = ((y_resized, x_resized) - 
+        (y_original, x_original) = ((y_resized, x_resized) -
             (top_padding, left_padding)) * (scale_height, scale_width)
 
     Returns
@@ -141,18 +141,17 @@ def preprocess_image(
         Zero-padding, (top, bottom, left, right)
     """
     img_new = normalize_image(img, normalize_type)
-    if tta == "1_crop": # imagenet 1 crop mode (256x256 -> 224x224)
+    if tta == "1_crop":  # imagenet 1 crop mode (256x256 -> 224x224)
         pad = 16
         if img_new.shape[0] < img_new.shape[1]:
-            img_new = cv2.resize(img_new, (int(img_new.shape[1]*(out_size[0]+pad*2)/img_new.shape[0]), (out_size[0]+pad*2)))
-            img_new = img_new[pad:pad+out_size[0],(img_new.shape[1]-out_size[1])//2:(img_new.shape[1]-out_size[1])//2+out_size[1],:]
+            img_new = cv2.resize(img_new, (int(img_new.shape[1] * (out_size[0] + pad * 2) / img_new.shape[0]), (out_size[0] + pad * 2)))
+            img_new = img_new[pad:pad + out_size[0], (img_new.shape[1] - out_size[1]) // 2:(img_new.shape[1] - out_size[1]) // 2 + out_size[1], :]
         else:
-            img_new = cv2.resize(img_new, ((out_size[1]+pad*2), int(img_new.shape[0]*(out_size[1]+pad*2)/img_new.shape[1])))
-            img_new = img_new[(img_new.shape[0]-out_size[0])//2:(img_new.shape[0]-out_size[0])//2+out_size[0],pad:pad+out_size[1],:]
+            img_new = cv2.resize(img_new, ((out_size[1] + pad * 2), int(img_new.shape[0] * (out_size[1] + pad * 2) / img_new.shape[1])))
+            img_new = img_new[(img_new.shape[0] - out_size[0]) // 2:(img_new.shape[0] - out_size[0]) // 2 + out_size[0], pad:pad + out_size[1], :]
         img_new = img_new.copy()
 
-    img_new, scale, padding = resize_image(img_new, out_size,
-        keep_aspect_ratio=keep_aspect_ratio)
+    img_new, scale, padding = resize_image(img_new, out_size, keep_aspect_ratio=keep_aspect_ratio)
 
     if len(img_new.shape) == 3:
         if reverse_color_channel:
@@ -176,18 +175,18 @@ def preprocess_image(
     else:
         return img_new
 
-def load_image(
-        image_path,
-        image_shape,
-        rgb=True,
-        normalize_type='255',
-        gen_input_ailia_tflite=False,
-        bgr_to_rgb=True,
-        output_type=np.float32,
-        keep_aspect_ratio=True,
-        return_scale_pad=False,
-        tta="none"
-    ):
+
+def load_image(image_path,
+               image_shape,
+               rgb=True,
+               normalize_type='255',
+               gen_input_ailia_tflite=False,
+               bgr_to_rgb=True,
+               output_type=np.float32,
+               keep_aspect_ratio=True,
+               return_scale_pad=False,
+               tta="none"
+               ):
     """
     Loads the image of the given path, performs the necessary preprocessing,
     and returns it.
@@ -226,9 +225,9 @@ def load_image(
         sys.exit()
 
     res = preprocess_image(image, image_shape, normalize_type,
-        keep_aspect_ratio=keep_aspect_ratio, reverse_color_channel=bgr_to_rgb,
-        chan_first=False, batch_dim=gen_input_ailia_tflite,
-        output_type=output_type, return_scale_pad=return_scale_pad, tta=tta)
+                           keep_aspect_ratio=keep_aspect_ratio, reverse_color_channel=bgr_to_rgb,
+                           chan_first=False, batch_dim=gen_input_ailia_tflite,
+                           output_type=output_type, return_scale_pad=return_scale_pad, tta=tta)
 
     return res
 
@@ -247,10 +246,10 @@ def draw_texts(img, texts, font_scale=0.7, thickness=2):
     dy = int(img.shape[1] / 15)
     color = (0, 0, 0)  # black
 
-    texts = [texts] if type(texts) == str else texts
+    texts = [texts] if isinstance(texts, str) else texts
 
     for i, text in enumerate(texts):
-        offset_y = initial_y + (i+1)*dy
+        offset_y = initial_y + (i + 1) * dy
         cv2.putText(img, text, (offset_x, offset_y), cv2.FONT_HERSHEY_SIMPLEX,
                     font_scale, color, thickness, cv2.LINE_AA)
 
