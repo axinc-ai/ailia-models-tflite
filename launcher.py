@@ -9,7 +9,20 @@ import subprocess
 # Arguemnt Parser Config
 # ======================
 
-sys.path.append('./util')
+
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+
 from utils import get_base_parser, update_parser
 
 parser = get_base_parser(
