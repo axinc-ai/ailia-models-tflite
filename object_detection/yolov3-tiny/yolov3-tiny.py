@@ -3,7 +3,7 @@ import sys
 import colorsys
 import random
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -19,13 +19,14 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
-from webcamera_utils import get_capture, get_writer  # noqa: E402
-from image_utils import load_image, preprocess_image  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from webcamera_utils import get_capture, get_writer
+from image_utils import load_image, preprocess_image
+from model_utils import check_and_download_models
 from nms_utils import nms
 from detector_utils import write_predictions
 
@@ -56,7 +57,7 @@ COCO_CATEGORY = [
 ]
 THRESHOLD = 0.4
 IOU = 0.45
-DETECTION_SIZE = 416 # Currently model only accepts this size
+DETECTION_SIZE = 416  # Currently model only accepts this size
 
 
 # ======================
@@ -66,12 +67,12 @@ parser = get_base_parser('Yolov3 tiny model', IMAGE_PATH, SAVE_IMAGE_PATH)
 parser.add_argument(
     '-th', '--threshold',
     default=THRESHOLD, type=float,
-    help='The detection threshold for yolo. (default: '+str(THRESHOLD)+')'
+    help=f'The detection threshold for yolo. (default: {str(THRESHOLD)})'
 )
 parser.add_argument(
     '-iou', '--iou',
     default=IOU, type=float,
-    help='The detection iou for yolo. (default: '+str(IOU)+')'
+    help=f'The detection iou for yolo. (default: {str(IOU)})'
 )
 parser.add_argument(
     '-w', '--write_prediction',
@@ -114,6 +115,7 @@ def get_input_tensor(tensor, input_details, idx):
     else:
         return tensor
 
+
 def get_real_tensor(interpreter, output_details, idx):
     details = output_details[idx]
     if details['dtype'] == np.uint8 or details['dtype'] == np.int8:
@@ -124,6 +126,7 @@ def get_real_tensor(interpreter, output_details, idx):
     else:
         real_tensor = interpreter.get_tensor(details['index'])
     return real_tensor
+
 
 def filter_boxes(box_xywh, scores, w, h, padding, score_threshold=0.4):
     scores_max = np.max(scores, axis=-1)
@@ -155,6 +158,7 @@ def filter_boxes(box_xywh, scores, w, h, padding, score_threshold=0.4):
     # return tf.concat([boxes, pred_conf], axis=-1)
     return (boxes, pred_conf)
 
+
 def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, show_label=True):
     num_boxes = len(out_boxes)
     num_classes = len(classes)
@@ -168,7 +172,8 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
     random.seed(None)
 
     for i in range(num_boxes):
-        if int(out_classes[i]) < 0 or int(out_classes[i]) > num_classes: continue
+        if int(out_classes[i]) < 0 or int(out_classes[i]) > num_classes:
+            continue
         coor = out_boxes[i]
         coor[0] = int(coor[0] * image_w)
         coor[1] = int(coor[1] * image_h)
@@ -187,7 +192,7 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
             bbox_mess = '%s: %.2f' % (classes[class_ind], score)
             t_size = cv2.getTextSize(bbox_mess, 0, fontScale, thickness=bbox_thick // 2)[0]
             c3 = (c1[0] + t_size[0], c1[1] - t_size[1] - 3)
-            cv2.rectangle(image, c1, (int(c3[0]), int(c3[1])), bbox_color, -1) #filled
+            cv2.rectangle(image, c1, (int(c3[0]), int(c3[1])), bbox_color, -1)  # filled
 
             cv2.putText(image, bbox_mess, (c1[0], int(c1[1] - 2)), cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale, (0, 0, 0), bbox_thick // 2, lineType=cv2.LINE_AA)
@@ -203,7 +208,11 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -260,13 +269,13 @@ def recognize_from_image():
             preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
 
         boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
-            det_w, det_h, pad, score_threshold=args.threshold)
+                                        det_w, det_h, pad, score_threshold=args.threshold)
         boxes, scores, classes = nms(boxes[0], pred_conf[0],
-            iou_threshold=args.iou, score_threshold=args.threshold)
+                                     iou_threshold=args.iou, score_threshold=args.threshold)
         src_img = draw_bbox(src_img, boxes, scores, classes)
 
         savepath = get_savepath(args.savepath, image_path)
-        logger.info(f'saved at : {savepath}')        
+        logger.info(f'saved at : {savepath}')
         cv2.imwrite(savepath, src_img)
 
         # write prediction
@@ -285,7 +294,10 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -302,7 +314,7 @@ def recognize_from_video():
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -327,9 +339,9 @@ def recognize_from_video():
         preds_tf_lite[1] = get_real_tensor(interpreter, output_details, 0)
 
         boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
-            det_w, det_h, pad, score_threshold=args.threshold)
+                                        det_w, det_h, pad, score_threshold=args.threshold)
         boxes, scores, classes = nms(boxes[0], pred_conf[0],
-            iou_threshold=args.iou, score_threshold=args.threshold)
+                                     iou_threshold=args.iou, score_threshold=args.threshold)
 
         visual_img = frame
         frame = draw_bbox(frame, boxes, scores, classes)

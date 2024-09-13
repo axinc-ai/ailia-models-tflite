@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import numpy as np
 import cv2
@@ -17,14 +17,15 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
-from image_utils import load_image  # noqa: E402
-from classifier_utils import plot_results, print_results  # noqa: E402
-import webcamera_utils  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor
+from image_utils import load_image
+from classifier_utils import plot_results, print_results
+import webcamera_utils
 import vgg16_labels
 
 
@@ -61,13 +62,13 @@ if args.float:
 else:
     MODEL_NAME = 'vgg16_pytorch_quant_recalib'
 MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/vgg16/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/vgg16/'
+
 
 # ======================
 # Main functions
 # ======================
 def recognize_from_image(interpreter):
-    
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
@@ -111,11 +112,11 @@ def recognize_from_image(interpreter):
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
             preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
-        
+
         preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
 
         # show results
-        print_results([preds_tf_lite[0],preds_tf_lite_int8[0]], vgg16_labels.imagenet_category)
+        print_results([preds_tf_lite[0], preds_tf_lite_int8[0]], vgg16_labels.imagenet_category)
     logger.info('Script finished successfully.')
 
 
@@ -138,7 +139,7 @@ def recognize_from_video(interpreter):
         writer = None
 
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -187,7 +188,11 @@ def main():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:
@@ -200,6 +205,7 @@ def main():
     else:
         # image mode
         recognize_from_image(interpreter)
+
 
 if __name__ == '__main__':
     main()

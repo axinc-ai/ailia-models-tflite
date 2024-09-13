@@ -1,7 +1,7 @@
 import sys
 import os
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -18,13 +18,14 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
-from webcamera_utils import get_capture, get_writer  # noqa: E402
-from image_utils import load_image, preprocess_image  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from webcamera_utils import get_capture, get_writer
+from image_utils import load_image, preprocess_image
+from model_utils import check_and_download_models
 from facemesh_const import FACEMESH_TESSELATION
 import facemesh_utils as fut
 
@@ -66,11 +67,11 @@ if args.shape:
 DETECTION_MODEL_NAME = 'blazeface'
 LANDMARK_MODEL_NAME = 'facemesh'
 if args.float:
-    DETECTOR_MODEL_PATH = f'face_detection_front.tflite'
-    LANDMARK_MODEL_PATH = f'face_landmark.tflite'
+    DETECTOR_MODEL_PATH = 'face_detection_front.tflite'
+    LANDMARK_MODEL_PATH = 'face_landmark.tflite'
 else:
-    DETECTOR_MODEL_PATH = f'face_detection_front_128_full_integer_quant.tflite'
-    LANDMARK_MODEL_PATH = f'face_landmark_192_full_integer_quant_uint8.tflite'
+    DETECTOR_MODEL_PATH = 'face_detection_front_128_full_integer_quant.tflite'
+    LANDMARK_MODEL_PATH = 'face_landmark_192_full_integer_quant_uint8.tflite'
 DETECTOR_MODEL_PATH = file_abs_path(__file__, DETECTOR_MODEL_PATH)
 LANDMARK_MODEL_PATH = file_abs_path(__file__, LANDMARK_MODEL_PATH)
 DETECTOR_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{DETECTION_MODEL_NAME}/'
@@ -91,6 +92,7 @@ def get_input_tensor(tensor, input_details, idx):
     else:
         return tensor
 
+
 def get_real_tensor(interpreter, output_details, idx):
     details = output_details[idx]
     if details['dtype'] == np.uint8 or details['dtype'] == np.int8:
@@ -101,6 +103,7 @@ def get_real_tensor(interpreter, output_details, idx):
     else:
         real_tensor = interpreter.get_tensor(details['index'])
     return real_tensor
+
 
 def draw_roi(img, roi):
     for i in range(roi.shape[0]):
@@ -118,18 +121,14 @@ def draw_landmarks(img, points, color=(0, 0, 255), size=2):
         cv2.circle(img, (x, y), size, color, thickness=cv2.FILLED)
 
 
-def draw_face_landmarks(
-        image,
-        landmark_list,
-        size = 1):
+def draw_face_landmarks(image, landmark_list, size=1):
     for connection in FACEMESH_TESSELATION:
         start_idx = connection[0]
         end_idx = connection[1]
         sx, sy = int(landmark_list[start_idx][0]), int(landmark_list[start_idx][1])
         ex, ey = int(landmark_list[end_idx][0]), int(landmark_list[end_idx][1])
-        cv2.line(
-            image, (sx,sy), (ex,ey),
-            (0, 255, 0), size)
+        cv2.line(image, (sx, sy), (ex, ey), (0, 255, 0), size)
+
 
 # ======================
 # Main functions
@@ -141,8 +140,16 @@ def recognize_from_image():
         estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     else:
         if args.memory_mode or args.flags or args.env_id or args.delegate_path is not None:
-            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
-            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH,
+                                                memory_mode=args.memory_mode,
+                                                flags=args.flags,
+                                                env_id=args.env_id,
+                                                experimental_delegates=delegate_obj(args.delegate_path))
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH,
+                                                 memory_mode=args.memory_mode,
+                                                 flags=args.flags,
+                                                 env_id=args.env_id,
+                                                 experimental_delegates=delegate_obj(args.delegate_path))
         else:
             detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
             estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
@@ -179,11 +186,11 @@ def recognize_from_image():
         detector.invoke()
         preds_tf_lite = {}
         if args.float:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   # 1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   # 1x896x1 classificators
         else:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   # 1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   # 1x896x1 classificators
         detections = fut.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         if detections[0].size != 0:
@@ -230,7 +237,7 @@ def recognize_from_image():
         for i in range(len(landmarks)):
             landmark, face_flag = landmarks[i], expit(confidences[i])
             if face_flag > 0:
-                #draw_landmarks(src_img, landmark[:, :2], size=1)
+                # draw_landmarks(src_img, landmark[:, :2], size=1)
                 draw_face_landmarks(src_img, landmark[:, :2], size=1)
 
         savepath = get_savepath(args.savepath, image_path)
@@ -246,8 +253,8 @@ def recognize_from_video():
         estimator = tf.lite.Interpreter(model_path=LANDMARK_MODEL_PATH)
     else:
         if args.memory_mode or args.flags:
-            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
-            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+            detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags)
+            estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags)
         else:
             detector = ailia_tflite.Interpreter(model_path=DETECTOR_MODEL_PATH)
             estimator = ailia_tflite.Interpreter(model_path=LANDMARK_MODEL_PATH)
@@ -268,7 +275,7 @@ def recognize_from_video():
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -289,11 +296,11 @@ def recognize_from_video():
         detector.invoke()
         preds_tf_lite = {}
         if args.float:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   #1x896x16 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   #1x896x1 classificators
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 0)   # 1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 1)   # 1x896x1 classificators
         else:
-            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x896x16 regressors
-            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x896x1 classificators
+            preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   # 1x896x16 regressors
+            preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   # 1x896x1 classificators
         detections = fut.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         # Face landmark estimation
@@ -324,12 +331,12 @@ def recognize_from_video():
             for i in range(len(landmarks)):
                 landmark, face_flag = landmarks[i], expit(confidences[i])
                 if face_flag > 0:
-                    #draw_landmarks(frame, landmark[:, :2], size=1)
+                    # draw_landmarks(frame, landmark[:, :2], size=1)
                     draw_face_landmarks(frame, landmark[:, :2], size=1)
 
         visual_img = frame
-        if args.video == '0': # Flip horizontally if camera
-            visual_img = np.ascontiguousarray(frame[:,::-1,:])
+        if args.video == '0':  # Flip horizontally if camera
+            visual_img = np.ascontiguousarray(frame[:, ::-1, :])
 
         cv2.imshow('frame', visual_img)
 

@@ -18,6 +18,7 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
@@ -36,14 +37,15 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 # ======================
 # Parameters
 # ======================
-MODEL_PARAMS = {#'yolox_nano': {'input_shape': [416, 416]},
-                'yolox_tiny': {'input_shape': [416, 416]},
-                'yolox_s': {'input_shape': [640, 640]},
-                #'yolox_m': {'input_shape': [640, 640]},
-                #'yolox_l': {'input_shape': [640, 640]},
-                #'yolox_darknet': {'input_shape': [640, 640]},
-                #'yolox_x': {'input_shape': [640, 640]}
-                }
+MODEL_PARAMS = {
+    # 'yolox_nano': {'input_shape': [416, 416]},
+    'yolox_tiny': {'input_shape': [416, 416]},
+    'yolox_s': {'input_shape': [640, 640]},
+    # 'yolox_m': {'input_shape': [640, 640]},
+    # 'yolox_l': {'input_shape': [640, 640]},
+    # 'yolox_darknet': {'input_shape': [640, 640]},
+    # 'yolox_x': {'input_shape': [640, 640]}
+}
 
 IMAGE_PATH = 'input.jpg'
 SAVE_IMAGE_PATH = 'output.jpg'
@@ -85,17 +87,17 @@ parser.add_argument(
 parser.add_argument(
     '-th', '--threshold',
     default=SCORE_THR, type=float,
-    help='The detection threshold for yolo. (default: '+str(SCORE_THR)+')'
+    help=f'The detection threshold for yolo. (default: {str(SCORE_THR)})'
 )
 parser.add_argument(
     '-iou', '--iou',
     default=NMS_THR, type=float,
-    help='The detection iou for yolo. (default: '+str(NMS_THR)+')'
+    help=f'The detection iou for yolo. (default: {str(NMS_THR)})'
 )
 parser.add_argument(
     '-n', '--normal',
     action='store_true',
-    help='By default, the optimized model is used, but with this option, ' +
+    help='By default, the optimized model is used, but with this option, ' +  # noqa: W504
     'you can switch to the normal model for ailia TFLite Runtime 1.1.0'
 )
 args = update_parser(parser)
@@ -117,7 +119,7 @@ else:
 if not args.normal:
     stem += '.opt'
 MODEL_PATH = file_abs_path(__file__, f'{stem}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/yolox/'
 
 HEIGHT = MODEL_PARAMS[MODEL_NAME]['input_shape'][0]
 WIDTH = MODEL_PARAMS[MODEL_NAME]['input_shape'][1]
@@ -125,6 +127,7 @@ WIDTH = MODEL_PARAMS[MODEL_NAME]['input_shape'][1]
 if args.shape:
     HEIGHT = args.shape
     WIDTH = args.shape
+
 
 # ======================
 # Utils
@@ -140,6 +143,7 @@ def compute(interpreter, input_data):
 
     return outputs
 
+
 # ======================
 # Main functions
 # ======================
@@ -149,12 +153,16 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
+    # output_details = interpreter.get_output_details()
 
     if args.shape:
         if args.normal:
@@ -224,13 +232,17 @@ def recognize_from_image():
 
     logger.info('Script finished successfully.')
 
+
 def recognize_from_video():
     # net initialize
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -285,7 +297,10 @@ def recognize_from_video():
 
         # write prediction
         if args.write_prediction:
-            savepath = get_savepath(args.savepath, video_name, post_fix = '_%s' % (str(frame_count).zfill(frame_digit) + '_res'), ext='.png')
+            savepath = get_savepath(args.savepath,
+                                    video_name,
+                                    post_fix='_%s' % (str(frame_count).zfill(frame_digit) + '_res'),
+                                    ext='.png')
             pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
             write_predictions(
                 pred_file, final_boxes, final_scores, final_cls_inds,
@@ -297,6 +312,7 @@ def recognize_from_video():
     if writer is not None:
         writer.release()
     logger.info('Script finished successfully.')
+
 
 def main():
     # model files check and download

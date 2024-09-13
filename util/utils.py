@@ -26,6 +26,7 @@ except ImportError:
     logger.warning('ailia_tflite package cannot be found under `sys.path`')
     AILIA_EXIST = False
 
+
 def check_file_existance(filename):
     if os.path.isfile(filename):
         return True
@@ -102,7 +103,7 @@ def get_base_parser(
     )
     parser.add_argument(
         '--tflite', action='store_true',
-        help='By default, the ailia lite runtime is used, but with this ' +
+        help='By default, the ailia lite runtime is used, but with this ' +  # noqa: W504
         'option, you can switch to using the TensorFlow Lite runtime.'
     )
     parser.add_argument(
@@ -116,7 +117,7 @@ def get_base_parser(
         help='set memory mode for tflite runtime'
     )
     parser.add_argument(
-        '--shape', type=int, 
+        '--shape', type=int,
         help='change input image shape (Please specify one int value to change width and height).'
     )
     parser.add_argument(
@@ -167,7 +168,7 @@ def update_parser(parser, check_input_type=True):
     # 1. update input
     if args.video is not None:
         args.ftype = 'video'
-        args.input = None # force video mode
+        args.input = None  # force video mode
 
     if args.input is None:
         # TODO: args.video, args.input is vague...
@@ -210,6 +211,7 @@ def update_parser(parser, check_input_type=True):
     # -------------------------------------------------------------------------
     return args
 
+
 def get_savepath(arg_path, src_path, prefix='', post_fix='_res', ext=None):
     """Get savepath
     NOTE: we may have better option...
@@ -245,6 +247,7 @@ def get_savepath(arg_path, src_path, prefix='', post_fix='_res', ext=None):
             arg_path, prefix + src_base + post_fix + new_ext
         )
     return new_path
+
 
 def delegate_obj(delegate_path):
     if delegate_path is None:

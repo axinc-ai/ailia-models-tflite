@@ -16,10 +16,11 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-from model_utils import format_input_tensor, get_output_tensor  # noqa: E402
+from model_utils import format_input_tensor, get_output_tensor
 import const
 
 
@@ -133,9 +134,9 @@ def get_final_preds(batch_heatmaps, center, scale):
                 hm = batch_heatmaps[n][p]
                 px = int(math.floor(coords[n][p][0] + 0.5))
                 py = int(math.floor(coords[n][p][1] + 0.5))
-                if 1 < px < heatmap_width-1 and 1 < py < heatmap_height-1:
-                    diff = np.array([hm[py][px+1] - hm[py][px-1],
-                                     hm[py+1][px]-hm[py-1][px]])
+                if 1 < px < heatmap_width - 1 and 1 < py < heatmap_height - 1:
+                    diff = np.array([hm[py][px + 1] - hm[py][px - 1],
+                                     hm[py + 1][px] - hm[py - 1][px]])
                     coords[n][p] += np.sign(diff) * .25
 
     preds = coords.copy()
@@ -163,30 +164,28 @@ def compute(interpreter_pose, original_img, offset_x, offset_y, scale_x, scale_y
 
     input_data = src_img
 
-    center = np.array([w/2, h/2], dtype=np.float32)
+    center = np.array([w / 2, h / 2], dtype=np.float32)
     scale = np.array([1, 1], dtype=np.float32)
 
     # BGR format
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
-    input_data = (input_data/255.0 - mean) / std
+    input_data = (input_data / 255.0 - mean) / std
 
     input_data = input_data[np.newaxis, :, :, :]
 
     inputs = format_input_tensor(input_data, input_details, 0)
     inputs = inputs.astype(dtype)
-    interpreter_pose.set_tensor(input_details[0]['index'], inputs) 
+    interpreter_pose.set_tensor(input_details[0]['index'], inputs)
     interpreter_pose.invoke()
     preds_tf_lite = get_output_tensor(interpreter_pose, output_details, 0)
     preds_tf_lite = np.transpose(preds_tf_lite, [0, 3, 1, 2])
-    
+
     output = preds_tf_lite
     preds, maxvals = get_final_preds(output, [center], [scale])
 
     k_list = []
-    ailia_to_mpi = [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, -1, -1
-    ]
+    ailia_to_mpi = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, -1, -1]
     # ailia_to_coco = [
     #     0, 14, 15, 16, 17, 2, 5, 3, 6, 4, 8, 11, 7, 9, 12, 10, 13, 1, -1
     # ]
@@ -201,14 +200,14 @@ def compute(interpreter_pose, original_img, offset_x, offset_y, scale_x, scale_y
         z = 0
         interpolated = 0
         if j == const.POSE_KEYPOINT_BODY_CENTER:
-            x = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 0] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 0] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_LEFT], 0] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_RIGHT], 0])/4
-            y = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 1] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 1] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_LEFT], 1] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_RIGHT], 1])/4
+            x = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 0] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 0] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_LEFT], 0] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_RIGHT], 0]) / 4
+            y = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 1] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 1] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_LEFT], 1] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_RIGHT], 1]) / 4
             score = min(min(min(
                 maxvals[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 0],
                 maxvals[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 0]),
@@ -216,10 +215,10 @@ def compute(interpreter_pose, original_img, offset_x, offset_y, scale_x, scale_y
                 maxvals[0, ailia_to_mpi[const.POSE_KEYPOINT_HIP_RIGHT], 0])
             interpolated = 1
         elif j == const.POSE_KEYPOINT_SHOULDER_CENTER:
-            x = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 0] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 0])/2
-            y = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 1] +
-                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 1])/2
+            x = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 0] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 0]) / 2
+            y = (preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT], 1] +  # noqa: W504
+                 preds[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT], 1]) / 2
             score = min(maxvals[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_LEFT]],
                         maxvals[0, ailia_to_mpi[const.POSE_KEYPOINT_SHOULDER_RIGHT]])
             interpolated = 1
@@ -228,8 +227,8 @@ def compute(interpreter_pose, original_img, offset_x, offset_y, scale_x, scale_y
             y = preds[0, i, 1]
             score = maxvals[0, i, 0]
 
-        num_valid_points = num_valid_points+1
-        total_score = total_score+score
+        num_valid_points = num_valid_points + 1
+        total_score = total_score + score
 
         k = const.PoseEstimatorKeypoint(
             x=x / src_img.shape[1] * scale_x + offset_x,
@@ -240,7 +239,7 @@ def compute(interpreter_pose, original_img, offset_x, offset_y, scale_x, scale_y
         )
         k_list.append(k)
 
-    total_score = total_score/num_valid_points
+    total_score = total_score / num_valid_points
 
     r = const.PoseEstimatorObjectPose(
         points=k_list,
@@ -262,17 +261,17 @@ def keep_aspect(top_left, bottom_right, pose_img):
     px2 = min(pose_img.shape[1], bottom_right[0])
 
     shape = [1, 3, 256, 192]
-    aspect = shape[2]/shape[3]
-    ow = (px2-px1)
-    oh = (py2-py1)
-    oaspect = oh/ow
+    aspect = shape[2] / shape[3]
+    ow = (px2 - px1)
+    oh = (py2 - py1)
+    oaspect = oh / ow
     if aspect <= oaspect:
-        w = oh/aspect
-        px1 = px1 - (w-ow)/2
+        w = oh / aspect
+        px1 = px1 - (w - ow) / 2
         px2 = px1 + w
     else:
-        h = ow*aspect
-        py1 = py1 - (h-oh)/2
+        h = ow * aspect
+        py1 = py1 - (h - oh) / 2
         py2 = py1 + h
 
     px1 = int(px1)

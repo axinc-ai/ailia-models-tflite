@@ -24,7 +24,7 @@ def label_to_color_image(label):
 
     Args:
         label: A 2D array with integer type, storing the segmentation label.
-    
+
     Returns:
         result: A 2D array with floating type. The element of the array
         is the color indexed by the corresponding element in the input label
@@ -38,7 +38,7 @@ def label_to_color_image(label):
         raise ValueError('Expect 2-D input label')
 
     colormap = create_pascal_label_colormap()
-    
+
     if np.max(label) >= len(colormap):
         raise ValueError('label value too large.')
 

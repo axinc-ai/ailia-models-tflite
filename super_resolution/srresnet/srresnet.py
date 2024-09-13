@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from logging import getLogger  # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -17,13 +17,14 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-import webcamera_utils  # noqa: E402
-from image_utils import load_image  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
-from utils import file_abs_path, get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
+import webcamera_utils
+from image_utils import load_image
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor
+from utils import file_abs_path, get_base_parser, get_savepath, update_parser, delegate_obj
 
 
 logger = getLogger(__name__)
@@ -48,7 +49,7 @@ parser = get_base_parser(
 )
 parser.add_argument(
     '-p', '--padding', action='store_true',
-    help=('Instead of resizing input image when loading it, ' +
+    help=('Instead of resizing input image when loading it, ' +  # noqa: W504
           ' padding input and output image')
 )
 args = update_parser(parser)
@@ -70,7 +71,7 @@ if args.float:
 else:
     MODEL_NAME = 'srresnet.opt_full_integer_quant'
 MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/srresnet/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/srresnet/'
 
 
 # ======================
@@ -86,7 +87,6 @@ def recognize_from_image(interpreter):
         interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
         interpreter.allocate_tensors()
 
-
     # input image loop
     for image_path in args.input:
         # prepare input data
@@ -99,7 +99,7 @@ def recognize_from_image(interpreter):
             gen_input_ailia_tflite=True,
             keep_aspect_ratio=False,
         )
-        
+
         inputs = format_input_tensor(input_data, input_details, 0)
 
         # inference
@@ -141,7 +141,7 @@ def tiling(interpreter, img):
     h, w = img.shape[0], img.shape[1]
 
     padding_w = int((w + IMAGE_WIDTH - 1) / IMAGE_WIDTH) * IMAGE_WIDTH
-    padding_h = int((h+IMAGE_HEIGHT-1) / IMAGE_HEIGHT) * IMAGE_HEIGHT
+    padding_h = int((h + IMAGE_HEIGHT - 1) / IMAGE_HEIGHT) * IMAGE_HEIGHT
     scale = int(OUTPUT_HEIGHT / IMAGE_HEIGHT)
     output_padding_w = padding_w * scale
     output_padding_h = padding_h * scale
@@ -169,18 +169,19 @@ def tiling(interpreter, img):
     else:
         inputs = inputs.astype(np.int8)
 
-    # Inference 
+    # Inference
     start = int(round(time.time() * 1000))
     for y in range(tile_y):
         for x in range(tile_x):
-            interpreter.set_tensor(input_details[0]['index'], inputs[:, y*IMAGE_HEIGHT:(y+1)*IMAGE_HEIGHT, x*IMAGE_WIDTH:(x+1)*IMAGE_WIDTH, :])
+            tile = inputs[:, y * IMAGE_HEIGHT:(y + 1) * IMAGE_HEIGHT, x * IMAGE_WIDTH:(x + 1) * IMAGE_WIDTH, :]
+            interpreter.set_tensor(input_details[0]['index'], tile)
             interpreter.invoke()
             preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
-            
+
             output_pad_img[
                 :,
-                y*OUTPUT_HEIGHT:(y+1)*OUTPUT_HEIGHT,
-                x*OUTPUT_WIDTH:(x+1)*OUTPUT_WIDTH,
+                y * OUTPUT_HEIGHT:(y + 1) * OUTPUT_HEIGHT,
+                x * OUTPUT_WIDTH:(x + 1) * OUTPUT_WIDTH,
                 :
             ] = preds_tf_lite
 
@@ -236,7 +237,7 @@ def recognize_from_video(interpreter):
         writer = None
 
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -244,7 +245,7 @@ def recognize_from_video(interpreter):
             break
 
         h, w = frame.shape[0], frame.shape[1]
-        frame = frame[h//2:h//2+h//4, w//2:w//2+w//4, :]
+        frame = frame[h // 2:h // 2 + h // 4, w // 2:w // 2 + w // 4, :]
 
         output_img = tiling(interpreter, frame)
 
@@ -271,7 +272,11 @@ def main():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:

@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 LABELS = [
     'person',
     'bicycle',
@@ -94,19 +95,16 @@ LABELS = [
     'toothbrush'
 ]
 
+
 SCORE_THRESHOLD = 0.6
+
 
 def postprocessing(img, boxes, classes, scores):
     h, w = img.shape[:2]
     for box, classidx, score in zip(boxes, classes, scores):
         probability = score
         if probability >= SCORE_THRESHOLD:
-            if (not np.isnan(box[0]) and
-                not np.isnan(box[1]) and
-                not np.isnan(box[2]) and
-                not np.isnan(box[3])):
-                pass
-            else:
+            if not all(not np.isnan(e) for e in box):
                 continue
             ymin = int(box[0] * h)
             xmin = int(box[1] * w)
@@ -122,4 +120,4 @@ def postprocessing(img, boxes, classes, scores):
             #     f' class: "{classnum}". probability: {probability:.2f}')
             cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
             cv2.putText(img, f'{LABELS[classnum]}: {probability:.2f}',
-                (xmin, ymin - 5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (0, 255, 0), 2)
+                        (xmin, ymin - 5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (0, 255, 0), 2)

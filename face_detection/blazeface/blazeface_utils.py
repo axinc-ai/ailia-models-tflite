@@ -23,8 +23,8 @@ def plot_detections(
 
         if with_keypoints:
             for k in range(6):
-                kp_x = int(detections[i, 4 + k*2    ] * img.shape[1])
-                kp_y = int(detections[i, 4 + k*2 + 1] * img.shape[0])
+                kp_x = int(detections[i, 4 + k * 2 + 0] * img.shape[1])
+                kp_y = int(detections[i, 4 + k * 2 + 1] * img.shape[0])
 
                 color = (255, 128, 128)
                 cv2.circle(img, (kp_x, kp_y), 2, color, 1)
@@ -56,14 +56,12 @@ def decode_boxes(raw_boxes, anchors):
     boxes[..., 3] = x_center + w / 2.  # xmax
 
     for k in range(6):
-        offset = 4 + k*2
-        keypoint_x = raw_boxes[..., offset    ] / x_scale * anchors[:, 2] +\
-            anchors[:, 0]
-        keypoint_y = raw_boxes[..., offset + 1] / y_scale * anchors[:, 3] +\
-            anchors[:, 1]
-        boxes[..., offset    ] = keypoint_x
+        offset = 4 + k * 2
+        keypoint_x = raw_boxes[..., offset + 0] / x_scale * anchors[:, 2] + anchors[:, 0]
+        keypoint_y = raw_boxes[..., offset + 1] / y_scale * anchors[:, 3] + anchors[:, 1]
+        boxes[..., offset + 0] = keypoint_x
         boxes[..., offset + 1] = keypoint_y
-        
+
     return boxes
 
 
@@ -88,14 +86,12 @@ def intersect(box_a, box_b):
     max_xy = np.minimum(
         np.repeat(np.expand_dims(box_a[:, 2:], axis=1), B, axis=1),
         np.repeat(np.expand_dims(box_b[:, 2:], axis=0), A, axis=0),
-        
     )
     min_xy = np.maximum(
         np.repeat(np.expand_dims(box_a[:, :2], axis=1), B, axis=1),
         np.repeat(np.expand_dims(box_b[:, :2], axis=0), A, axis=0),
-        
     )
-    
+
     inter = np.clip((max_xy - min_xy), 0, None)
     return inter[:, :, 0] * inter[:, :, 1]
 
@@ -115,7 +111,7 @@ def jaccard(box_a, box_b):
     inter = intersect(box_a, box_b)
     area_a = np.repeat(
         np.expand_dims(
-            (box_a[:, 2]-box_a[:, 0]) * (box_a[:, 3]-box_a[:, 1]),
+            (box_a[:, 2] - box_a[:, 0]) * (box_a[:, 3] - box_a[:, 1]),
             axis=1
         ),
         inter.shape[1],
@@ -123,7 +119,7 @@ def jaccard(box_a, box_b):
     )  # [A,B]
     area_b = np.repeat(
         np.expand_dims(
-            (box_b[:, 2]-box_b[:, 0]) * (box_b[:, 3]-box_b[:, 1]),
+            (box_b[:, 2] - box_b[:, 0]) * (box_b[:, 3] - box_b[:, 1]),
             axis=0
         ),
         inter.shape[0],
@@ -152,7 +148,7 @@ def weighted_non_max_suppression(detections):
     while len(remaining) > 0:
         detection = detections[remaining[0]]
 
-        # Compute the overlap between the first box and the other 
+        # Compute the overlap between the first box and the other
         # remaining boxes. (Note that the other_boxes also include
         # the first_box.)
         first_box = detection[:4]
@@ -178,7 +174,7 @@ def weighted_non_max_suppression(detections):
 
         output_detections.append(weighted_detection)
 
-    return output_detections    
+    return output_detections
 
 
 def postprocess(preds_ailia, anchor_path='anchors.npy'):
@@ -188,11 +184,11 @@ def postprocess(preds_ailia, anchor_path='anchors.npy'):
     anchors = np.load(anchor_path).astype(np.float32)
     score_thresh = 100.0
     min_score_thresh = 0.75
-    
+
     detection_boxes = decode_boxes(raw_box, anchors)  # (1, 896, 16)
     raw_score = np.clip(raw_score, -score_thresh, score_thresh)  # (1, 896, 1)
     detection_scores = np.squeeze(sigmoid(raw_score), axis=-1)  # (1, 896)
-    
+
     # Note: we stripped off the last dimension from the scores tensor
     # because there is only has one class. Now we can simply use a mask
     # to filter out the boxes with too low confidence.
@@ -214,18 +210,19 @@ def postprocess(preds_ailia, anchor_path='anchors.npy'):
         filtered_detections.append(faces)
     return filtered_detections
 
+
 def crop_blazeface(obj, margin, frame):
     w = frame.shape[1]
     h = frame.shape[0]
-    cx = (obj.x + obj.w/2) * w
-    cy = (obj.y + obj.h/2) * h
+    cx = (obj.x + obj.w / 2) * w
+    cy = (obj.y + obj.h / 2) * h
     cw = max(obj.w * w * margin, obj.h * h * margin)
-    fx = max(cx - cw/2, 0)
-    fy = max(cy - cw/2, 0)
-    fw = min(cw, w-fx)
-    fh = min(cw, h-fy)
+    fx = max(cx - cw / 2, 0)
+    fy = max(cy - cw / 2, 0)
+    fw = min(cw, w - fx)
+    fh = min(cw, h - fy)
     top_left = (int(fx), int(fy))
-    bottom_right = (int((fx+fw)), int(fy+fh))
+    bottom_right = (int((fx + fw)), int(fy + fh))
     crop_img = frame[
         top_left[1]:bottom_right[1], top_left[0]:bottom_right[0], 0:3
     ]
@@ -237,14 +234,13 @@ def show_result(input_img, detections):
         for d in detection:
             w = input_img.shape[1]
             h = input_img.shape[0]
-            top_left = (int(d[1]*w), int(d[0]*h))
-            bottom_right = (int(d[3]*w), int(d[2]*h))
+            top_left = (int(d[1] * w), int(d[0] * h))
+            bottom_right = (int(d[3] * w), int(d[2] * h))
             color = (255, 255, 255)
             cv2.rectangle(input_img, top_left, bottom_right, color, 4)
 
             for k in range(6):
-                kp_x = d[4 + k*2] * input_img.shape[1]
-                kp_y = d[4 + k*2 + 1] * input_img.shape[0]
-                r = int(input_img.shape[1]/100)
-                cv2.circle(input_img, (int(kp_x), int(kp_y)),
-                           r, (255, 255, 255), -1)
+                kp_x = d[4 + k * 2] * input_img.shape[1]
+                kp_y = d[4 + k * 2 + 1] * input_img.shape[0]
+                r = int(input_img.shape[1] / 100)
+                cv2.circle(input_img, (int(kp_x), int(kp_y)), r, (255, 255, 255), -1)

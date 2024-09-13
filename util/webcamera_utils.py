@@ -133,7 +133,7 @@ def get_writer(savepath, height, width, fps=20, rgb=True):
     return writer
 
 
-def get_capture(video, width = 0, height = 0):
+def get_capture(video, width=0, height=0):
     """
     Get cv2.VideoCapture
 

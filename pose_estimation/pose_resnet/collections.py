@@ -5,7 +5,8 @@
 try:
     from _collections import _tuplegetter
 except ImportError:
-    _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
+    _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)  # noqa: E731, F821
+
 
 def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
     """Returns a new subclass of tuple with named fields.
@@ -36,15 +37,12 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     if isinstance(field_names, str):
         field_names = field_names.replace(',', ' ').split()
     field_names = list(map(str, field_names))
-    typename = _sys.intern(str(typename))
+    typename = _sys.intern(str(typename))  # noqa: F821
 
     if rename:
         seen = set()
         for index, name in enumerate(field_names):
-            if (not name.isidentifier()
-                or _iskeyword(name)
-                or name.startswith('_')
-                or name in seen):
+            if (not name.isidentifier() or _iskeyword(name) or name.startswith('_') or name in seen):  # noqa: F821
                 field_names[index] = f'_{index}'
             seen.add(name)
 
@@ -54,7 +52,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         if not name.isidentifier():
             raise ValueError('Type names and field names must be valid '
                              f'identifiers: {name!r}')
-        if _iskeyword(name):
+        if _iskeyword(name):  # noqa: F821
             raise ValueError('Type names and field names cannot be a '
                              f'keyword: {name!r}')
 
@@ -76,7 +74,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
                                                 reversed(defaults)))))
 
     # Variables used in the methods and docstrings
-    field_names = tuple(map(_sys.intern, field_names))
+    field_names = tuple(map(_sys.intern, field_names))  # noqa: F821
     num_fields = len(field_names)
     arg_list = ', '.join(field_names)
     if num_fields == 1:
@@ -157,7 +155,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__match_args__': field_names,
     }
     for index, name in enumerate(field_names):
-        doc = _sys.intern(f'Alias for field number {index}')
+        doc = _sys.intern(f'Alias for field number {index}')  # noqa: F821
         class_namespace[name] = _tuplegetter(index, doc)
 
     result = type(typename, (tuple,), class_namespace)
@@ -169,11 +167,10 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # specified a particular module.
     if module is None:
         try:
-            module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+            module = _sys._getframe(1).f_globals.get('__name__', '__main__')  # noqa: F821
         except (AttributeError, ValueError):
             pass
     if module is not None:
         result.__module__ = module
 
     return result
-
