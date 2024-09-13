@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -21,9 +21,9 @@ def find_and_append_util_path():
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
-import webcamera_utils  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath
+from model_utils import check_and_download_models
+import webcamera_utils
 
 
 logger = getLogger(__name__)
@@ -112,7 +112,10 @@ def recognize_from_image():
             interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
         else:
             if args.flags or args.memory_mode or args.env_id:
-                interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
+                interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                       memory_mode=args.memory_mode,
+                                                       flags=args.flags,
+                                                       env_id=args.env_id)
             else:
                 interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
         interpreter.resize_tensor_input(0, input_data.shape)
@@ -182,7 +185,10 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
 

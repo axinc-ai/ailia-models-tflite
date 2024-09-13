@@ -438,7 +438,8 @@ def landmarks2roi(landmarks, affine):
         ROI x center, y center, scale (width = height), theta (rotation)
         in original image coordinates
 
-    Reference: https://github.com/google/mediapipe/blob/master/mediapipe/modules/hand_landmark/hand_landmark_landmarks_to_roi.pbtxt
+    Reference:
+        https://github.com/google/mediapipe/blob/master/mediapipe/modules/hand_landmark/hand_landmark_landmarks_to_roi.pbtxt
     """
     partial_landmarks_id = [0, 1, 2, 3, 5, 6, 9, 10, 13, 14, 17, 18]
     partial_landmarks = landmarks[partial_landmarks_id, :]

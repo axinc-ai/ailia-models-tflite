@@ -1,8 +1,8 @@
-#### definition of constant and data structure ####  # noqa: E266
+#### definition of constant and data structure ####
 
 from collections import namedtuple
 
-#### definition of constant ####  # noqa: E266
+#### definition of constant ####
 MULTITHREAD_AUTO = 0
 ENVIRONMENT_AUTO = -1
 
@@ -92,20 +92,33 @@ POSE_KEYPOINT_CNT = (19)
 POSE_UPPOSE_KEYPOINT_CNT = (15)
 POSE_HAND_KEYPOINT_CNT = (21)
 
-#### definition of data structure ####  # noqa: E266
+#### definition of data structure ####
 Environment = namedtuple("Environment", ["id", "type", "name", "backend", "props"])
 DetectorObject = namedtuple("DetectorObject", ["category", "prob", "x", "y", "w", "h"])
 ClassifierClass = namedtuple("ClassifierClass", ["category", "prob"])
 PoseEstimatorKeypoint = namedtuple("PoseEstimatorKeypoint", ["x", "y", "z_local", "score", "interpolated"])
-PoseEstimatorObjectPose = namedtuple("PoseEstimatorObjectPose", ["points", "total_score", "num_valid_points", "id", "angle_x", "angle_y", "angle_z"])
-PoseEstimatorObjectUpPose = namedtuple("PoseEstimatorObjectUpPose", ["points", "total_score", "num_valid_points", "id", "angle_x", "angle_y", "angle_z"])
+
+PoseEstimatorObjectPose = namedtuple(
+    "PoseEstimatorObjectPose", ["points", "total_score", "num_valid_points", "id", "angle_x", "angle_y", "angle_z"])
+
+PoseEstimatorObjectUpPose = namedtuple(
+    "PoseEstimatorObjectUpPose", ["points", "total_score", "num_valid_points", "id", "angle_x", "angle_y", "angle_z"])
+
 PoseEstimatorObjectHand = namedtuple("PoseEstimatorObjectHand", ["points", "total_score"])
 
-### definition of data type for Structured array in NumPy ###  # noqa: E266
+### definition of data type for Structured array in NumPy ###
 NumpyDetectorRectangle = [("x", "f4"), ("y", "f4"), ("w", "f4"), ("h", "f4")]
 NumpyDetectorObject = [("category", "i4"), ("prob", "f4"), ("box", NumpyDetectorRectangle)]
 NumpyClassifierClass = [("category", "i4"), ("prob", "f4")]
 NumpyPoseEstimatorKeypoint = [("x", "f4"), ("y", "f4"), ("z_local", "f4"), ("score", "f4"), ("interpolated", "i4")]
-NumpyPoseEstimatorObjectPose = [("points", NumpyPoseEstimatorKeypoint, POSE_KEYPOINT_CNT), ("total_score", "f4"), ("num_valid_points", "i4"), ("id", "i4"), ("angle_x", "f4"), ("angle_y", "f4"), ("angle_z", "f4")]
-NumpyPoseEstimatorObjectUpPose = [("points", NumpyPoseEstimatorKeypoint, POSE_UPPOSE_KEYPOINT_CNT), ("total_score", "f4"), ("num_valid_points", "i4"), ("id", "i4"), ("angle_x", "f4"), ("angle_y", "f4"), ("angle_z", "f4")]
+NumpyPoseEstimatorObjectPose = [
+    ("points", NumpyPoseEstimatorKeypoint, POSE_KEYPOINT_CNT), ("total_score", "f4"), ("num_valid_points", "i4"),
+    ("id", "i4"), ("angle_x", "f4"), ("angle_y", "f4"), ("angle_z", "f4")
+]
+
+NumpyPoseEstimatorObjectUpPose = [
+    ("points", NumpyPoseEstimatorKeypoint, POSE_UPPOSE_KEYPOINT_CNT), ("total_score", "f4"),
+    ("num_valid_points", "i4"), ("id", "i4"), ("angle_x", "f4"), ("angle_y", "f4"), ("angle_z", "f4")
+]
+
 NumpyPoseEstimatorObjectHand = [("points", NumpyPoseEstimatorKeypoint, POSE_HAND_KEYPOINT_CNT), ("total_score", "f4")]

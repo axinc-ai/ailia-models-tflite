@@ -1,6 +1,6 @@
 import os
 import sys
-from logging import getLogger  # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -19,10 +19,10 @@ def find_and_append_util_path():
 
 find_and_append_util_path()
 
-from image_utils import resize_image, load_image  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
-from utils import file_abs_path, get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
-from webcamera_utils import get_capture, get_writer, preprocess_frame  # noqa: E402
+from image_utils import resize_image, load_image
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor
+from utils import file_abs_path, get_base_parser, get_savepath, update_parser, delegate_obj
+from webcamera_utils import get_capture, get_writer, preprocess_frame
 
 
 logger = getLogger(__name__)
@@ -270,7 +270,11 @@ def main():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:

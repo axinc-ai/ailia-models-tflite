@@ -48,7 +48,7 @@ logger.setLevel(log_level)
 if not disable_stream_handler:
     try:
         # Rainbow Logging
-        from rainbow_logging_handler import RainbowLoggingHandler  # noqa: E402
+        from rainbow_logging_handler import RainbowLoggingHandler
         color_msecs = ('green', None, True)
         stream_handler = RainbowLoggingHandler(
             sys.stdout, color_msecs=color_msecs, datefmt=datefmt

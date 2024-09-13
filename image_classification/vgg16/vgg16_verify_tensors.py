@@ -22,7 +22,7 @@ def find_and_append_util_path():
 find_and_append_util_path()
 
 
-from model_utils import format_input_tensor, get_output_tensor  # noqa: E402
+from model_utils import format_input_tensor, get_output_tensor
 from image_utils import normalize_image
 
 
@@ -34,7 +34,7 @@ def predict_tflite(tflite_path, input_data):
     # 入力の形式チェック
     input_details = interpreter.get_input_details()
     input_shape = input_details[0]['shape']
-    if input_shape[0] != input_data.shape[0] or input_shape[1] != input_data.shape[1] or input_shape[2] != input_data.shape[2] or input_shape[3] != input_data.shape[3]:
+    if any(input_shape[i] != input_data.shape[i] for i in range(4)):
         print("input shape mismatch", input_shape, input_data.shape)
         return
     inputs = format_input_tensor(input_data, input_details, 0)
@@ -75,7 +75,10 @@ def main():
 
     for idx in range(len(tensors_dict_float)):
         diff = np.mean(np.square(tensors_dict_float[idx]["tensor"] - tensors_dict_int8[idx]["tensor"]))
-        print(tensors_dict_float[idx]["index"], tensors_dict_int8[idx]["index"], tensors_dict_float[idx]["operator"], tensors_dict_int8[idx]["operator"], diff)
+        print(tensors_dict_float[idx]["index"],
+              tensors_dict_int8[idx]["index"],
+              tensors_dict_float[idx]["operator"],
+              tensors_dict_int8[idx]["operator"], diff)
 
 
 if __name__ == '__main__':

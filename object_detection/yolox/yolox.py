@@ -153,7 +153,11 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -235,7 +239,10 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -290,7 +297,10 @@ def recognize_from_video():
 
         # write prediction
         if args.write_prediction:
-            savepath = get_savepath(args.savepath, video_name, post_fix='_%s' % (str(frame_count).zfill(frame_digit) + '_res'), ext='.png')
+            savepath = get_savepath(args.savepath,
+                                    video_name,
+                                    post_fix='_%s' % (str(frame_count).zfill(frame_digit) + '_res'),
+                                    ext='.png')
             pred_file = '%s.txt' % savepath.rsplit('.', 1)[0]
             write_predictions(
                 pred_file, final_boxes, final_scores, final_cls_inds,

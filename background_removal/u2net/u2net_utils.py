@@ -4,7 +4,7 @@ import os
 import cv2
 import numpy as np
 
-from logging import getLogger  # noqa: E402
+from logging import getLogger
 
 logger = getLogger(__name__)
 

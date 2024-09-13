@@ -144,11 +144,20 @@ def preprocess_image(img,
     if tta == "1_crop":  # imagenet 1 crop mode (256x256 -> 224x224)
         pad = 16
         if img_new.shape[0] < img_new.shape[1]:
-            img_new = cv2.resize(img_new, (int(img_new.shape[1] * (out_size[0] + pad * 2) / img_new.shape[0]), (out_size[0] + pad * 2)))
-            img_new = img_new[pad:pad + out_size[0], (img_new.shape[1] - out_size[1]) // 2:(img_new.shape[1] - out_size[1]) // 2 + out_size[1], :]
+            new_sz = (int(img_new.shape[1] * (out_size[0] + pad * 2) / img_new.shape[0]), (out_size[0] + pad * 2))
+            img_new = cv2.resize(img_new, new_sz)
+
+            xmin, xmax = (pad, pad + out_size[0])
+            ymin, ymax = ((img_new.shape[1] - out_size[1]) // 2, (img_new.shape[1] - out_size[1]) // 2 + out_size[1])
+            img_new = img_new[xmin:xmax, ymin:ymax, :]
         else:
-            img_new = cv2.resize(img_new, ((out_size[1] + pad * 2), int(img_new.shape[0] * (out_size[1] + pad * 2) / img_new.shape[1])))
-            img_new = img_new[(img_new.shape[0] - out_size[0]) // 2:(img_new.shape[0] - out_size[0]) // 2 + out_size[0], pad:pad + out_size[1], :]
+            new_sz = ((out_size[1] + pad * 2), int(img_new.shape[0] * (out_size[1] + pad * 2) / img_new.shape[1]))
+            img_new = cv2.resize(img_new, new_sz)
+
+            xmin, xmax = ((img_new.shape[0] - out_size[0]) // 2, (img_new.shape[0] - out_size[0]) // 2 + out_size[0])
+            ymin, ymax = (pad, pad + out_size[1])
+            img_new = img_new[xmin:xmax, ymin:ymax, :]
+
         img_new = img_new.copy()
 
     img_new, scale, padding = resize_image(img_new, out_size, keep_aspect_ratio=keep_aspect_ratio)

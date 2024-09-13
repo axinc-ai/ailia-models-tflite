@@ -38,7 +38,8 @@ def nms_between_categories(detections, w, h, categories=None, iou_threshold=0.25
             box_a = [w * det[idx2].x, h * det[idx2].y, w * (det[idx2].x + det[idx2].w), h * (det[idx2].y + det[idx2].h)]
             box_b = [w * obj.x, h * obj.y, w * (obj.x + obj.w), h * (obj.y + obj.h)]
             iou = bb_intersection_over_union(box_a, box_b)
-            if iou >= iou_threshold and (categories is None or ((det[idx2].category in categories) and (obj.category in categories))):
+            cat_of_interest = (det[idx2].category in categories) and (obj.category in categories)
+            if iou >= iou_threshold and (categories is None or cat_of_interest):
                 if det[idx2].prob <= obj.prob:
                     keep[idx2] = False
                 else:

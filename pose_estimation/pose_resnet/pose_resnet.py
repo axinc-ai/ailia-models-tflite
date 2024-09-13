@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import numpy as np
 import cv2
@@ -21,13 +21,13 @@ def find_and_append_util_path():
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
-from image_utils import load_image as load_image_img, preprocess_image  # noqa: E402
-from detector_utils import load_image as load_image_det  # noqa: E402
-from nms_utils import nms  # noqa: E402
-import webcamera_utils  # noqa: E402
-from pose_resnet_util import compute, keep_aspect  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from model_utils import check_and_download_models
+from image_utils import load_image as load_image_img, preprocess_image
+from detector_utils import load_image as load_image_det
+from nms_utils import nms
+import webcamera_utils
+from pose_resnet_util import compute, keep_aspect
 import const
 
 logger = getLogger(__name__)
@@ -471,7 +471,11 @@ def main():
         interpreter_pose = tf.lite.Interpreter(model_path=POSE_MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
+            interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH,
+                                                        memory_mode=args.memory_mode,
+                                                        flags=args.flags,
+                                                        env_id=args.env_id,
+                                                        experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH)
     interpreter_pose.allocate_tensors()
@@ -481,7 +485,11 @@ def main():
         interpreter_detect = tf.lite.Interpreter(model_path=DETECT_MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
+            interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH,
+                                                          memory_mode=args.memory_mode,
+                                                          flags=args.flags,
+                                                          env_id=args.env_id,
+                                                          experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH)
     interpreter_detect.allocate_tensors()

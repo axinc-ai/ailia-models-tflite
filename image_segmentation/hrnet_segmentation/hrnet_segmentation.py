@@ -21,10 +21,10 @@ def find_and_append_util_path():
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
-from image_utils import load_image, preprocess_image  # noqa: E402
-import webcamera_utils  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from model_utils import check_and_download_models, format_input_tensor
+from image_utils import load_image, preprocess_image
+import webcamera_utils
 from hrnet_utils import smooth_output, save_pred, gen_preds_img_np
 
 

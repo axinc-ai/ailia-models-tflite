@@ -3,7 +3,7 @@ import sys
 import colorsys
 import random
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -23,10 +23,10 @@ def find_and_append_util_path():
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
-from webcamera_utils import get_capture, get_writer  # noqa: E402
-from image_utils import load_image, preprocess_image  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from webcamera_utils import get_capture, get_writer
+from image_utils import load_image, preprocess_image
+from model_utils import check_and_download_models
 from nms_utils import nms
 from detector_utils import write_predictions
 
@@ -208,7 +208,11 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -290,7 +294,10 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()

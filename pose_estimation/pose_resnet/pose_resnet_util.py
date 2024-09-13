@@ -20,7 +20,7 @@ def find_and_append_util_path():
 find_and_append_util_path()
 
 
-from model_utils import format_input_tensor, get_output_tensor  # noqa: E402
+from model_utils import format_input_tensor, get_output_tensor
 import const
 
 
