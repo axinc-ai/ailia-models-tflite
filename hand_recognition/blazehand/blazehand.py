@@ -1,19 +1,31 @@
+import os
 import sys
 import time
+from logging import getLogger   # noqa: E402
 
 import cv2
 import numpy as np
 
-import blazehand_utils as but
 
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from webcamera_utils import get_capture, get_writer  # noqa: E402
 from image_utils import load_image, preprocess_image  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
+import blazehand_utils as but
 
-# logger
-from logging import getLogger   # noqa: E402
+
 logger = getLogger(__name__)
 
 
@@ -63,6 +75,8 @@ if args.float:
 else:
     DETECTOR_MODEL_PATH = f'palm_detection_builtin_256_full_integer_quant.tflite'
     LANDMARK_MODEL_PATH = f'hand_landmark_new_256x256_full_integer_quant.tflite'
+DETECTOR_MODEL_PATH = file_abs_path(__file__, DETECTOR_MODEL_PATH)
+LANDMARK_MODEL_PATH = file_abs_path(__file__, LANDMARK_MODEL_PATH)
 DETECTOR_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{DETECTION_MODEL_NAME}/'
 LANDMARK_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/{LANDMARK_MODEL_NAME}/'
 
@@ -164,7 +178,7 @@ def recognize_from_image(detector, estimator):
         else:
             preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
             preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
-        detections = but.detector_postprocess(preds_tf_lite)
+        detections = but.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         # Hand landmark estimation
         presence = [0, 0]  # [left, right]
@@ -275,7 +289,7 @@ def recognize_from_video(detector, estimator):
             else:
                 preds_tf_lite[0] = get_real_tensor(detector, det_output_details, 1)   #1x2944x18 regressors
                 preds_tf_lite[1] = get_real_tensor(detector, det_output_details, 0)   #1x2944x1 classificators
-            detections = but.detector_postprocess(preds_tf_lite)
+            detections = but.detector_postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
             if detections[0].size > 0:
                 tracking = True
                 roi_imgs, affines, _ = but.estimator_preprocess(frame, [detections[0][:num_hands]], scale, pad)

@@ -1,23 +1,33 @@
-import numpy as np
-import time
 import os
 import sys
-import cv2
+import time
 import math
+from logging import getLogger
 
+import cv2
+import numpy as np
+
+
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor
+from detector_utils import plot_results, write_predictions
+import webcamera_utils
 from yolox_utils import preproc as preprocess
 from yolox_utils import postprocess, filter_predictions
 
-# import original modules
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj
-from model_utils import check_and_download_models, format_input_tensor, \
-    get_output_tensor
-from detector_utils import plot_results, write_predictions
-import webcamera_utils
-
-# logger
-from logging import getLogger
 
 logger = getLogger(__name__)
 
@@ -106,7 +116,7 @@ else:
     stem = f'{MODEL_NAME}_full_integer_quant'
 if not args.normal:
     stem += '.opt'
-MODEL_PATH = f'{stem}.tflite'
+MODEL_PATH = file_abs_path(__file__, f'{stem}.tflite')
 REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolox/'
 
 HEIGHT = MODEL_PARAMS[MODEL_NAME]['input_shape'][0]
