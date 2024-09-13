@@ -4,8 +4,6 @@ import os
 import cv2
 import numpy as np
 
-sys.path.append('../../util')
-# logger
 from logging import getLogger  # noqa: E402
 
 logger = getLogger(__name__)

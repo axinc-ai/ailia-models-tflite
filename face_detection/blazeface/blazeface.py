@@ -1,20 +1,31 @@
+import os
 import sys
 import time
-import numpy as np
+from logging import getLogger   # noqa: E402
 
 import cv2
 
-import blazeface_utils as but
 
-# import original modules
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 from image_utils import load_image  # noqa: E402
 import webcamera_utils  # noqa: E402
+import blazeface_utils as but
 
-# logger
-from logging import getLogger   # noqa: E402
+
 logger = getLogger(__name__)
 
 # ======================
@@ -50,15 +61,17 @@ if args.shape:
     IMAGE_HEIGHT = args.shape
     IMAGE_WIDTH = args.shape
 
+if args.float:
+    MODEL_PATH = MODEL_FLOAT_PATH
+else:
+    MODEL_PATH = MODEL_INT_PATH
+MODEL_PATH = file_abs_path(__file__, MODEL_PATH)
+
 # ======================
 # Main functions
 # ======================
 def recognize_from_image():
     # net initialize
-    if args.float:
-        MODEL_PATH = MODEL_FLOAT_PATH
-    else:
-        MODEL_PATH = MODEL_INT_PATH
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
@@ -114,7 +127,7 @@ def recognize_from_image():
             preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
 
         # postprocessing
-        detections = but.postprocess(preds_tf_lite)
+        detections = but.postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         savepath = get_savepath(args.savepath, image_path)
         logger.info(f'saved at : {savepath}')        
@@ -128,10 +141,6 @@ def recognize_from_image():
 
 def recognize_from_video():
     # net initialize
-    if args.float:
-        MODEL_PATH = "face_detection_front.tflite"
-    else:
-        MODEL_PATH = "face_detection_front_128_full_integer_quant.tflite"
     if args.tflite:
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
@@ -178,7 +187,7 @@ def recognize_from_video():
             preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
 
         # postprocessing
-        detections = but.postprocess(preds_tf_lite)
+        detections = but.postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
         but.show_result(input_image, detections)
         cv2.imshow('frame', input_image)
 
@@ -195,8 +204,7 @@ def recognize_from_video():
 
 def main():
     # model files check and download
-    check_and_download_models(MODEL_FLOAT_PATH, REMOTE_PATH)
-    check_and_download_models(MODEL_INT_PATH, REMOTE_PATH)
+    check_and_download_models(MODEL_PATH, REMOTE_PATH)
 
     if args.video is not None:
         # video mode

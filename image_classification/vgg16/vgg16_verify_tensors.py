@@ -1,14 +1,30 @@
 # int8とfloatの誤差を比較する
 
+import os
+import sys
+
 import ailia_tflite
 import numpy as np
 import cv2
 import hashlib
-import sys
 
-sys.path.append('../../util')
+
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+
 from model_utils import format_input_tensor, get_output_tensor  # noqa: E402
 from image_utils import normalize_image
+
 
 def predict_tflite(tflite_path, input_data):
     # ailiaでtfliteファイルを読み込み
