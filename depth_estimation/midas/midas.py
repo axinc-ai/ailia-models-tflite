@@ -16,10 +16,11 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 from image_utils import resize_image, load_image  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor, get_output_tensor # noqa: E402
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
 from utils import file_abs_path, get_base_parser, get_savepath, update_parser, delegate_obj  # noqa: E402
 from webcamera_utils import get_capture, get_writer, preprocess_frame  # noqa: E402
 
@@ -79,7 +80,7 @@ else:
     if not args.v21:
         MODEL_NAME = 'midas_quant_recalib'
 MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/midas/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/midas/'
 
 
 # ======================
@@ -116,8 +117,7 @@ def midas_resize(image, target_height, target_width):
 
 def recognize_from_image(interpreter):
 
-    h, w = (IMAGE_HEIGHT, IMAGE_WIDTH) if not args.v21 or args.model_type == 'large' \
-               else (IMAGE_HEIGHT_SMALL, IMAGE_WIDTH_SMALL)
+    h, w = (IMAGE_HEIGHT, IMAGE_WIDTH) if not args.v21 or args.model_type == 'large' else (IMAGE_HEIGHT_SMALL, IMAGE_WIDTH_SMALL)
 
     src = cv2.imread(IMAGE_PATH, cv2.IMREAD_COLOR)
     src_h, src_w, c = src.shape
@@ -134,7 +134,7 @@ def recognize_from_image(interpreter):
         dtype = float
         if args.float:
             dtype = np.float32
-        image = load_image( 
+        image = load_image(
             image_path,
             (h, w),
             normalize_type='ImageNet',
@@ -150,7 +150,7 @@ def recognize_from_image(interpreter):
 
         # inference
         logger.info('Start inference...')
-        
+
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
 
@@ -177,8 +177,7 @@ def recognize_from_image(interpreter):
 
 def recognize_from_video(interpreter):
 
-    h, w = (IMAGE_HEIGHT, IMAGE_WIDTH) if not args.v21 or args.model_type == 'large' \
-               else (IMAGE_HEIGHT_SMALL, IMAGE_WIDTH_SMALL)
+    h, w = (IMAGE_HEIGHT, IMAGE_WIDTH) if not args.v21 or args.model_type == 'large' else (IMAGE_HEIGHT_SMALL, IMAGE_WIDTH_SMALL)
 
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -189,39 +188,36 @@ def recognize_from_video(interpreter):
     f_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     f_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
 
-    zero_frame = np.zeros((f_h,f_w,3))
+    zero_frame = np.zeros((f_h, f_w, 3))
     resized_img = midas_resize(zero_frame, h, w)
     save_h, save_w = resized_img.shape[0], resized_img.shape[1]
 
-    output_frame = np.zeros((save_h,save_w*2,3))
+    output_frame = np.zeros((save_h, save_w * 2, 3))
 
     # create video writer if savepath is specified as video format
     if args.savepath != SAVE_IMAGE_PATH:
-        logger.warning(
-            'currently, video results cannot be output correctly...'
-        )
+        logger.warning('currently, video results cannot be output correctly...')
         writer = get_writer(args.savepath, save_h, save_w * 2)
     else:
         writer = None
 
-    input_shape_set = False
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
 
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
         if frame_shown and cv2.getWindowProperty('depth', cv2.WND_PROP_VISIBLE) == 0:
             break
-        
-        frame_mini, scale, padding = resize_image(frame, (save_h, save_w), keep_aspect_ratio=False)
-        frame_resize, scale, padding = resize_image(frame, (h, w), keep_aspect_ratio=False)
+
+        frame_mini, _, _ = resize_image(frame, (save_h, save_w), keep_aspect_ratio=False)
+        frame_resize, _, _ = resize_image(frame, (h, w), keep_aspect_ratio=False)
 
         # prepare input data
         dtype = float
         if args.float:
             dtype = np.float32
-        input_image, input_data = preprocess_frame(
+        _, input_data = preprocess_frame(
             frame_resize, h, w, normalize_type='ImageNet',
             bgr_to_rgb=True, output_type=dtype
         )
@@ -241,13 +237,13 @@ def recognize_from_video(interpreter):
             out = 0
 
         # convert to 8bit
-        res_img = (out.transpose(1, 2, 0)/256).astype("uint8")
+        res_img = (out.transpose(1, 2, 0) / 256).astype("uint8")
         res_img = cv2.cvtColor(res_img, cv2.COLOR_GRAY2BGR)
 
-        res_img, scale, padding = resize_image(res_img, (save_h, save_w), keep_aspect_ratio=False)
+        res_img, _, _ = resize_image(res_img, (save_h, save_w), keep_aspect_ratio=False)
 
-        output_frame[:,save_w:save_w*2,:]=res_img
-        output_frame[:,0:save_w,:]=frame_mini
+        output_frame[:, save_w:save_w * 2, :] = res_img
+        output_frame[:, 0:save_w, :] = frame_mini
         output_frame = output_frame.astype("uint8")
 
         cv2.imshow('depth', output_frame)
@@ -274,7 +270,7 @@ def main():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:
@@ -287,6 +283,7 @@ def main():
     else:
         # image mode
         recognize_from_image(interpreter)
+
 
 if __name__ == '__main__':
     main()

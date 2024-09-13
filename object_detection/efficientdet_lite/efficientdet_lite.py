@@ -19,6 +19,7 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
@@ -55,7 +56,8 @@ COCO_CATEGORY = [
 
 THRESHOLD = 0.4
 
-MODEL_LIST=["lite0", "lite1", "edgeai", "automl"]
+MODEL_LIST = ["lite0", "lite1", "edgeai", "automl"]
+
 
 # ======================
 # Argument Parser Config
@@ -64,7 +66,7 @@ parser = get_base_parser('EfficientDetLite model', IMAGE_PATH, SAVE_IMAGE_PATH)
 parser.add_argument(
     '-th', '--threshold',
     default=THRESHOLD, type=float,
-    help='The detection threshold for yolo. (default: '+str(THRESHOLD)+')'
+    help=f'The detection threshold for yolo. (default: {str(THRESHOLD)})'
 )
 parser.add_argument(
     '-m', '--model',
@@ -88,24 +90,24 @@ if args.shape:
 MODEL_NAME = 'efficientdet_lite'
 if args.model == 'lite0':
     if args.float:
-        MODEL_PATH = f'efficientdet_lite0_float32.tflite'
+        MODEL_PATH = 'efficientdet_lite0_float32.tflite'
     else:
-        MODEL_PATH = f'efficientdet_lite0_integer_quant.tflite'
+        MODEL_PATH = 'efficientdet_lite0_integer_quant.tflite'
     DETECTION_SIZE = 320
 elif args.model == 'lite1':
     if args.float:
-        MODEL_PATH = f'efficientdet_lite1_float32.tflite'
+        MODEL_PATH = 'efficientdet_lite1_float32.tflite'
     else:
-        MODEL_PATH = f'efficientdet_lite1_integer_quant.tflite'
+        MODEL_PATH = 'efficientdet_lite1_integer_quant.tflite'
     DETECTION_SIZE = 384
 elif args.model == 'edgeai':
-    MODEL_PATH = f'efficientdet_lite1_relu_ti.tflite'
+    MODEL_PATH = 'efficientdet_lite1_relu_ti.tflite'
     DETECTION_SIZE = 384
 elif args.model == 'automl':
     if args.float:
-        MODEL_PATH = f'efficientdet-lite0_automl.tflite'
+        MODEL_PATH = 'efficientdet-lite0_automl.tflite'
     else:
-        MODEL_PATH = f'efficientdet-lite0_integer_quant_automl.tflite'
+        MODEL_PATH = 'efficientdet-lite0_integer_quant_automl.tflite'
     DETECTION_SIZE = 320
 
 MODEL_PATH = file_abs_path(__file__, MODEL_PATH)
@@ -134,6 +136,7 @@ def get_input_tensor(tensor, input_details, idx):
     else:
         return tensor
 
+
 def get_real_tensor(interpreter, output_details, idx):
     details = output_details[idx]
     if details['dtype'] == np.uint8 or details['dtype'] == np.int8:
@@ -144,6 +147,7 @@ def get_real_tensor(interpreter, output_details, idx):
     else:
         real_tensor = interpreter.get_tensor(details['index'])
     return real_tensor
+
 
 def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, show_label=True):
     num_boxes = len(out_boxes)
@@ -158,7 +162,8 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
     random.seed(None)
 
     for i in range(num_boxes):
-        if int(out_classes[i]) < 0 or int(out_classes[i]) > num_classes: continue
+        if int(out_classes[i]) < 0 or int(out_classes[i]) > num_classes:
+            continue
         coor = out_boxes[i]
         coor[0] = int(coor[0] * image_h)
         coor[2] = int(coor[2] * image_h)
@@ -167,8 +172,9 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
 
         fontScale = 0.5
         score = out_scores[i]
-        if score<args.threshold:
+        if score < args.threshold:
             continue
+
         class_ind = int(out_classes[i])
         bbox_color = colors[class_ind]
         bbox_thick = int(0.6 * (image_h + image_w) / 600)
@@ -179,7 +185,7 @@ def draw_bbox(image, out_boxes, out_scores, out_classes, classes=COCO_CATEGORY, 
             bbox_mess = '%s: %.2f' % (classes[class_ind], score)
             t_size = cv2.getTextSize(bbox_mess, 0, fontScale, thickness=bbox_thick // 2)[0]
             c3 = (c1[0] + t_size[0], c1[1] - t_size[1] - 3)
-            cv2.rectangle(image, c1, (int(c3[0]), int(c3[1])), bbox_color, -1) #filled
+            cv2.rectangle(image, c1, (int(c3[0]), int(c3[1])), bbox_color, -1)  # filled
 
             cv2.putText(image, bbox_mess, (c1[0], int(c1[1] - 2)), cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale, (0, 0, 0), bbox_thick // 2, lineType=cv2.LINE_AA)
@@ -194,10 +200,11 @@ def reverse_padding(bboxes, pad):
     if args.model == 'edgeai' or args.model == 'automl':
         scale = DETECTION_SIZE
 
-    bboxes[:,0] = (bboxes[:,0] / scale - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
-    bboxes[:,2] = (bboxes[:,2] / scale - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[0]-pad[1]))
-    bboxes[:,1] = (bboxes[:,1] / scale - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
-    bboxes[:,3] = (bboxes[:,3] / scale - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE/(DETECTION_SIZE-pad[2]-pad[3]))
+    bboxes[:, 0] = (bboxes[:, 0] / scale - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE / (DETECTION_SIZE - pad[0] - pad[1]))
+    bboxes[:, 2] = (bboxes[:, 2] / scale - pad[0] / DETECTION_SIZE) * (DETECTION_SIZE / (DETECTION_SIZE - pad[0] - pad[1]))
+    bboxes[:, 1] = (bboxes[:, 1] / scale - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE / (DETECTION_SIZE - pad[2] - pad[3]))
+    bboxes[:, 3] = (bboxes[:, 3] / scale - pad[2] / DETECTION_SIZE) * (DETECTION_SIZE / (DETECTION_SIZE - pad[2] - pad[3]))
+
 
 # ======================
 # Main functions
@@ -208,7 +215,7 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -261,9 +268,9 @@ def recognize_from_image():
 
         if args.model == "edgeai" or args.model == "automl":
             outputs = get_real_tensor(interpreter, output_details, 0)
-            bboxes = outputs[:,:,1:5]
-            class_ids = outputs[:,:,6] - 1
-            confs = outputs[:,:,5]
+            bboxes = outputs[:, :, 1:5]
+            class_ids = outputs[:, :, 6] - 1
+            confs = outputs[:, :, 5]
             print(outputs)
         else:
             if args.float:
@@ -282,7 +289,7 @@ def recognize_from_image():
         confs = confs[0]
         src_img = draw_bbox(src_img, bboxes, confs, class_ids)
 
-        logger.info(f'saved at : {args.savepath}')        
+        logger.info(f'saved at : {args.savepath}')
         cv2.imwrite(args.savepath, src_img)
 
         if args.profile:
@@ -297,7 +304,7 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -314,7 +321,7 @@ def recognize_from_video():
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -337,9 +344,9 @@ def recognize_from_video():
 
         if args.model == "edgeai" or args.model == "automl":
             outputs = get_real_tensor(interpreter, output_details, 0)
-            bboxes = outputs[:,:,1:5]
-            class_ids = outputs[:,:,6] - 1
-            confs = outputs[:,:,5]
+            bboxes = outputs[:, :, 1:5]
+            class_ids = outputs[:, :, 6] - 1
+            confs = outputs[:, :, 5]
         else:
             if args.float:
                 bboxes = get_real_tensor(interpreter, output_details, 0)

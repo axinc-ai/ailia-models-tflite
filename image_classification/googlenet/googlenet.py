@@ -17,6 +17,7 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
@@ -64,7 +65,7 @@ if args.float:
 else:
     MODEL_NAME = 'googlenet_quant_recalib'
 MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/googlenet/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/googlenet/'
 
 
 # ======================
@@ -97,7 +98,7 @@ def recognize_from_image(interpreter):
             bgr_to_rgb=True,
             output_type=dtype,
         )
-        
+
         # quantize input data
         inputs = format_input_tensor(input_data, input_details, 0)
 
@@ -116,11 +117,11 @@ def recognize_from_image(interpreter):
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
             preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
-        
+
         preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
 
         # show results
-        print_results([preds_tf_lite[0],preds_tf_lite_int8[0]], googlenet_labels.imagenet_category)
+        print_results([preds_tf_lite[0], preds_tf_lite_int8[0]], googlenet_labels.imagenet_category)
 
     logger.info('Script finished successfully.')
 
@@ -144,7 +145,7 @@ def recognize_from_video(interpreter):
         writer = None
 
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -192,7 +193,7 @@ def main():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:

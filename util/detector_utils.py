@@ -140,7 +140,7 @@ def plot_results(img, boxes, scores, class_ids, classes, normalized_boxes=True,
             (1 * x / nb_classes, 1., 1.) for x in range(nb_classes)])
         colors = np.apply_along_axis(
             lambda x: colorsys.hsv_to_rgb(*x), 1, hsv_tuples)
-        colors = (colors * 255).astype(np.uint8) # 0-255 BGR
+        colors = (colors * 255).astype(np.uint8)  # 0-255 BGR
         rng = np.random.default_rng(0)
         rng.shuffle(colors)
 
@@ -176,9 +176,9 @@ def plot_results(img, boxes, scores, class_ids, classes, normalized_boxes=True,
             logger.info(f'  h = {boxes_norm[i][3] - boxes_norm[i][1]}')
 
         color = colors[class_id]
-        l = np.asarray([300, 600, 1200])
-        idx = np.searchsorted(l, max_side)
-        if idx == len(l):
+        thicknesses = np.asarray([300, 600, 1200])
+        idx = np.searchsorted(thicknesses, max_side)
+        if idx == len(thicknesses):
             bbox_thick = int(round(max_side / 2400))
         else:
             bbox_thick = max(1, idx)
@@ -200,7 +200,7 @@ def plot_results(img, boxes, scores, class_ids, classes, normalized_boxes=True,
                 {
                     'pt1': (x0, y0 + margin),
                     'pt2': (
-                        x0 + txt_size[0] + 2*margin, y0 + txt_size[1] + 2*margin
+                        x0 + txt_size[0] + 2 * margin, y0 + txt_size[1] + 2 * margin
                     ),
                     'color': color.tolist(),
                     'thickness': -1,
@@ -246,7 +246,7 @@ def write_predictions(file_name, boxes, scores, class_ids, normalized_boxes=True
     classes : list of str, optional
         List of all classes/categories
     """
-    boxes_ = boxes # Not a copy
+    boxes_ = boxes  # Not a copy
     if img_size is not None:
         h, w = img_size
         a = np.asarray([[w, h, w, h]], dtype=np.float32)

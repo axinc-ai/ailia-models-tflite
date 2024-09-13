@@ -17,6 +17,7 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
@@ -24,7 +25,7 @@ from utils import file_abs_path, get_base_parser, update_parser, get_savepath, d
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
 from image_utils import load_image  # noqa: E402
 import webcamera_utils  # noqa: E402
-from deeplab_utils import *
+from deeplab_utils import label_to_color_image
 
 
 logger = getLogger(__name__)
@@ -78,7 +79,7 @@ def segment_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -124,7 +125,7 @@ def segment_from_image():
 
         # postprocessing
         if args.float:
-            preds_tf_lite = preds_tf_lite[:,:,0]
+            preds_tf_lite = preds_tf_lite[:, :, 0]
         seg_img = preds_tf_lite.astype(np.uint8)
         seg_img = label_to_color_image(seg_img)
         org_h, org_w = org_img.shape[:2]
@@ -133,7 +134,7 @@ def segment_from_image():
         seg_overlay = cv2.addWeighted(org_img, 1.0, seg_img, 0.9, 0)
 
         savepath = get_savepath(args.savepath, image_path)
-        logger.info(f'saved at : {savepath}')        
+        logger.info(f'saved at : {savepath}')
         cv2.imwrite(args.savepath, seg_overlay)
     logger.info('Script finished successfully.')
 
@@ -144,7 +145,7 @@ def segment_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -164,7 +165,7 @@ def segment_from_video():
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -178,7 +179,7 @@ def segment_from_video():
         interpreter.invoke()
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])[0]
         if args.float:
-            preds_tf_lite = preds_tf_lite[:,:,0]
+            preds_tf_lite = preds_tf_lite[:, :, 0]
 
         # postprocessing
         seg_img = preds_tf_lite.astype(np.uint8)

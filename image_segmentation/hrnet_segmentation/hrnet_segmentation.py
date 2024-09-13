@@ -17,6 +17,7 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
@@ -38,7 +39,7 @@ SAVE_IMAGE_PATH = 'output.png'
 IMAGE_HEIGHT = 512
 IMAGE_WIDTH = 1024
 MODEL_NAMES = ['HRNetV2-W48', 'HRNetV2-W18-Small-v1', 'HRNetV2-W18-Small-v2']
-NORMALIZE_TYPE="255"
+NORMALIZE_TYPE = "255"
 
 
 # ======================
@@ -53,8 +54,7 @@ parser.add_argument(
     '-a', '--arch', metavar="ARCH",
     default='HRNetV2-W18-Small-v2',
     choices=MODEL_NAMES,
-    help='model architecture:  ' + ' | '.join(MODEL_NAMES) +
-         ' (default: HRNetV2-W18-Small-v2)'
+    help=f'model architecture:  {" | ".join(MODEL_NAMES)} (default: HRNetV2-W18-Small-v2)'
 )
 parser.add_argument(
     '--smooth',  # '-s' has already been reserved for '--savepath'
@@ -98,11 +98,11 @@ def recognize_from_image():
     else:
         if args.flags or args.memory_mode or args.env_id or args.env_id or args.delegate_path is not None:
             interpreter = ailia_tflite.Interpreter(
-                model_path=MODEL_PATH, 
-                memory_mode=args.memory_mode, 
+                model_path=MODEL_PATH,
+                memory_mode=args.memory_mode,
                 flags=args.flags,
-                env_id = args.env_id,
-                experimental_delegates = delegate_obj(args.delegate_path)
+                env_id=args.env_id,
+                experimental_delegates=delegate_obj(args.delegate_path)
             )
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
@@ -114,11 +114,11 @@ def recognize_from_image():
     if args.shape:
         logger.info(f'update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}')
         interpreter.resize_tensor_input(
-            input_details[0]["index"], 
+            input_details[0]["index"],
             [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]
         )
         interpreter.allocate_tensors()
- 
+
     logger.info("Start inference...")
 
     for image_path in args.input:
@@ -165,8 +165,8 @@ def recognize_from_video():
     else:
         if args.flags or args.memory_mode or args.env_id:
             interpreter = ailia_tflite.Interpreter(
-                model_path=MODEL_PATH, 
-                memory_mode=args.memory_mode, 
+                model_path=MODEL_PATH,
+                memory_mode=args.memory_mode,
                 flags=args.flags
             )
         else:
@@ -196,9 +196,9 @@ def recognize_from_video():
             break
 
         input_data = preprocess_image(
-            frame, 
-            (IMAGE_HEIGHT, IMAGE_WIDTH), 
-            NORMALIZE_TYPE, 
+            frame,
+            (IMAGE_HEIGHT, IMAGE_WIDTH),
+            NORMALIZE_TYPE,
             batch_dim=True,
             keep_aspect_ratio=True,
             reverse_color_channel=True,

@@ -1,8 +1,8 @@
-#### definition of constant and data structure ####
+#### definition of constant and data structure ####  # noqa: E266
 
 from collections import namedtuple
 
-#### definition of constant ####
+#### definition of constant ####  # noqa: E266
 MULTITHREAD_AUTO = 0
 ENVIRONMENT_AUTO = -1
 
@@ -92,7 +92,7 @@ POSE_KEYPOINT_CNT = (19)
 POSE_UPPOSE_KEYPOINT_CNT = (15)
 POSE_HAND_KEYPOINT_CNT = (21)
 
-#### definition of data structure ####
+#### definition of data structure ####  # noqa: E266
 Environment = namedtuple("Environment", ["id", "type", "name", "backend", "props"])
 DetectorObject = namedtuple("DetectorObject", ["category", "prob", "x", "y", "w", "h"])
 ClassifierClass = namedtuple("ClassifierClass", ["category", "prob"])
@@ -101,7 +101,7 @@ PoseEstimatorObjectPose = namedtuple("PoseEstimatorObjectPose", ["points", "tota
 PoseEstimatorObjectUpPose = namedtuple("PoseEstimatorObjectUpPose", ["points", "total_score", "num_valid_points", "id", "angle_x", "angle_y", "angle_z"])
 PoseEstimatorObjectHand = namedtuple("PoseEstimatorObjectHand", ["points", "total_score"])
 
-### definition of data type for Structured array in NumPy ###
+### definition of data type for Structured array in NumPy ###  # noqa: E266
 NumpyDetectorRectangle = [("x", "f4"), ("y", "f4"), ("w", "f4"), ("h", "f4")]
 NumpyDetectorObject = [("category", "i4"), ("prob", "f4"), ("box", NumpyDetectorRectangle)]
 NumpyClassifierClass = [("category", "i4"), ("prob", "f4")]

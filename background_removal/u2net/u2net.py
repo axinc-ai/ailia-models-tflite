@@ -16,7 +16,9 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
+
 
 import webcamera_utils  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor  # noqa: E402
@@ -32,7 +34,7 @@ logger = getLogger(__name__)
 # ======================
 IMAGE_PATH = 'input.png'
 SAVE_IMAGE_PATH = 'output.png'
-SAVE_VIDEO_FRAME_PATH = 'video_frame.png' 
+SAVE_VIDEO_FRAME_PATH = 'video_frame.png'
 IMAGE_SIZE = 320
 MODEL_LISTS = ['small', 'large']
 OPSET_LISTS = ['10', '11']
@@ -98,10 +100,10 @@ MODEL_PATH = file_abs_path(__file__, MODEL_PATH)
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/u2net/'
 
 
-
 # ======================
 # Main functions
 # ======================
+
 
 def recognize_from_video(interpreter):
     interpreter.allocate_tensors()
@@ -113,9 +115,9 @@ def recognize_from_video(interpreter):
     # create video writer if savepath is specified as video format
     f_h = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     f_w = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    
+
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -172,7 +174,7 @@ def recognize_from_image(interpreter):
         # prepare input data
         input_data, h, w = load_image(
             image_path,
-            scaled_size=(args.width,args.height),
+            scaled_size=(args.width, args.height),
             rgb_mode=args.rgb
         )
 
@@ -217,10 +219,10 @@ def main():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
-    
+
     if args.video is not None:
         # video mode
         recognize_from_video(interpreter)

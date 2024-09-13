@@ -1,5 +1,4 @@
 import os
-import enum
 import sys
 import time
 
@@ -16,6 +15,7 @@ def find_and_append_util_path():
             return
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
 
 find_and_append_util_path()
 
@@ -65,8 +65,7 @@ parser.add_argument(
 parser.add_argument(
     '--tta', '-t', metavar='TTA',
     default='none', choices=TTA_NAMES,
-    help=('tta scheme: ' + ' | '.join(TTA_NAMES) +
-          ' (default: none)')
+    help=('tta scheme: ' + ' | '.join(TTA_NAMES) + ' (default: none)')
 )
 args = update_parser(parser)
 
@@ -96,19 +95,22 @@ else:
         else:
             MODEL_NAME = 'efficientnetliteb0_quant_recalib'
 MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/efficientnet_lite/'
 
 # ======================
 # Pre processs
 # ======================
 
+
 def tensorflow_preprocess(x):
     return x / 127.5 - 1
 
+
 def torch_preprocess(x):
-    mean=[0.485, 0.456, 0.406]
-    std=[0.229, 0.224, 0.225]
+    mean = [0.485, 0.456, 0.406]
+    std = [0.229, 0.224, 0.225]
     return (x / 255.0 - mean) / std
+
 
 # ======================
 # Main functions
@@ -119,7 +121,7 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id, experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     if args.profile:
@@ -136,11 +138,11 @@ def recognize_from_image():
     print('Start inference...')
 
     if args.legacy:
-        normalize_type='Caffe'
-        bgr_to_rgb=False
+        normalize_type = 'Caffe'
+        bgr_to_rgb = False
     else:
-        normalize_type='None'
-        bgr_to_rgb=True
+        normalize_type = 'None'
+        bgr_to_rgb = True
 
     for image_path in args.input:
         # prepare input data
@@ -164,7 +166,7 @@ def recognize_from_image():
                 input_data = torch_preprocess(input_data)
             else:
                 input_data = tensorflow_preprocess(input_data)
-   
+
         # quantize input data
         input_data = format_input_tensor(input_data, input_details, 0)
 
@@ -189,7 +191,7 @@ def recognize_from_image():
         preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
 
         print(f"=== {image_path} ===")
-        print_results([preds_tf_lite[0],preds_tf_lite_int8[0]], efficientnet_lite_labels.imagenet_category)
+        print_results([preds_tf_lite[0], preds_tf_lite_int8[0]], efficientnet_lite_labels.imagenet_category)
 
         # write prediction
         if args.write_prediction:
@@ -209,7 +211,7 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode=args.memory_mode, flags=args.flags, env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -230,13 +232,13 @@ def recognize_from_video():
         writer = None
 
     if args.legacy:
-        normalize_type='Caffe'
-        bgr_to_rgb=False
+        normalize_type = 'Caffe'
+        bgr_to_rgb = False
     else:
-        normalize_type='None'
-        bgr_to_rgb=True
+        normalize_type = 'None'
+        bgr_to_rgb = True
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
