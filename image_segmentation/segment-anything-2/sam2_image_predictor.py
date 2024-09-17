@@ -193,7 +193,7 @@ class SAM2ImagePredictor:
                 concat_points = (box_coords, box_labels.astype(np.int32))
 
         if mask_input is None:
-            mask_input_dummy = np.zeros((1, 256, 256), dtype=np.float32)
+            mask_input_dummy = np.zeros((1, self.image_size // 4, self.image_size // 4), dtype=np.float32)
             masks_enable = np.array([0], dtype=np.int32)
         else:
             mask_input_dummy = mask_input
@@ -337,7 +337,7 @@ class SAM2ImagePredictor:
             coords[..., 0] = coords[..., 0] / w
             coords[..., 1] = coords[..., 1] / h
 
-        resolution = 1024
+        resolution = self.image_size
         coords = coords * resolution  # unnormalize coords
         return coords
 
