@@ -76,6 +76,10 @@ parser.add_argument(
     '--max_obj_ptrs_in_encoder', type=int, default=1, choices=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
     help='Number of obj ptr in encoder.'
 )
+parser.add_argument(
+    '--image_size', type=int, default=1024, choices=(512, 1024),
+    help='Inference image size.'
+)
 args = update_parser(parser)
 
 # ======================
@@ -170,13 +174,12 @@ def get_input_point():
 def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
     input_point, input_label, input_box = get_input_point()
 
-    image_predictor = SAM2ImagePredictor()
+    image_predictor = SAM2ImagePredictor(args.image_size)
 
     for image_path in args.input:
         image = cv2.imread(image_path)
         orig_hw = [image.shape[0], image.shape[1]]
-        image_size = 1024
-        image_np = preprocess_frame(image, image_size=image_size)
+        image_np = preprocess_frame(image, image_size=args.image_size)
 
         if args.benchmark:
             logger.info('BENCHMARK mode')
@@ -240,8 +243,6 @@ def preprocess_frame(img, image_size):
 
 
 def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp):
-    image_size = 1024
-
     if args.video == "demo":
         frame_names = [
             p for p in os.listdir(args.video)
@@ -267,7 +268,7 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
     else:
         writer = None
 
-    predictor = SAM2VideoPredictor(args.benchmark)
+    predictor = SAM2VideoPredictor(args.benchmark, args.image_size)
 
     inference_state = predictor.init_state(args.num_mask_mem, args.max_obj_ptrs_in_encoder)
     predictor.reset_state(inference_state)
@@ -291,7 +292,7 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
         if frame_shown and cv2.getWindowProperty('frame', cv2.WND_PROP_VISIBLE) == 0:
             break
 
-        image = preprocess_frame(frame, image_size)
+        image = preprocess_frame(frame, args.image_size)
 
         predictor.append_image(
             inference_state,
@@ -366,12 +367,15 @@ def process_frame(image, frame_idx, predictor, inference_state, image_encoder, p
 
 def main():
     # select model
-    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + args.model_type + '.tflite'
-    WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + args.model_type + '.tflite'
-    WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + args.model_type + '.tflite'
-    WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + args.model_type + '.tflite'
-    WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + args.model_type + '.tflite'
-    WEIGHT_MLP_L_PATH = 'mlp_' + args.model_type + '.tflite'
+    model_type = args.model_type
+    if args.image_size != 1024:
+        model_type = model_type + "_" + str(args.image_size)
+    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + '.tflite'
+    WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + '.tflite'
+    WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + '.tflite'
+    WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + '.tflite'
+    WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + '.tflite'
+    WEIGHT_MLP_L_PATH = 'mlp_' + model_type + '.tflite'
 
     # model files check and download
     check_and_download_models(WEIGHT_IMAGE_ENCODER_L_PATH, REMOTE_PATH)

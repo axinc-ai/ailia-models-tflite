@@ -83,6 +83,11 @@ By adding the `--model_type` option, you can specify model type which is selecte
 $ python3 segment-anything-2.py --model_type hiera_l
 ```
 
+By adding the `--image_size` option, you can specify inference image size which is selected from "512" and "1024". (default is 1024)
+```bash
+$ python3 segment-anything-2.py --model_type 512
+```
+
 ## Reference
 
 - [Segment Anything 2](https://github.com/facebookresearch/segment-anything-2)

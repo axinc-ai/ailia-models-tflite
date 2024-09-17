@@ -107,6 +107,7 @@ class SAM2VideoPredictor():
     def __init__(
         self,
         benchmark,
+        image_size,
         fill_hole_area=0,
         # whether to apply non-overlapping constraints on the output object masks
         non_overlap_masks=False,
@@ -117,6 +118,7 @@ class SAM2VideoPredictor():
         clear_non_cond_mem_for_multi_obj=False
     ):
         self.benchmark = benchmark
+        self.image_size = image_size
         self.fill_hole_area = fill_hole_area
         self.non_overlap_masks = non_overlap_masks
         self.clear_non_cond_mem_around_input = clear_non_cond_mem_around_input
@@ -128,7 +130,6 @@ class SAM2VideoPredictor():
         max_obj_ptrs_in_encoder = 16,
     ):
         """default state from yaml"""
-        self.image_size = 1024
         self.num_feature_levels = 3
         self.hidden_dim = 256
         self.num_maskmem = num_maskmem
@@ -1342,7 +1343,7 @@ class SAM2VideoPredictor():
             sam_mask_prompt = None
 
         if sam_mask_prompt is None:
-            mask_input_dummy = np.zeros((1, 256, 256))
+            mask_input_dummy = np.zeros((1, self.image_size // 4, self.image_size // 4))
             masks_enable = np.array([0], dtype=np.int64)
         else:
             mask_input_dummy = sam_mask_prompt

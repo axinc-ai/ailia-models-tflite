@@ -13,6 +13,12 @@ from typing import Tuple
 class SAM2ImagePredictor:
     debug = False
 
+    def __init__(
+        self,
+        image_size,
+    ):
+        self.image_size = image_size
+
     def trunc_normal(self, size, std=0.02, a=-2, b=2):
         values = np.random.normal(loc=0., scale=std, size=size)
         values = np.clip(values, a*std, b*std)       
