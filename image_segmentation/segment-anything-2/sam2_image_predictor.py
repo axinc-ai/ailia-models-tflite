@@ -71,9 +71,9 @@ class SAM2ImagePredictor:
             vision_feats[-1] = vision_feats[-1] + no_mem_embed
 
         bb_feat_sizes = [
-            (256, 256),
-            (128, 128),
-            (64, 64),
+            (self.image_size // 4, self.image_size // 4),
+            (self.image_size // 8, self.image_size // 8),
+            (self.image_size // 16, self.image_size // 16),
         ]
 
         feats = [
