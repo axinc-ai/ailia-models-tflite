@@ -236,13 +236,14 @@ class SAM2ImagePredictor:
 
         image_feature = features["image_embed"]
 
-        print("coords", concat_points[0].shape)
-        print("labels", concat_points[1].shape)
-        print("masks", mask_input_dummy.shape)
+        if self.debug:
+            print("coords", concat_points[0].shape)
+            print("labels", concat_points[1].shape)
+            print("masks", mask_input_dummy.shape)
 
-        print("sparse_embeddings", sparse_embeddings.shape)
-        print("dense_embeddings", dense_embeddings.shape)
-        print("dense_pe", dense_pe.shape)
+            print("sparse_embeddings", sparse_embeddings.shape)
+            print("dense_embeddings", dense_embeddings.shape)
+            print("dense_pe", dense_pe.shape)
 
         mask_decoder.allocate_tensors()
         input_details = mask_decoder.get_input_details()
