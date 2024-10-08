@@ -211,7 +211,7 @@ class SAM2VideoPredictor():
         inference_state["images"] = None
         inference_state["num_frames"] = 0
         # Debug
-        self.debug = False
+        self.debug = True
         return inference_state
 
     def append_image(self,
@@ -936,15 +936,16 @@ class SAM2VideoPredictor():
             image = np.expand_dims(inference_state["images"][frame_idx], axis=0)
 
             if self.debug:
-                print("begin image encoder onnx")
-                print(frame_idx)
-                print(image.shape)
+                print("# begin image encoder onnx")
+                print("frame_idx", frame_idx)
             if self.benchmark:
                 start = int(round(time.time() * 1000))
             image_encoder.allocate_tensors()
             input_details = image_encoder.get_input_details()
             output_details = image_encoder.get_output_details()
 
+            if self.debug:
+                print("image", np.sum(image))
             image_encoder.set_tensor(input_details[0]["index"], image.astype(np.float32))
             image_encoder.invoke()
 
@@ -959,6 +960,15 @@ class SAM2VideoPredictor():
                 end = int(round(time.time() * 1000))
                 estimation_time = (end - start)
                 logger.info(f'\timage_encoder processing {estimation_time} ms')
+
+            if self.debug:
+                print("vision_features", np.sum(vision_features))
+                print("vision_pos_enc_0", np.sum(vision_pos_enc_0))
+                print("vision_pos_enc_1", np.sum(vision_pos_enc_1))
+                print("vision_pos_enc_2", np.sum(vision_pos_enc_2))
+                print("backbone_fpn_0", np.sum(backbone_fpn_0))
+                print("backbone_fpn_1", np.sum(backbone_fpn_1))
+                print("backbone_fpn_2", np.sum(backbone_fpn_2))
 
             backbone_out = {"vision_features":vision_features,
                             "vision_pos_enc":[vision_pos_enc_0, vision_pos_enc_1, vision_pos_enc_2],
@@ -1350,7 +1360,7 @@ class SAM2VideoPredictor():
             masks_enable = np.array([1], dtype=np.int64)
         
         if self.debug:
-            print("begin prompt encoder onnx")
+            print("# begin prompt encoder tflite")
 
         if self.benchmark:
             start = int(round(time.time() * 1000))
@@ -1380,7 +1390,7 @@ class SAM2VideoPredictor():
             logger.info(f'\tprompt_encoder processing {estimation_time} ms')
 
         if self.debug:
-            print("begin mask decoder onnx")
+            print("# begin mask decoder tflite")
             print("backbone_features", np.sum(backbone_features))
             print("image_pe", np.sum(dense_pe))
             print("sparse_embeddings", np.sum(sparse_embeddings))
@@ -1416,18 +1426,18 @@ class SAM2VideoPredictor():
         sam_tokens_out = mask_decoder.get_tensor(output_details[3]["index"])
         object_score_logits = mask_decoder.get_tensor(output_details[1]["index"])
 
+        if self.debug:
+            print("masks", np.sum(masks))
+            print("iou_pred", np.sum(iou_pred))
+            print("sam_tokens_out", np.sum(sam_tokens_out))
+            print("object_score_logits", np.sum(object_score_logits))
+
         if self.benchmark:
             end = int(round(time.time() * 1000))
             estimation_time = (end - start)
             logger.info(f'\tmask_decoder processing {estimation_time} ms')
 
         low_res_multimasks, ious, sam_output_tokens, object_score_logits  = self.forward_postprocess(masks, iou_pred, sam_tokens_out, object_score_logits, multimask_output)
-
-        if self.debug:
-            print(low_res_multimasks.shape)
-            print(ious.shape)
-            print(sam_output_tokens.shape)
-            print(object_score_logits.shape)
 
         if self.pred_obj_scores:
             is_obj_appearing = object_score_logits > 0
@@ -1464,6 +1474,8 @@ class SAM2VideoPredictor():
             low_res_masks, high_res_masks = low_res_multimasks, high_res_multimasks
 
         # Extract object pointer from the SAM output token (with occlusion handling)
+        if self.debug:
+            print("# begin mlp")
         if self.benchmark:
             start = int(round(time.time() * 1000))
         mlp.allocate_tensors()
@@ -1475,6 +1487,11 @@ class SAM2VideoPredictor():
         mlp.invoke()
 
         obj_ptr = mlp.get_tensor(output_details[0]["index"])
+
+        if self.debug:
+            print("sam_output_token", np.sum(sam_output_token))
+            print("obj_ptr", np.sum(obj_ptr))
+
         if self.benchmark:
             end = int(round(time.time() * 1000))
             estimation_time = (end - start)
@@ -1758,6 +1775,7 @@ class SAM2VideoPredictor():
 
         num_obj_ptr_tokens_numpy = np.array((num_obj_ptr_tokens)).astype(np.int64)
         if self.debug:
+            print("# begin memory attention tflite")
             print("curr", np.sum(current_vision_feats[0]))
             print("memory", np.sum(memory))
             print("curr_pos", np.sum(current_vision_pos_embeds[0]))
@@ -1800,6 +1818,9 @@ class SAM2VideoPredictor():
         memory_attention.invoke()
 
         pix_feat_with_mem = memory_attention.get_tensor(output_details[0]["index"])
+
+        if self.debug:
+            print("pix_feat_with_mem", np.sum(pix_feat_with_mem))
 
         if self.benchmark:
             end = int(round(time.time() * 1000))
@@ -1856,8 +1877,14 @@ class SAM2VideoPredictor():
         memory_encoder.set_tensor(input_details[1]["index"], mask_for_mem.astype(np.float32))
         memory_encoder.invoke()
 
+        print("pix_feat", np.sum(pix_feat))
+        print("mask_for_mem", np.sum(mask_for_mem))
+
         vision_features = memory_encoder.get_tensor(output_details[1]["index"])
         vision_pos_enc = memory_encoder.get_tensor(output_details[0]["index"])
+
+        print("vision_features", np.sum(vision_features))
+        print("vision_pos_enc", np.sum(vision_pos_enc))
 
         if self.benchmark:
             end = int(round(time.time() * 1000))

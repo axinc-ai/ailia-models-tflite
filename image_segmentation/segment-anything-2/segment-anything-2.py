@@ -65,7 +65,7 @@ parser.add_argument(
     help='Select mask index.'
 )
 parser.add_argument(
-    '-m', '--model_type', default='hiera_l', choices=('hiera_l', 'hiera_b+', 'hiera_s', 'hiera_t'),
+    '-m', '--model_type', default='hiera_t', choices=('hiera_l', 'hiera_b+', 'hiera_s', 'hiera_t'),
     help='Select model.'
 )
 parser.add_argument(
@@ -398,17 +398,21 @@ def main():
         memory_encoder = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
         mlp = tf.lite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
     else:
-        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH)
-        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
-        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH)
-        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH)
-        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
-        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
+        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
+        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
+        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
+        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
+        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
+        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
+
+    image_encoder.set_profile_mode(True)
 
     if args.video is not None:
         recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
+
+    print(image_encoder.get_summary())
 
     logger.info('Script finished successfully.')
 
