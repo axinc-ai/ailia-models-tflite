@@ -1371,8 +1371,8 @@ class SAM2VideoPredictor():
         prompt_encoder.invoke()
 
         sparse_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
-        dense_embeddings = prompt_encoder.get_tensor(output_details[2]["index"])
-        dense_pe = prompt_encoder.get_tensor(output_details[0]["index"])
+        dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
+        dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
 
         if self.benchmark:
             end = int(round(time.time() * 1000))
