@@ -405,14 +405,16 @@ def main():
         memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
         mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH)#, memory_mode=ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE)
 
-    image_encoder.set_profile_mode(True)
+    if not args.tflite:
+        image_encoder.set_profile_mode(True)
 
     if args.video is not None:
         recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
-    print(image_encoder.get_summary())
+    if not args.tflite:
+        print(image_encoder.get_summary())
 
     logger.info('Script finished successfully.')
 
