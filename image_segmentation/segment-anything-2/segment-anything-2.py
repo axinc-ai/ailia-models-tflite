@@ -398,17 +398,25 @@ def main():
         memory_encoder = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
         mlp = tf.lite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
     else:
-        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH)
-        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
-        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH)
-        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH)
-        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
-        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
+        memory_mode = None
+        memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE
+        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode)
+        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode)
+        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode)
+        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode)
+        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode)
+        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode)
+
+    if not args.tflite:
+        image_encoder.set_profile_mode(True)
 
     if args.video is not None:
         recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
+
+    if not args.tflite:
+        print(image_encoder.get_summary())
 
     logger.info('Script finished successfully.')
 
