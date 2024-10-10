@@ -29,7 +29,7 @@ class SAM2ImagePredictor:
         img = img.astype(np.float32)
         #print(img.shape)
 
-        image_encoder.allocate_tensors()
+        #image_encoder.allocate_tensors()
         input_details = image_encoder.get_input_details()
         output_details = image_encoder.get_output_details()
         #interpreter.resize_tensor_input(
@@ -202,18 +202,18 @@ class SAM2ImagePredictor:
         if concat_points is None:
             raise("concat_points must be exists")
 
-        prompt_encoder.allocate_tensors()
+        #prompt_encoder.allocate_tensors()
         input_details = prompt_encoder.get_input_details()
         output_details = prompt_encoder.get_output_details()
-        prompt_encoder.resize_tensor_input(
-            input_details[2]["index"], 
-            [1, concat_points[0].shape[1], 2]
-        )
-        prompt_encoder.resize_tensor_input(
-            input_details[3]["index"], 
-            [1, concat_points[1].shape[1]]
-        )
-        prompt_encoder.allocate_tensors()
+        #prompt_encoder.resize_tensor_input(
+        #    input_details[2]["index"], 
+        #    [1, concat_points[0].shape[1], 2]
+        #)
+        #prompt_encoder.resize_tensor_input(
+        #    input_details[3]["index"], 
+        #    [1, concat_points[1].shape[1]]
+        #)
+        #prompt_encoder.allocate_tensors()
 
         prompt_encoder.set_tensor(input_details[2]["index"], concat_points[0])
         prompt_encoder.set_tensor(input_details[3]["index"], concat_points[1])
@@ -245,14 +245,14 @@ class SAM2ImagePredictor:
             print("dense_embeddings", dense_embeddings.shape)
             print("dense_pe", dense_pe.shape)
 
-        mask_decoder.allocate_tensors()
+        #mask_decoder.allocate_tensors()
         input_details = mask_decoder.get_input_details()
         output_details = mask_decoder.get_output_details()
-        mask_decoder.resize_tensor_input(
-            input_details[1]["index"], 
-            [1, sparse_embeddings.shape[1], 256]
-        )
-        mask_decoder.allocate_tensors()
+        #mask_decoder.resize_tensor_input(
+        #    input_details[1]["index"], 
+        #    [1, sparse_embeddings.shape[1], 256]
+        #)
+        #mask_decoder.allocate_tensors()
 
         #batched_mode_np = np.zeros((1), dtype=bool)
         #if batched_mode:

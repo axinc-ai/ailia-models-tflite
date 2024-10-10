@@ -410,6 +410,13 @@ def main():
     if not args.tflite:
         image_encoder.set_profile_mode(True)
 
+    image_encoder.allocate_tensors()
+    prompt_encoder.allocate_tensors()
+    mask_decoder.allocate_tensors()
+    memory_attention.allocate_tensors()
+    memory_encoder.allocate_tensors()
+    mlp.allocate_tensors()
+
     if args.video is not None:
         recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
     else:
