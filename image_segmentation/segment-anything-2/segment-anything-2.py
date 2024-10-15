@@ -409,6 +409,11 @@ def main():
 
     if not args.tflite and args.profile:
         image_encoder.set_profile_mode(True)
+        prompt_encoder.set_profile_mode(True)
+        mask_decoder.set_profile_mode(True)
+        memory_attention.set_profile_mode(True)
+        memory_encoder.set_profile_mode(True)
+        mlp.set_profile_mode(True)
 
     image_encoder.allocate_tensors()
     prompt_encoder.allocate_tensors()
