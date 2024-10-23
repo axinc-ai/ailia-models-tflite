@@ -80,6 +80,11 @@ parser.add_argument(
     '--image_size', type=int, default=1024, choices=(512, 1024),
     help='Inference image size.'
 )
+parser.add_argument(
+    '--dump', action='store_true',
+    help='dump tensor data to file.'
+)
+
 args = update_parser(parser)
 
 # ======================
@@ -174,7 +179,7 @@ def get_input_point():
 def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
     input_point, input_label, input_box = get_input_point()
 
-    image_predictor = SAM2ImagePredictor(args.image_size)
+    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump)
 
     for image_path in args.input:
         image = cv2.imread(image_path)

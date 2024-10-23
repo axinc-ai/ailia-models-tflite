@@ -12,12 +12,25 @@ from typing import Tuple
 
 class SAM2ImagePredictor:
     debug = False
+    dump = False
 
     def __init__(
         self,
         image_size,
+        debug,
+        dump
     ):
         self.image_size = image_size
+        self.debug = debug
+        self.dump = dump
+
+    def dump_tensor(self, path, tensor):
+        data = tensor.flatten()
+        import struct
+        s = struct.pack('f'*len(data), *data)
+        f = open(path,'wb')
+        f.write(s)
+        f.close()
 
     def trunc_normal(self, size, std=0.02, a=-2, b=2):
         values = np.random.normal(loc=0., scale=std, size=size)
@@ -48,6 +61,16 @@ class SAM2ImagePredictor:
         backbone_fpn_0 = image_encoder.get_tensor(output_details[0]["index"])
         backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
         backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
+
+        if self.dump:
+            self.dump_tensor("image_encoder_input_0.dat", img)
+            self.dump_tensor("image_encoder_output_0.dat", backbone_fpn_0)
+            self.dump_tensor("image_encoder_output_1.dat", vision_pos_enc_0)
+            self.dump_tensor("image_encoder_output_2.dat", backbone_fpn_1)
+            self.dump_tensor("image_encoder_output_3.dat", vision_pos_enc_2)
+            self.dump_tensor("image_encoder_output_4.dat", vision_features)
+            self.dump_tensor("image_encoder_output_5.dat", vision_pos_enc_1)
+            self.dump_tensor("image_encoder_output_6.dat", backbone_fpn_2)
 
         if self.debug:
             print("vision_features", vision_features.shape)
