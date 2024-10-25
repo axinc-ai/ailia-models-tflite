@@ -89,14 +89,29 @@ args = update_parser(parser)
 np.random.seed(3)
 
 
-def show_mask(mask, img, color = np.array([255, 144, 30]), obj_id=None):
+def show_mask(mask, img, color = np.array([255, 144, 30]),  obj_id=None, title=None,):
     color = color.reshape(1, 1, -1)
 
     h, w = mask.shape[-2:]
     mask = mask.reshape(h, w, 1)
+    np.save( args.savepath, mask)
 
     mask_image = mask * color
     img = (img * ~mask) + (img * mask) * 0.6 + mask_image * 0.4
+
+    # Add the title to the image
+    if title != None: 
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        font_color = (255, 255, 255)  # White color for the text
+        thickness = 2
+        text_x = 10  # Starting point (10 pixels from the left)
+        text_y = 30  # Starting point (30 pixels from the top)
+        t1, t2 =title.split(",")
+
+        img = cv2.putText(img, t1, (text_x, text_y), font, font_scale, font_color, thickness, cv2.LINE_AA)
+        img = cv2.putText(img, t2, (text_x, text_y+28), font, font_scale, font_color, thickness, cv2.LINE_AA)
+
 
     return img
 
@@ -224,10 +239,13 @@ def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
 
         savepath = get_savepath(args.savepath, image_path, ext='.png')
         logger.info(f'saved at : {savepath}')
-        image = show_mask(masks[0], image)
+        title = args.savepath +", Score: "+str(scores[0])
+        print("The title is: ", title)
+        image = show_mask(masks[0], image,  title=title)
         image = show_points(input_point, input_label, image)
         image = show_box(input_box, image)
         cv2.imwrite(savepath, image)
+        
 
 
 def preprocess_frame(img, image_size):
@@ -361,7 +379,7 @@ def process_frame(image, frame_idx, predictor, inference_state, image_encoder, p
                                                                                 mlp = mlp,
                                                                                 frame_idx = frame_idx)
 
-    image = show_mask((out_mask_logits[0] > 0.0), image, color = np.array([30, 144, 255]), obj_id = out_obj_ids[0])
+    image = show_mask((out_mask_logits[0] > 0.0), image, color = np.array([30, 144, 255]), obj_id = out_obj_ids[0], title=None)
 
     return image
 
@@ -416,14 +434,16 @@ def main():
     memory_attention.allocate_tensors()
     memory_encoder.allocate_tensors()
     mlp.allocate_tensors()
+    #for detail in image_encoder.get_tensor_details():
+    #    print(detail['name'], detail['dtype'])
 
     if args.video is not None:
         recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
-    if not args.tflite:
-        print(image_encoder.get_summary())
+    #if not args.tflite:
+        #print(image_encoder.get_summary())
 
     logger.info('Script finished successfully.')
 
