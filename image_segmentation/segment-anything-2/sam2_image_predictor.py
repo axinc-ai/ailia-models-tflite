@@ -25,7 +25,13 @@ class SAM2ImagePredictor:
         self.dump = dump
 
     def dump_tensor(self, path, tensor):
-        data = tensor.flatten()
+        if type(tensor) == bool:
+            if tensor:
+                data = np.array([1], dtype=np.float32)
+            else:
+                data = np.array([0], dtype=np.float32)
+        else:
+            data = tensor.flatten()
         import struct
         s = struct.pack('f'*len(data), *data)
         f = open(path,'wb')
@@ -248,6 +254,16 @@ class SAM2ImagePredictor:
         dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
         dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
 
+        if self.dump:
+            self.dump_tensor("prompt_encoder_input_2.dat", concat_points[0])
+            self.dump_tensor("prompt_encoder_input_3.dat", concat_points[1])
+            self.dump_tensor("prompt_encoder_input_0.dat", mask_input_dummy)
+            self.dump_tensor("prompt_encoder_input_1.dat", masks_enable)
+
+            self.dump_tensor("prompt_encoder_output_1.dat", sparse_embeddings)
+            self.dump_tensor("prompt_encoder_output_0.dat", dense_embeddings)
+            self.dump_tensor("prompt_encoder_output_2.dat", dense_pe)
+
         # Predict masks
         batched_mode = (
             concat_points is not None and concat_points[0].shape[0] > 1
@@ -298,6 +314,20 @@ class SAM2ImagePredictor:
         iou_pred = mask_decoder.get_tensor(output_details[0]["index"])
         sam_tokens_out = mask_decoder.get_tensor(output_details[3]["index"])
         object_score_logits = mask_decoder.get_tensor(output_details[1]["index"])
+
+        if self.dump:
+            self.dump_tensor("mask_decoder_input_3.dat", image_feature)
+            self.dump_tensor("mask_decoder_input_6.dat", dense_pe)
+            self.dump_tensor("mask_decoder_input_1.dat", sparse_embeddings)
+            self.dump_tensor("mask_decoder_input_2.dat", dense_embeddings)
+            self.dump_tensor("mask_decoder_input_5.dat", batched_mode)
+            self.dump_tensor("mask_decoder_input_0.dat", high_res_features[0])
+            self.dump_tensor("mask_decoder_input_4.dat", high_res_features[1])
+
+            self.dump_tensor("mask_decoder_output_2.dat", masks)
+            self.dump_tensor("mask_decoder_output_0.dat", iou_pred)
+            self.dump_tensor("mask_decoder_output_3.dat", sam_tokens_out)
+            self.dump_tensor("mask_decoder_output_1.dat", object_score_logits)
 
         if self.debug:
             print("masks", masks.shape)

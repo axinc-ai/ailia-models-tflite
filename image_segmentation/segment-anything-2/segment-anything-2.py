@@ -273,7 +273,7 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
     else:
         writer = None
 
-    predictor = SAM2VideoPredictor(args.benchmark, args.image_size)
+    predictor = SAM2VideoPredictor(args.benchmark, args.image_size, args.debug, args.dump)
 
     inference_state = predictor.init_state(args.num_mask_mem, args.max_obj_ptrs_in_encoder)
     predictor.reset_state(inference_state)

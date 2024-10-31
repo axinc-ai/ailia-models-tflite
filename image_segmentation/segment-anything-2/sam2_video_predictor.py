@@ -103,11 +103,15 @@ def interpolate(low_res_multimasks, image_size):
 # sam2_video_predictor.py
 class SAM2VideoPredictor():
     """The predictor class to handle user interactions and manage inference states."""
+    debug = False
+    dump = False
 
     def __init__(
         self,
         benchmark,
         image_size,
+        debug,
+        dump,
         fill_hole_area=0,
         # whether to apply non-overlapping constraints on the output object masks
         non_overlap_masks=False,
@@ -123,6 +127,8 @@ class SAM2VideoPredictor():
         self.non_overlap_masks = non_overlap_masks
         self.clear_non_cond_mem_around_input = clear_non_cond_mem_around_input
         self.clear_non_cond_mem_for_multi_obj = clear_non_cond_mem_for_multi_obj
+        self.debug = debug
+        self.dump = dump
 
     def init_state(
         self,
@@ -210,9 +216,21 @@ class SAM2VideoPredictor():
         # Warm up the visual backbone and cache the image feature on frame 0
         inference_state["images"] = None
         inference_state["num_frames"] = 0
-        # Debug
-        self.debug = False
         return inference_state
+
+    def dump_tensor(self, path, tensor):
+        if type(tensor) == bool:
+            if tensor:
+                data = np.array([1], dtype=np.float32)
+            else:
+                data = np.array([0], dtype=np.float32)
+        else:
+            data = tensor.flatten()
+        import struct
+        s = struct.pack('f'*len(data), *data)
+        f = open(path,'wb')
+        f.write(s)
+        f.close()
 
     def append_image(self,
         inference_state,
@@ -1479,7 +1497,11 @@ class SAM2VideoPredictor():
             end = int(round(time.time() * 1000))
             estimation_time = (end - start)
             logger.info(f'\tmlp processing {estimation_time} ms')
-        
+
+        if self.dump:
+            self.dump_tensor("mlp_input_0.dat", sam_output_token.astype(np.float32))
+            self.dump_tensor("mlp_output_0.dat", obj_ptr) 
+
         if self.pred_obj_scores:
             # Allow *soft* no obj ptr, unlike for masks
             if self.soft_no_obj_ptr:
@@ -1801,6 +1823,15 @@ class SAM2VideoPredictor():
 
         pix_feat_with_mem = memory_attention.get_tensor(output_details[0]["index"])
 
+        if self.dump:
+            self.dump_tensor("memory_attention_input_3.dat", current_vision_feats[0].astype(np.float32))
+            self.dump_tensor("memory_attention_input_5.dat", memory_1.astype(np.float32))
+            self.dump_tensor("memory_attention_input_1.dat", memory_2.astype(np.float32))
+            self.dump_tensor("memory_attention_input_2.dat", current_vision_pos_embeds[0].astype(np.float32))
+            self.dump_tensor("memory_attention_input_4.dat", memory_pos_embed_1.astype(np.float32))
+            self.dump_tensor("memory_attention_input_0.dat", memory_pos_embed_2.astype(np.float32))
+            self.dump_tensor("memory_attention_output_0.dat", pix_feat_with_mem)
+
         if self.benchmark:
             end = int(round(time.time() * 1000))
             estimation_time = (end - start)
@@ -1863,6 +1894,12 @@ class SAM2VideoPredictor():
             end = int(round(time.time() * 1000))
             estimation_time = (end - start)
             logger.info(f'\tmemory_encoder processing {estimation_time} ms')
+
+        if self.dump:
+            self.dump_tensor("memory_encoder_input_0.dat", pix_feat.astype(np.float32))
+            self.dump_tensor("memory_encoder_input_1.dat", mask_for_mem.astype(np.float32))
+            self.dump_tensor("memory_encoder_output_1.dat", vision_features) 
+            self.dump_tensor("memory_encoder_output_0.dat", vision_pos_enc) 
 
         maskmem_out = {"vision_features": vision_features, "vision_pos_enc": [vision_pos_enc]}
 
