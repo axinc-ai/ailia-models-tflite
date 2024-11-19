@@ -425,8 +425,13 @@ def main():
         memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
         mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode, flags = flags)
 
-    if not args.tflite:
+    if not args.tflite and args.profile:
         image_encoder.set_profile_mode(True)
+        prompt_encoder.set_profile_mode(True)
+        mask_decoder.set_profile_mode(True)
+        memory_attention.set_profile_mode(True)
+        memory_encoder.set_profile_mode(True)
+        mlp.set_profile_mode(True)
 
     image_encoder.allocate_tensors()
     prompt_encoder.allocate_tensors()
@@ -442,9 +447,23 @@ def main():
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
-    #if not args.tflite:
-        #print(image_encoder.get_summary())
 
+    if not args.tflite:
+        print(image_encoder.get_summary())
+
+    if not args.tflite and args.profile:
+        print("--- image_encoder")
+        print(image_encoder.get_summary())
+        print("--- prompt_encoder")
+        print(prompt_encoder.get_summary())
+        print("--- mask_decoder")
+        print(mask_decoder.get_summary())
+        print("--- memory_attention")
+        print(memory_attention.get_summary())
+        print("--- memory_encoder")
+        print(memory_encoder.get_summary())
+        print("--- mlp")
+        print(mlp.get_summary())
     logger.info('Script finished successfully.')
 
 if __name__ == '__main__':
