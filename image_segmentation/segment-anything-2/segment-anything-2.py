@@ -89,12 +89,12 @@ args = update_parser(parser)
 np.random.seed(3)
 
 
-def show_mask(mask, img, color = np.array([255, 144, 30]),  obj_id=None, title=None,):
+def show_mask(mask, img, color = np.array([255, 144, 30]), obj_id=None, title=None,path_mask=args.savepath, ):
     color = color.reshape(1, 1, -1)
 
     h, w = mask.shape[-2:]
     mask = mask.reshape(h, w, 1)
-    np.save( args.savepath, mask)
+    np.save( path_mask, mask)
 
     mask_image = mask * color
     img = (img * ~mask) + (img * mask) * 0.6 + mask_image * 0.4
@@ -240,8 +240,7 @@ def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
         savepath = get_savepath(args.savepath, image_path, ext='.png')
         logger.info(f'saved at : {savepath}')
         title = args.savepath +", Score: "+str(scores[0])
-        print("The title is: ", title)
-        image = show_mask(masks[0], image,  title=title)
+        image = show_mask(masks[0], image,  title=title, )
         image = show_points(input_point, input_label, image)
         image = show_box(input_box, image)
         cv2.imwrite(savepath, image)
@@ -418,12 +417,13 @@ def main():
     else:
         memory_mode = None
         memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE
-        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode)
-        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode)
-        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode)
-        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode)
-        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode)
-        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode)
+        flags= int(args.flags)
+        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode, flags = flags)
+        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode, flags = flags)
 
     if not args.tflite:
         image_encoder.set_profile_mode(True)

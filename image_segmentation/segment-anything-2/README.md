@@ -88,6 +88,11 @@ By adding the `--image_size` option, you can specify inference image size which 
 $ python3 segment-anything-2.py --model_type 512
 ```
 
+By adding the `--f` option, you can specify inference 1 to enable execution mode selection (dynamic quantization (1) or default no quantization (0)) 
+```bash
+$ python3 segment-anything-2.py --model_type 512
+```
+
 ## Reference
 
 - [Segment Anything 2](https://github.com/facebookresearch/segment-anything-2)
