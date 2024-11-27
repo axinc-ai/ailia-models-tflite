@@ -448,9 +448,6 @@ def main():
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
 
-    if not args.tflite:
-        print(image_encoder.get_summary())
-
     if not args.tflite and args.profile:
         print("--- image_encoder")
         print(image_encoder.get_summary())
