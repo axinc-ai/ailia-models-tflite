@@ -85,7 +85,12 @@ $ python3 segment-anything-2.py --model_type hiera_l
 
 By adding the `--image_size` option, you can specify inference image size which is selected from "512" and "1024". (default is 1024)
 ```bash
-$ python3 segment-anything-2.py --model_type 512
+$ python3 segment-anything-2.py --image_size 512
+```
+
+By adding the `--flags` option, you can specify inference 1 to enable execution mode selection (dynamic quantization (1) or default no quantization (0)) 
+```bash
+$ python3 segment-anything-2.py --image_size 512 --model_type hiera_t --flags 1
 ```
 
 ## Reference

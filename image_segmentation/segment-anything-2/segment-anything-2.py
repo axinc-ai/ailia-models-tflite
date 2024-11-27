@@ -89,14 +89,29 @@ args = update_parser(parser)
 np.random.seed(3)
 
 
-def show_mask(mask, img, color = np.array([255, 144, 30]), obj_id=None):
+def show_mask(mask, img, color = np.array([255, 144, 30]), obj_id=None, title=None,path_mask=args.savepath, ):
     color = color.reshape(1, 1, -1)
 
     h, w = mask.shape[-2:]
     mask = mask.reshape(h, w, 1)
+    np.save( path_mask, mask)
 
     mask_image = mask * color
     img = (img * ~mask) + (img * mask) * 0.6 + mask_image * 0.4
+
+    # Add the title to the image
+    if title != None: 
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        font_color = (255, 255, 255)  # White color for the text
+        thickness = 2
+        text_x = 10  # Starting point (10 pixels from the left)
+        text_y = 30  # Starting point (30 pixels from the top)
+        t1, t2 =title.split(",")
+
+        img = cv2.putText(img, t1, (text_x, text_y), font, font_scale, font_color, thickness, cv2.LINE_AA)
+        img = cv2.putText(img, t2, (text_x, text_y+28), font, font_scale, font_color, thickness, cv2.LINE_AA)
+
 
     return img
 
@@ -224,10 +239,12 @@ def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
 
         savepath = get_savepath(args.savepath, image_path, ext='.png')
         logger.info(f'saved at : {savepath}')
-        image = show_mask(masks[0], image)
+        title = args.savepath +", Score: "+str(scores[0])
+        image = show_mask(masks[0], image,  title=title, )
         image = show_points(input_point, input_label, image)
         image = show_box(input_box, image)
         cv2.imwrite(savepath, image)
+        
 
 
 def preprocess_frame(img, image_size):
@@ -361,7 +378,7 @@ def process_frame(image, frame_idx, predictor, inference_state, image_encoder, p
                                                                                 mlp = mlp,
                                                                                 frame_idx = frame_idx)
 
-    image = show_mask((out_mask_logits[0] > 0.0), image, color = np.array([30, 144, 255]), obj_id = out_obj_ids[0])
+    image = show_mask((out_mask_logits[0] > 0.0), image, color = np.array([30, 144, 255]), obj_id = out_obj_ids[0], title=None)
 
     return image
 
@@ -400,12 +417,13 @@ def main():
     else:
         memory_mode = None
         memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE
-        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode)
-        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode)
-        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode)
-        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode)
-        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode)
-        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode)
+        flags= int(args.flags)
+        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode, flags = flags)
+        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
+        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode, flags = flags)
 
     if not args.tflite and args.profile:
         image_encoder.set_profile_mode(True)
@@ -421,11 +439,14 @@ def main():
     memory_attention.allocate_tensors()
     memory_encoder.allocate_tensors()
     mlp.allocate_tensors()
+    #for detail in image_encoder.get_tensor_details():
+    #    print(detail['name'], detail['dtype'])
 
     if args.video is not None:
         recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
+
 
     if not args.tflite and args.profile:
         print("--- image_encoder")
@@ -440,7 +461,6 @@ def main():
         print(memory_encoder.get_summary())
         print("--- mlp")
         print(mlp.get_summary())
-
     logger.info('Script finished successfully.')
 
 if __name__ == '__main__':
