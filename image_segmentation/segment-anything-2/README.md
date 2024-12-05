@@ -78,7 +78,7 @@ $ python3 segment-anything-2.py --pos 500 375 --pos 1125 625
 $ python3 segment-anything-2.py --box 425 600 700 875 --neg 575 750
 ```
 
-By adding the `--model_type` option, you can specify model type which is selected from "hiera_l",  "hiera_b+",  "hiera_s", and "hiera_t". (default is hiera_l)
+By adding the `--model_type` option, you can specify model type which is selected from "hiera_l",  "hiera_b+",  "hiera_s", and "hiera_t". (default is hiera_t)
 ```bash
 $ python3 segment-anything-2.py --model_type hiera_l
 ```

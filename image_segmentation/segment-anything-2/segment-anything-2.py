@@ -31,8 +31,6 @@ logger = getLogger(__name__)
 # Parameters
 # ======================
 
-REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/segment-anything-2/'
-
 IMAGE_PATH = 'truck.jpg'
 SAVE_IMAGE_PATH = 'output.png'
 
@@ -65,15 +63,19 @@ parser.add_argument(
     help='Select mask index.'
 )
 parser.add_argument(
-    '-m', '--model_type', default='hiera_l', choices=('hiera_l', 'hiera_b+', 'hiera_s', 'hiera_t'),
+    '-m', '--model_type', default='hiera_t', choices=('hiera_l', 'hiera_b+', 'hiera_s', 'hiera_t'),
     help='Select model.'
 )
 parser.add_argument(
-    '--num_mask_mem', type=int, default=1, choices=(0, 1, 2, 3, 4, 5, 6, 7),
-    help='Number of mask mem. (default 1 input frame + 6 previous frames)'
+    '--version', default='2', choices=('2', '2.1'),
+    help='Select model.'
 )
 parser.add_argument(
-    '--max_obj_ptrs_in_encoder', type=int, default=1, choices=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+    '--num_mask_mem', type=int, default=7, choices=(0, 1, 2, 3, 4, 5, 6, 7),
+    help='Number of mask mem. (default 7, 1 input frame + 6 previous frames)'
+)
+parser.add_argument(
+    '--max_obj_ptrs_in_encoder', type=int, default=16, choices=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16),
     help='Number of obj ptr in encoder.'
 )
 parser.add_argument(
@@ -81,6 +83,18 @@ parser.add_argument(
     help='Inference image size.'
 )
 args = update_parser(parser)
+
+# ======================
+# Model path
+# ======================
+
+if args.version == "2.1":
+    REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/segment-anything-2.1/'
+else:
+    REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/segment-anything-2/'
+    logger.warning("This model only supports num_mask_mem and max_obj_ptrs_in_encoder 1.")
+    args.num_mask_mem = 1
+    args.max_obj_ptrs_in_encoder = 1
 
 # ======================
 # Utility
@@ -287,7 +301,7 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
 
     predictor = SAM2VideoPredictor(args.benchmark, args.image_size)
 
-    inference_state = predictor.init_state(args.num_mask_mem, args.max_obj_ptrs_in_encoder)
+    inference_state = predictor.init_state(args.num_mask_mem, args.max_obj_ptrs_in_encoder, args.version)
     predictor.reset_state(inference_state)
 
     frame_shown = False
@@ -385,8 +399,11 @@ def process_frame(image, frame_idx, predictor, inference_state, image_encoder, p
 def main():
     # select model
     model_type = args.model_type
+    if args.version == "2.1":
+        model_type = model_type + "_2.1"
     if args.image_size != 1024:
         model_type = model_type + "_" + str(args.image_size)
+
     WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + '.tflite'
     WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + '.tflite'
     WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + '.tflite'
