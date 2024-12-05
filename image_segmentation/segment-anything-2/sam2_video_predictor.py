@@ -65,8 +65,10 @@ def get_1d_sine_pe(pos_inds, dim, temperature=10000):
     dim_t = np.arange(pe_dim, dtype=np.float32)
     dim_t = temperature ** (2 * (dim_t // 2) / pe_dim)
 
-    pos_embed = pos_inds.unsqueeze(-1) / dim_t
-    pos_embed = np.concatenate([pos_embed.sin(), pos_embed.cos()], axis=-1)
+    #pos_embed = pos_inds.unsqueeze(-1) / dim_t
+    pos_embed = np.expand_dims(pos_inds, axis=-1) / dim_t
+    #pos_embed = np.concatenate([np.sin(pos_embed), np.cos(pos_embed)], axis=-1)
+    pos_embed = np.concatenate([np.sin(pos_embed), np.cos(pos_embed)], axis=-1)
     return pos_embed
 
 def concat_points(old_point_inputs, new_points, new_labels):
@@ -153,6 +155,8 @@ class SAM2VideoPredictor():
         self.use_obj_ptrs_in_encoder = True
         self.use_mlp_for_obj_ptr_proj = True
         self.proj_tpos_enc_in_obj_ptrs = False
+        if version == "2.1":
+            self.proj_tpos_enc_in_obj_ptrs = True
         self.soft_no_obj_ptr = False
         self.fixed_no_obj_ptr = True
         self.non_overlap_masks_for_mem_enc = False
@@ -1740,19 +1744,21 @@ class SAM2VideoPredictor():
                     if self.add_tpos_enc_to_obj_ptrs:
                         t_diff_max = max_obj_ptrs_in_encoder - 1
                         tpos_dim = C if self.proj_tpos_enc_in_obj_ptrs else self.mem_dim
-                        obj_pos = pos_list
+                        obj_pos = np.array(pos_list)
                         obj_pos = get_1d_sine_pe(obj_pos / t_diff_max, dim=tpos_dim)
 
                         input_details = obj_ptr_tpos_proj.get_input_details()
                         output_details = obj_ptr_tpos_proj.get_output_details()
                         tpos = np.zeros((obj_pos.shape[0], 64))
                         for i in range(obj_pos.shape[0]):
-                            obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], obj_pos[i:i+1,:].numpy())
+                            obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], obj_pos[i:i+1,:])
                             obj_ptr_tpos_proj.invoke()
-                            tpos[i:i+1,:] = self.obj_ptr_tpos_proj.get_tensor(output_details[0]["index"])
-                        tpos = obj_pos
+                            tpos[i:i+1,:] = obj_ptr_tpos_proj.get_tensor(output_details[0]["index"])
+                        obj_pos = tpos
 
-                        obj_pos = obj_pos.unsqueeze(1).expand(-1, B, self.mem_dim)
+                        #obj_pos = obj_pos.unsqueeze(1).expand(-1, B, self.mem_dim) # torch
+                        obj_pos_expanded = np.expand_dims(obj_pos, axis=1) # numpy
+                        obj_pos = np.tile(obj_pos_expanded, (1, B, 1))
                     else:
                         obj_pos = np.zeros((len(pos_list), B, self.mem_dim))
                     if self.mem_dim < C:
@@ -1799,21 +1805,21 @@ class SAM2VideoPredictor():
         memory_pos_embed_1 = memory_pos_embed[:-num_obj_ptr_tokens,:,:]
         memory_pos_embed_2 = memory_pos_embed[-num_obj_ptr_tokens:,:,:]
 
-        convert_to_static_shape = (version == "2.1")
+        convert_to_static_shape = (self.version == "2.1")
         if convert_to_static_shape:
             max_num_frames = 16
-            memory_1_pad = np.zeros(max_num_frames * 4096, memory_1.shape[1], memory_1.shape[2])
+            memory_1_pad = np.zeros((max_num_frames * 4096, memory_1.shape[1], memory_1.shape[2]))
             memory_1_pad[:memory_1.shape[0],:,:] = memory_1
-            memory_pos_embed_1_pad = np.zeros(max_num_frames * 4096, memory_pos_embed_1.shape[1], memory_pos_embed_1.shape[2])
+            memory_pos_embed_1_pad = np.zeros((max_num_frames * 4096, memory_pos_embed_1.shape[1], memory_pos_embed_1.shape[2]))
             memory_pos_embed_1_pad[:memory_pos_embed_1.shape[0],:,:] = memory_pos_embed_1
-            memory_2_pad = np.zeros(max_num_frames * 4, memory_2.shape[1], memory_2.shape[2])
+            memory_2_pad = np.zeros((max_num_frames * 4, memory_2.shape[1], memory_2.shape[2]))
             memory_2_pad[:memory_2.shape[0],:,:] = memory_2
-            memory_pos_embed_2_pad = np.zeros(max_num_frames * 4, memory_pos_embed_2.shape[1], memory_pos_embed_2.shape[2])
+            memory_pos_embed_2_pad = np.zeros((max_num_frames * 4, memory_pos_embed_2.shape[1], memory_pos_embed_2.shape[2]))
             memory_pos_embed_2_pad[:memory_pos_embed_2.shape[0],:,:] = memory_pos_embed_2
-            memory_2_pad = np.zeros(max_num_frames * 4, memory_2.shape[1], memory_2.shape[2])
+            memory_2_pad = np.zeros((max_num_frames * 4, memory_2.shape[1], memory_2.shape[2]))
             memory_2_pad[:memory_2.shape[0],:,:] = memory_2
-            attention_mask_1 = np.zeros(max_num_frames * 4096, memory_1.shape[1], dtype=np.bool)
-            attention_mask_2 = np.zeros(max_num_frames * 4, memory_2.shape[1], dtype=np.bool)
+            attention_mask_1 = np.zeros((max_num_frames * 4096, memory_1.shape[1]), dtype=np.bool_)
+            attention_mask_2 = np.zeros((max_num_frames * 4, memory_2.shape[1]), dtype=np.bool_)
             attention_mask_1[:memory_1.shape[0],:] = True
             attention_mask_2[:memory_2.shape[0],:] = True
             memory_1 = memory_1_pad
@@ -1821,30 +1827,13 @@ class SAM2VideoPredictor():
             memory_pos_embed_1 = memory_pos_embed_1_pad
             memory_pos_embed_2 = memory_pos_embed_2_pad
         else:
-            attention_mask_1 = np.zeros(memory_1.shape[0], memory_1.shape[1], dtype=np.bool)
-            attention_mask_2 = np.zeros(memory_2.shape[0], memory_2.shape[1], dtype=np.bool)
+            attention_mask_1 = np.zeros((memory_1.shape[0], memory_1.shape[1]), dtype=np.bool_)
+            attention_mask_2 = np.zeros((memory_2.shape[0], memory_2.shape[1]), dtype=np.bool_)
             attention_mask_1[:memory_1.shape[0],:] = True
             attention_mask_2[:memory_2.shape[0],:] = True
 
         input_details = memory_attention.get_input_details()
         output_details = memory_attention.get_output_details()
-        #memory_attention.resize_tensor_input(
-        #    input_details[5]["index"], 
-        #    [memory_1.shape[0], 1, 64]
-        #)
-        #memory_attention.resize_tensor_input(
-        #    input_details[1]["index"], 
-        #    [memory_2.shape[0], 1, 64]
-        #)
-        #memory_attention.resize_tensor_input(
-        #    input_details[4]["index"], 
-        #    [memory_pos_embed_1.shape[0], 1, 64]
-        #)
-        #memory_attention.resize_tensor_input(
-        #    input_details[0]["index"], 
-        #    [memory_pos_embed_2.shape[0], 1, 64]
-        #)
-        #memory_attention.allocate_tensors()
 
         if self.version == "2.0":
             memory_attention.set_tensor(input_details[3]["index"], current_vision_feats[0].astype(np.float32))
@@ -1860,8 +1849,8 @@ class SAM2VideoPredictor():
             memory_attention.set_tensor(input_details[2]["index"], current_vision_pos_embeds[0].astype(np.float32))
             memory_attention.set_tensor(input_details[5]["index"], memory_pos_embed_1.astype(np.float32))
             memory_attention.set_tensor(input_details[0]["index"], memory_pos_embed_2.astype(np.float32))
-            memory_attention.set_tensor(input_details[4]["index"], attention_mask_1.numpy())
-            memory_attention.set_tensor(input_details[7]["index"], attention_mask_2.numpy())
+            memory_attention.set_tensor(input_details[4]["index"], attention_mask_1)
+            memory_attention.set_tensor(input_details[7]["index"], attention_mask_2)
 
         memory_attention.invoke()
 
