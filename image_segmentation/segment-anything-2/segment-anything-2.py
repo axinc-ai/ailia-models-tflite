@@ -67,7 +67,7 @@ parser.add_argument(
     help='Select model.'
 )
 parser.add_argument(
-    '--version', default='2', choices=('2', '2.1'),
+    '--version', default='2.1', choices=('2', '2.1'),
     help='Select model.'
 )
 parser.add_argument(
@@ -273,7 +273,7 @@ def preprocess_frame(img, image_size):
     return img
 
 
-def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp):
+def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj):
     if args.video == "demo":
         frame_names = [
             p for p in os.listdir(args.video)
@@ -333,9 +333,9 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
             image_encoder)
 
         if frame_idx == 0:
-            annotate_frame(input_point, input_label, input_box, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
+            annotate_frame(input_point, input_label, input_box, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj)
 
-        frame = process_frame(frame, frame_idx, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
+        frame = process_frame(frame, frame_idx, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj)
         frame = frame.astype(np.uint8)
 
         if frame_idx == 0:
@@ -355,7 +355,7 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
     if writer is not None:
         writer.release()
 
-def annotate_frame(points, labels, box, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp):
+def annotate_frame(points, labels, box, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj):
     ann_frame_idx = 0  # the frame index we interact with
     ann_obj_id = 1  # give a unique id to each object we interact with (it can be any integers)
 
@@ -371,7 +371,8 @@ def annotate_frame(points, labels, box, predictor, inference_state, image_encode
         mask_decoder=mask_decoder,
         memory_attention=memory_attention,
         memory_encoder=memory_encoder,
-        mlp=mlp
+        mlp=mlp,
+        obj_ptr_tpos_proj = obj_ptr_tpos_proj
     )
 
     predictor.propagate_in_video_preflight(inference_state,
@@ -380,9 +381,10 @@ def annotate_frame(points, labels, box, predictor, inference_state, image_encode
                                                                             mask_decoder = mask_decoder,
                                                                             memory_attention = memory_attention,
                                                                             memory_encoder = memory_encoder,
-                                                                            mlp = mlp)
+                                                                            mlp = mlp,
+                                                                            obj_ptr_tpos_proj = obj_ptr_tpos_proj)
 
-def process_frame(image, frame_idx, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp):
+def process_frame(image, frame_idx, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj):
     out_frame_idx, out_obj_ids, out_mask_logits = predictor.propagate_in_video(inference_state,
                                                                                 image_encoder = image_encoder,
                                                                                 prompt_encoder = prompt_encoder,
@@ -390,6 +392,7 @@ def process_frame(image, frame_idx, predictor, inference_state, image_encoder, p
                                                                                 memory_attention = memory_attention,
                                                                                 memory_encoder = memory_encoder,
                                                                                 mlp = mlp,
+                                                                                obj_ptr_tpos_proj = obj_ptr_tpos_proj,
                                                                                 frame_idx = frame_idx)
 
     image = show_mask((out_mask_logits[0] > 0.0), image, color = np.array([30, 144, 255]), obj_id = out_obj_ids[0], title=None)
@@ -410,6 +413,7 @@ def main():
     WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + '.tflite'
     WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + '.tflite'
     WEIGHT_MLP_L_PATH = 'mlp_' + model_type + '.tflite'
+    WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH = 'obj_ptr_tpos_proj_' + model_type + '.tflite'
 
     # model files check and download
     check_and_download_models(WEIGHT_IMAGE_ENCODER_L_PATH, REMOTE_PATH)
@@ -418,7 +422,9 @@ def main():
     check_and_download_models(WEIGHT_MEMORY_ATTENTION_L_PATH, REMOTE_PATH)
     check_and_download_models(WEIGHT_MEMORY_ENCODER_L_PATH, REMOTE_PATH)
     check_and_download_models(WEIGHT_MLP_L_PATH, REMOTE_PATH)
-
+    if args.version == "2.1":
+        check_and_download_models(WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH, REMOTE_PATH)
+    
     if args.tflite:
         import tensorflow as tf
     else:
@@ -431,6 +437,10 @@ def main():
         memory_attention = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH)
         memory_encoder = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
         mlp = tf.lite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
+        if args.version == "2.1":
+            obj_ptr_tpos_proj = tf.lite.Interpreter(model_path=WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH)
+        else:
+            obj_ptr_tpos_proj = None
     else:
         memory_mode = None
         memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE
@@ -441,6 +451,10 @@ def main():
         memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode, flags = flags)
         memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
         mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode, flags = flags)
+        if args.version == "2.1":
+            obj_ptr_tpos_proj = ailia_tflite.Interpreter(model_path=WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH)
+        else:
+            obj_ptr_tpos_proj = None
 
     if not args.tflite and args.profile:
         image_encoder.set_profile_mode(True)
@@ -449,18 +463,22 @@ def main():
         memory_attention.set_profile_mode(True)
         memory_encoder.set_profile_mode(True)
         mlp.set_profile_mode(True)
-
+        if obj_ptr_tpos_proj is not None:
+            obj_ptr_tpos_proj.set_profile_mode(True)
+    
     image_encoder.allocate_tensors()
     prompt_encoder.allocate_tensors()
     mask_decoder.allocate_tensors()
     memory_attention.allocate_tensors()
     memory_encoder.allocate_tensors()
     mlp.allocate_tensors()
+    if obj_ptr_tpos_proj is not None:
+        obj_ptr_tpos_proj.allocate_tensors()
     #for detail in image_encoder.get_tensor_details():
     #    print(detail['name'], detail['dtype'])
 
     if args.video is not None:
-        recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp)
+        recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj)
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
@@ -478,6 +496,9 @@ def main():
         print(memory_encoder.get_summary())
         print("--- mlp")
         print(mlp.get_summary())
+        if obj_ptr_tpos_proj is not None:
+            print("--- obj_ptr_tpos_proj")
+            print(obj_ptr_tpos_proj.get_summary())
     logger.info('Script finished successfully.')
 
 if __name__ == '__main__':
