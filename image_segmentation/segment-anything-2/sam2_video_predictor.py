@@ -1751,7 +1751,7 @@ class SAM2VideoPredictor():
                         output_details = obj_ptr_tpos_proj.get_output_details()
                         tpos = np.zeros((obj_pos.shape[0], 64))
                         for i in range(obj_pos.shape[0]):
-                            obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], obj_pos[i:i+1,:])
+                            obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], obj_pos[i:i+1,:].astype(np.float32))
                             obj_ptr_tpos_proj.invoke()
                             tpos[i:i+1,:] = obj_ptr_tpos_proj.get_tensor(output_details[0]["index"])
                         obj_pos = tpos
