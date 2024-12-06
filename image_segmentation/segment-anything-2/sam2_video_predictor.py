@@ -1776,6 +1776,9 @@ class SAM2VideoPredictor():
                             obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], obj_pos[i:i+1,:].astype(np.float32))
                             obj_ptr_tpos_proj.invoke()
                             tpos[i:i+1,:] = obj_ptr_tpos_proj.get_tensor(output_details[0]["index"])
+                            if self.dump:
+                                self.dump_tensor("obj_ptr_tpos_proj_input_0.dat", obj_pos[i:i+1,:].astype(np.float32))
+                                self.dump_tensor("obj_ptr_tpos_proj_output_0.dat", tpos[i:i+1,:]) 
                         obj_pos = tpos
 
                         #obj_pos = obj_pos.unsqueeze(1).expand(-1, B, self.mem_dim) # torch
@@ -1879,13 +1882,24 @@ class SAM2VideoPredictor():
         pix_feat_with_mem = memory_attention.get_tensor(output_details[0]["index"])
 
         if self.dump:
-            self.dump_tensor("memory_attention_input_3.dat", current_vision_feats[0].astype(np.float32))
-            self.dump_tensor("memory_attention_input_5.dat", memory_1.astype(np.float32))
-            self.dump_tensor("memory_attention_input_1.dat", memory_2.astype(np.float32))
-            self.dump_tensor("memory_attention_input_2.dat", current_vision_pos_embeds[0].astype(np.float32))
-            self.dump_tensor("memory_attention_input_4.dat", memory_pos_embed_1.astype(np.float32))
-            self.dump_tensor("memory_attention_input_0.dat", memory_pos_embed_2.astype(np.float32))
-            self.dump_tensor("memory_attention_output_0.dat", pix_feat_with_mem)
+            if self.version == "2.0":
+                self.dump_tensor("memory_attention_input_3.dat", current_vision_feats[0].astype(np.float32))
+                self.dump_tensor("memory_attention_input_5.dat", memory_1.astype(np.float32))
+                self.dump_tensor("memory_attention_input_1.dat", memory_2.astype(np.float32))
+                self.dump_tensor("memory_attention_input_2.dat", current_vision_pos_embeds[0].astype(np.float32))
+                self.dump_tensor("memory_attention_input_4.dat", memory_pos_embed_1.astype(np.float32))
+                self.dump_tensor("memory_attention_input_0.dat", memory_pos_embed_2.astype(np.float32))
+                self.dump_tensor("memory_attention_output_0.dat", pix_feat_with_mem)
+            else:
+                self.dump_tensor("memory_attention_input_3.dat", current_vision_feats[0].astype(np.float32))
+                self.dump_tensor("memory_attention_input_6.dat", memory_1.astype(np.float32))
+                self.dump_tensor("memory_attention_input_1.dat", memory_2.astype(np.float32))
+                self.dump_tensor("memory_attention_input_2.dat", current_vision_pos_embeds[0].astype(np.float32))
+                self.dump_tensor("memory_attention_input_5.dat", memory_pos_embed_1.astype(np.float32))
+                self.dump_tensor("memory_attention_input_0.dat", memory_pos_embed_2.astype(np.float32))
+                self.dump_tensor("memory_attention_input_4.dat", attention_mask_1.astype(np.float32))
+                self.dump_tensor("memory_attention_input_7.dat", attention_mask_2.astype(np.float32))
+                self.dump_tensor("memory_attention_output_0.dat", pix_feat_with_mem)
 
         if self.benchmark:
             end = int(round(time.time() * 1000))
