@@ -12,12 +12,31 @@ from typing import Tuple
 
 class SAM2ImagePredictor:
     debug = False
+    dump = False
 
     def __init__(
         self,
         image_size,
+        debug,
+        dump
     ):
         self.image_size = image_size
+        self.debug = debug
+        self.dump = dump
+
+    def dump_tensor(self, path, tensor):
+        if type(tensor) == bool:
+            if tensor:
+                data = np.array([1], dtype=np.float32)
+            else:
+                data = np.array([0], dtype=np.float32)
+        else:
+            data = tensor.flatten()
+        import struct
+        s = struct.pack('f'*len(data), *data)
+        f = open(path,'wb')
+        f.write(s)
+        f.close()
 
     def trunc_normal(self, size, std=0.02, a=-2, b=2):
         values = np.random.normal(loc=0., scale=std, size=size)
@@ -48,6 +67,16 @@ class SAM2ImagePredictor:
         backbone_fpn_0 = image_encoder.get_tensor(output_details[0]["index"])
         backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
         backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
+
+        if self.dump:
+            self.dump_tensor("image_encoder_input_0.dat", img)
+            self.dump_tensor("image_encoder_output_0.dat", backbone_fpn_0)
+            self.dump_tensor("image_encoder_output_1.dat", vision_pos_enc_0)
+            self.dump_tensor("image_encoder_output_2.dat", backbone_fpn_1)
+            self.dump_tensor("image_encoder_output_3.dat", vision_pos_enc_2)
+            self.dump_tensor("image_encoder_output_4.dat", vision_features)
+            self.dump_tensor("image_encoder_output_5.dat", vision_pos_enc_1)
+            self.dump_tensor("image_encoder_output_6.dat", backbone_fpn_2)
 
         if self.debug:
             print("vision_features", vision_features.shape)
@@ -225,6 +254,16 @@ class SAM2ImagePredictor:
         dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
         dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
 
+        if self.dump:
+            self.dump_tensor("prompt_encoder_input_2.dat", concat_points[0])
+            self.dump_tensor("prompt_encoder_input_3.dat", concat_points[1])
+            self.dump_tensor("prompt_encoder_input_0.dat", mask_input_dummy)
+            self.dump_tensor("prompt_encoder_input_1.dat", masks_enable)
+
+            self.dump_tensor("prompt_encoder_output_1.dat", sparse_embeddings)
+            self.dump_tensor("prompt_encoder_output_0.dat", dense_embeddings)
+            self.dump_tensor("prompt_encoder_output_2.dat", dense_pe)
+
         # Predict masks
         batched_mode = (
             concat_points is not None and concat_points[0].shape[0] > 1
@@ -275,6 +314,20 @@ class SAM2ImagePredictor:
         iou_pred = mask_decoder.get_tensor(output_details[0]["index"])
         sam_tokens_out = mask_decoder.get_tensor(output_details[3]["index"])
         object_score_logits = mask_decoder.get_tensor(output_details[1]["index"])
+
+        if self.dump:
+            self.dump_tensor("mask_decoder_input_3.dat", image_feature)
+            self.dump_tensor("mask_decoder_input_6.dat", dense_pe)
+            self.dump_tensor("mask_decoder_input_1.dat", sparse_embeddings)
+            self.dump_tensor("mask_decoder_input_2.dat", dense_embeddings)
+            self.dump_tensor("mask_decoder_input_5.dat", batched_mode)
+            self.dump_tensor("mask_decoder_input_0.dat", high_res_features[0])
+            self.dump_tensor("mask_decoder_input_4.dat", high_res_features[1])
+
+            self.dump_tensor("mask_decoder_output_2.dat", masks)
+            self.dump_tensor("mask_decoder_output_0.dat", iou_pred)
+            self.dump_tensor("mask_decoder_output_3.dat", sam_tokens_out)
+            self.dump_tensor("mask_decoder_output_1.dat", object_score_logits)
 
         if self.debug:
             print("masks", masks.shape)
