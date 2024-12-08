@@ -1832,7 +1832,7 @@ class SAM2VideoPredictor():
 
         convert_to_static_shape = (self.version == "2.1")
         if convert_to_static_shape:
-            max_num_frames = 16
+            max_num_frames = 8
             memory_1_pad = np.zeros((max_num_frames * self.sam_image_embedding_size * self.sam_image_embedding_size, memory_1.shape[1], memory_1.shape[2]))
             memory_1_pad[:memory_1.shape[0],:,:] = memory_1
             memory_pos_embed_1_pad = np.zeros((max_num_frames * self.sam_image_embedding_size * self.sam_image_embedding_size, memory_pos_embed_1.shape[1], memory_pos_embed_1.shape[2]))
