@@ -7,6 +7,8 @@ import cv2
 import time
 from logging import getLogger
 
+from model_utils import format_input_tensor, get_output_tensor
+
 logger = getLogger(__name__)
 
 # a large negative value as a placeholder score for missing objects
@@ -114,6 +116,7 @@ class SAM2VideoPredictor():
         image_size,
         debug,
         dump,
+        accuracy,
         fill_hole_area=0,
         # whether to apply non-overlapping constraints on the output object masks
         non_overlap_masks=False,
@@ -131,6 +134,7 @@ class SAM2VideoPredictor():
         self.clear_non_cond_mem_for_multi_obj = clear_non_cond_mem_for_multi_obj
         self.debug = debug
         self.dump = dump
+        self.accuracy = accuracy
 
     def init_state(
         self,
@@ -976,19 +980,31 @@ class SAM2VideoPredictor():
             if self.benchmark:
                 start = int(round(time.time() * 1000))
             #image_encoder.allocate_tensors()
+
             input_details = image_encoder.get_input_details()
             output_details = image_encoder.get_output_details()
 
-            image_encoder.set_tensor(input_details[0]["index"], image.astype(np.float32))
-            image_encoder.invoke()
+            if self.accuracy == "int8":
+                image_encoder.set_tensor(input_details[0]["index"], format_input_tensor(image.astype(np.float32), input_details, 0))
+                image_encoder.invoke()
+                vision_features = get_output_tensor(image_encoder, output_details, 4)
+                vision_pos_enc_0 = get_output_tensor(image_encoder, output_details, 1)
+                vision_pos_enc_1 = get_output_tensor(image_encoder, output_details, 5)
+                vision_pos_enc_2 = get_output_tensor(image_encoder, output_details, 3)
+                backbone_fpn_0 = get_output_tensor(image_encoder, output_details, 0)
+                backbone_fpn_1 = get_output_tensor(image_encoder, output_details, 2)
+                backbone_fpn_2 = get_output_tensor(image_encoder, output_details, 6)
+            else:
+                image_encoder.set_tensor(input_details[0]["index"], image.astype(np.float32))
+                image_encoder.invoke()
+                vision_features = image_encoder.get_tensor(output_details[4]["index"])
+                vision_pos_enc_0 = image_encoder.get_tensor(output_details[1]["index"])
+                vision_pos_enc_1 = image_encoder.get_tensor(output_details[5]["index"])
+                vision_pos_enc_2 = image_encoder.get_tensor(output_details[3]["index"])
+                backbone_fpn_0 = image_encoder.get_tensor(output_details[0]["index"])
+                backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
+                backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
 
-            vision_features = image_encoder.get_tensor(output_details[4]["index"])
-            vision_pos_enc_0 = image_encoder.get_tensor(output_details[1]["index"])
-            vision_pos_enc_1 = image_encoder.get_tensor(output_details[5]["index"])
-            vision_pos_enc_2 = image_encoder.get_tensor(output_details[3]["index"])
-            backbone_fpn_0 = image_encoder.get_tensor(output_details[0]["index"])
-            backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
-            backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
             if self.benchmark:
                 end = int(round(time.time() * 1000))
                 estimation_time = (end - start)
