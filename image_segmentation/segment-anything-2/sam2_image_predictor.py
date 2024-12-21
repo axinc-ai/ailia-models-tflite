@@ -10,6 +10,8 @@ import numpy as np
 from typing import Optional
 from typing import Tuple
 
+from model_utils import format_input_tensor, get_output_tensor
+
 class SAM2ImagePredictor:
     debug = False
     dump = False
@@ -18,11 +20,13 @@ class SAM2ImagePredictor:
         self,
         image_size,
         debug,
-        dump
+        dump,
+        accuracy
     ):
         self.image_size = image_size
         self.debug = debug
         self.dump = dump
+        self.accuracy = accuracy
 
     def dump_tensor(self, path, tensor):
         if type(tensor) == bool:
@@ -57,16 +61,27 @@ class SAM2ImagePredictor:
         #)
         #image_encoder.allocate_tensors()
 
-        image_encoder.set_tensor(input_details[0]["index"], img)
-        image_encoder.invoke()
+        if self.accuracy == "int8":
+            image_encoder.set_tensor(input_details[0]["index"], format_input_tensor(img, input_details, 0))
+            image_encoder.invoke()
+            vision_features = get_output_tensor(image_encoder, output_details, 4)
+            vision_pos_enc_0 = get_output_tensor(image_encoder, output_details, 1)
+            vision_pos_enc_1 = get_output_tensor(image_encoder, output_details, 5)
+            vision_pos_enc_2 = get_output_tensor(image_encoder, output_details, 3)
+            backbone_fpn_0 = get_output_tensor(image_encoder, output_details, 0)
+            backbone_fpn_1 = get_output_tensor(image_encoder, output_details, 2)
+            backbone_fpn_2 = get_output_tensor(image_encoder, output_details, 6)
+        else:
+            image_encoder.set_tensor(input_details[0]["index"], img)
+            image_encoder.invoke()
 
-        vision_features = image_encoder.get_tensor(output_details[4]["index"]) # 4 or 6
-        vision_pos_enc_0 = image_encoder.get_tensor(output_details[1]["index"])
-        vision_pos_enc_1 = image_encoder.get_tensor(output_details[5]["index"])
-        vision_pos_enc_2 = image_encoder.get_tensor(output_details[3]["index"])
-        backbone_fpn_0 = image_encoder.get_tensor(output_details[0]["index"])
-        backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
-        backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
+            vision_features = image_encoder.get_tensor(output_details[4]["index"]) # 4 or 6
+            vision_pos_enc_0 = image_encoder.get_tensor(output_details[1]["index"])
+            vision_pos_enc_1 = image_encoder.get_tensor(output_details[5]["index"])
+            vision_pos_enc_2 = image_encoder.get_tensor(output_details[3]["index"])
+            backbone_fpn_0 = image_encoder.get_tensor(output_details[0]["index"])
+            backbone_fpn_1 = image_encoder.get_tensor(output_details[2]["index"])
+            backbone_fpn_2 = image_encoder.get_tensor(output_details[6]["index"])
 
         if self.dump:
             self.dump_tensor("image_encoder_input_0.dat", img)

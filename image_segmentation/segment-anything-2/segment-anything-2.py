@@ -86,7 +86,10 @@ parser.add_argument(
     '--dump', action='store_true',
     help='dump tensor data to file.'
 )
-
+parser.add_argument(
+    '--accuracy', default='float', choices=('float', 'int8'),
+    help='Select model.'
+)
 args = update_parser(parser)
 
 # ======================
@@ -208,7 +211,7 @@ def get_input_point():
 def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
     input_point, input_label, input_box = get_input_point()
 
-    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump)
+    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump, args.accuracy)
 
     for image_path in args.input:
         image = cv2.imread(image_path)
@@ -411,8 +414,12 @@ def main():
         model_type = model_type + "_2.1"
     if args.image_size != 1024:
         model_type = model_type + "_" + str(args.image_size)
+    
+    accuracy_type = ""
+    if args.accuracy == "int8":
+        accuracy_type = ".int8"
 
-    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + '.tflite'
+    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + accuracy_type + '.tflite'
     WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + '.tflite'
     WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + '.tflite'
     WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + '.tflite'
