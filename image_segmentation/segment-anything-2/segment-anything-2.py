@@ -505,7 +505,7 @@ def main():
             print("-----------------")
             if args.tflite:
                 for t in model.get_tensor_details():
-                    print(t['name'], t['index'], np.sum(model.get_tensor(t['index'])))
+                    print(str(t['index']) + " , " + str(np.sum(model.get_tensor(t['index']))) + " , " + str(t['shape']) + " , " + t['name'])
             else:
                 for model in [image_encoder, mask_decoder]:
                     for i in range(10000):
@@ -513,7 +513,7 @@ def main():
                             t = model.get_tensor2(i) # __get_tensorをpublicにしたもの
                             v = model.get_tensor(i)
                             v = np.sum(v)
-                            print(t["name"], t["index"], v)
+                            print(str(t["index"]) + " , " + str(v) + " , " + str(t["shape"]) + " , " + t["name"])
                         except:
                             continue
 
