@@ -87,6 +87,10 @@ parser.add_argument(
     help='dump tensor data to file.'
 )
 parser.add_argument(
+    '--verify', action='store_true',
+    help='verify tensor data.'
+)
+parser.add_argument(
     '--accuracy', default='float', choices=('float', 'int8'),
     help='Select model.'
 )
@@ -443,9 +447,10 @@ def main():
         import ailia_tflite
 
     if args.tflite:
-        image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH)
+        experimental_preserve_all_tensors = args.verify
+        image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
         prompt_encoder = tf.lite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
-        mask_decoder = tf.lite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH)
+        mask_decoder = tf.lite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
         memory_attention = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH)
         memory_encoder = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
         mlp = tf.lite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
@@ -454,8 +459,9 @@ def main():
         else:
             obj_ptr_tpos_proj = None
     else:
-        memory_mode = None
         memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE
+        if args.verify:
+            memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_DEFAULT
         flags= int(args.flags)
         image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
         prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
@@ -493,6 +499,23 @@ def main():
         recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj)
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
+
+    if args.verify:
+        for model in [image_encoder, mask_decoder]:
+            print("-----------------")
+            if args.tflite:
+                for t in model.get_tensor_details():
+                    print(t['name'], t['index'], np.sum(model.get_tensor(t['index'])))
+            else:
+                for model in [image_encoder, mask_decoder]:
+                    for i in range(10000):
+                        try:
+                            t = model.get_tensor2(i) # __get_tensorをpublicにしたもの
+                            v = model.get_tensor(i)
+                            v = np.sum(v)
+                            print(t["name"], t["index"], v)
+                        except:
+                            continue
 
 
     if not args.tflite and args.profile:
