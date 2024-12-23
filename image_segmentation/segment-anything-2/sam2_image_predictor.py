@@ -259,15 +259,26 @@ class SAM2ImagePredictor:
         #)
         #prompt_encoder.allocate_tensors()
 
-        prompt_encoder.set_tensor(input_details[2]["index"], concat_points[0])
-        prompt_encoder.set_tensor(input_details[3]["index"], concat_points[1])
-        prompt_encoder.set_tensor(input_details[0]["index"], mask_input_dummy)
-        prompt_encoder.set_tensor(input_details[1]["index"], masks_enable)
-        prompt_encoder.invoke()
+        if False:#self.accuracy == "int8":
+            prompt_encoder.set_tensor(input_details[2]["index"], format_input_tensor(concat_points[0], input_details, 2))
+            prompt_encoder.set_tensor(input_details[3]["index"], format_input_tensor(concat_points[1], input_details, 3))
+            prompt_encoder.set_tensor(input_details[0]["index"], format_input_tensor(mask_input_dummy, input_details, 0))
+            prompt_encoder.set_tensor(input_details[1]["index"], format_input_tensor(masks_enable, input_details, 1))
+            prompt_encoder.invoke()
 
-        sparse_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
-        dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
-        dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
+            sparse_embeddings = get_output_tensor(prompt_encoder, output_details, 1)
+            dense_embeddings = get_output_tensor(prompt_encoder, output_details, 0)
+            dense_pe = get_output_tensor(prompt_encoder, output_details, 2)
+        else:
+            prompt_encoder.set_tensor(input_details[2]["index"], concat_points[0])
+            prompt_encoder.set_tensor(input_details[3]["index"], concat_points[1])
+            prompt_encoder.set_tensor(input_details[0]["index"], mask_input_dummy)
+            prompt_encoder.set_tensor(input_details[1]["index"], masks_enable)
+            prompt_encoder.invoke()
+
+            sparse_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
+            dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
+            dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
 
         if self.dump:
             self.dump_tensor("prompt_encoder_input_2.dat", concat_points[0])

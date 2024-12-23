@@ -1542,10 +1542,15 @@ class SAM2VideoPredictor():
         output_details = mlp.get_output_details()
         #mlp.allocate_tensors()
 
-        mlp.set_tensor(input_details[0]["index"], sam_output_token.astype(np.float32))
-        mlp.invoke()
+        if self.accuracy == "int8":
+            mlp.set_tensor(input_details[0]["index"], format_input_tensor(sam_output_token.astype(np.float32), input_details, 0))
+            mlp.invoke()
+            obj_ptr = get_output_tensor(mlp, output_details, 0)
+        else:
+            mlp.set_tensor(input_details[0]["index"], sam_output_token.astype(np.float32))
+            mlp.invoke()
+            obj_ptr = mlp.get_tensor(output_details[0]["index"])
 
-        obj_ptr = mlp.get_tensor(output_details[0]["index"])
         if self.benchmark:
             end = int(round(time.time() * 1000))
             estimation_time = (end - start)
@@ -1804,9 +1809,14 @@ class SAM2VideoPredictor():
                         output_details = obj_ptr_tpos_proj.get_output_details()
                         tpos = np.zeros((obj_pos.shape[0], 64))
                         for i in range(obj_pos.shape[0]):
-                            obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], obj_pos[i:i+1,:].astype(np.float32))
-                            obj_ptr_tpos_proj.invoke()
-                            tpos[i:i+1,:] = obj_ptr_tpos_proj.get_tensor(output_details[0]["index"])
+                            if self.accuracy == "int8":
+                                obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], format_input_tensor(obj_pos[i:i+1,:].astype(np.float32), input_details, 0))
+                                obj_ptr_tpos_proj.invoke()
+                                tpos[i:i+1,:] = get_output_tensor(obj_ptr_tpos_proj, output_details, 0)
+                            else:
+                                obj_ptr_tpos_proj.set_tensor(input_details[0]["index"], obj_pos[i:i+1,:].astype(np.float32))
+                                obj_ptr_tpos_proj.invoke()
+                                tpos[i:i+1,:] = obj_ptr_tpos_proj.get_tensor(output_details[0]["index"])
                             if self.dump:
                                 self.dump_tensor("obj_ptr_tpos_proj_input_0.dat", obj_pos[i:i+1,:].astype(np.float32))
                                 self.dump_tensor("obj_ptr_tpos_proj_output_0.dat", tpos[i:i+1,:]) 
@@ -1996,12 +2006,20 @@ class SAM2VideoPredictor():
         output_details = memory_encoder.get_output_details()
         #memory_encoder.allocate_tensors()
 
-        memory_encoder.set_tensor(input_details[0]["index"], pix_feat.astype(np.float32))
-        memory_encoder.set_tensor(input_details[1]["index"], mask_for_mem.astype(np.float32))
-        memory_encoder.invoke()
+        if self.accuracy == "int8":
+            memory_encoder.set_tensor(input_details[0]["index"], format_input_tensor(pix_feat.astype(np.float32), input_details, 0))
+            memory_encoder.set_tensor(input_details[1]["index"], format_input_tensor(mask_for_mem.astype(np.float32), input_details, 1))
+            memory_encoder.invoke()
 
-        vision_features = memory_encoder.get_tensor(output_details[1]["index"])
-        vision_pos_enc = memory_encoder.get_tensor(output_details[0]["index"])
+            vision_features = get_output_tensor(memory_encoder, output_details, 1)
+            vision_pos_enc = get_output_tensor(memory_encoder, output_details, 0)
+        else:
+            memory_encoder.set_tensor(input_details[0]["index"], pix_feat.astype(np.float32))
+            memory_encoder.set_tensor(input_details[1]["index"], mask_for_mem.astype(np.float32))
+            memory_encoder.invoke()
+
+            vision_features = memory_encoder.get_tensor(output_details[1]["index"])
+            vision_pos_enc = memory_encoder.get_tensor(output_details[0]["index"])
 
         if self.benchmark:
             end = int(round(time.time() * 1000))
