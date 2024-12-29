@@ -416,6 +416,10 @@ def main():
     model_type = args.model_type
     if args.version == "2.1":
         model_type = model_type + "_2.1"
+
+    if args.version == "2" and args.accuracy == "int8":
+        raise Exception("Please use SAM2.1 for int8")
+
     if args.image_size != 1024:
         model_type = model_type + "_" + str(args.image_size)
     
@@ -501,21 +505,33 @@ def main():
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
     if args.verify:
+        model_cnt = 0
         for model in [image_encoder, mask_decoder]:
-            print("-----------------")
             if args.tflite:
+                os.makedirs("./dump" + str(model_cnt), exist_ok=True)
                 for t in model.get_tensor_details():
-                    print(str(t['index']) + " , " + str(np.sum(model.get_tensor(t['index']))) + " , " + str(t['shape']) + " , " + t['name'])
+                    try:
+                        np.save("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy", model.get_tensor(t['index']))
+                    except:
+                        continue
             else:
-                for model in [image_encoder, mask_decoder]:
-                    for i in range(10000):
-                        try:
-                            t = model.get_tensor2(i) # __get_tensorをpublicにしたもの
-                            v = model.get_tensor(i)
-                            v = np.sum(v)
-                            print(str(t["index"]) + " , " + str(v) + " , " + str(t["shape"]) + " , " + t["name"])
-                        except:
-                            continue
+                f = open("diff" + str(model_cnt) + ".csv", "w")
+                f.write("index , diff_mean , diff_max , name , shape\n")
+                for i in range(2153):
+                    try:
+                        t = model._Interpreter__get_tensor(i)
+                        v = model.get_tensor(i)
+                        s = np.sum(v)
+                        ref = np.load("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy")
+                        if v.dtype == np.float32 or v.dtype == np.int8:
+                            r = ref - v
+                            diff_mean = np.mean(np.abs(r))
+                            diff_max = np.max(np.abs(r))
+                            f.write(str(t["index"]) + " , " + str(diff_mean) + " , " + str(diff_max) + " , " + t["name"] + " , " + str(t["shape"]) + "\n")
+                    except:
+                        continue
+                f.close()
+            model_cnt = model_cnt + 1
 
 
     if not args.tflite and args.profile:
