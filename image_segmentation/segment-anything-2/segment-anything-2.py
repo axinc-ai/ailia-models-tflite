@@ -91,6 +91,10 @@ parser.add_argument(
     help='verify tensor data.'
 )
 parser.add_argument(
+    '--verify_only_mask_decoder', action='store_true',
+    help='verify mask decoder tensor data.'
+)
+parser.add_argument(
     '--accuracy', default='float', choices=('float', 'int8'),
     help='Select model.'
 )
@@ -411,6 +415,72 @@ def process_frame(image, frame_idx, predictor, inference_state, image_encoder, p
 
     return image
 
+def verify_tensor(image_encoder, mask_decoder):
+    if args.verify_only_mask_decoder:
+        verify_list = [mask_decoder]
+        model_cnt = 1
+    else:
+        verify_list = [image_encoder, mask_decoder]
+        model_cnt = 0
+    for model in verify_list:
+        if args.tflite:
+            os.makedirs("./dump" + str(model_cnt), exist_ok=True)
+            for t in model.get_tensor_details():
+                try:
+                    np.save("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy", model.get_tensor(t['index']))
+                except:
+                    continue
+        else:
+            f = open("diff" + str(model_cnt) + ".csv", "w")
+            f.write("index , diff_mean , diff_max , name , shape\n")
+            f2 = open("tensor" + str(model_cnt) + ".csv", "w")
+            for i in range(2153):
+                try:
+                    t = model._Interpreter__get_tensor(i)
+                    v = model.get_tensor(i)
+                    s = np.sum(v)
+                    ref = np.load("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy")
+                    if v.dtype == np.float32 or v.dtype == np.int8:
+                        r = ref - v
+                        diff_mean = np.mean(np.abs(r))
+                        diff_max = np.max(np.abs(r))
+                        f.write(str(t["index"]) + " , " + str(diff_mean) + " , " + str(diff_max) + " , " + t["name"] + " , " + str(t["shape"]) + "\n")
+
+                    if args.verify_only_mask_decoder:
+                        if t["index"] == 245 or t["index"] == 246:
+                            for ref_id in range(2):
+                                if ref_id == 1:
+                                    d = ref
+                                    f2.write("tflite "+str(d.shape)+"\n")
+                                else:
+                                    d = v
+                                    f2.write("ailia "+str(d.shape)+"\n")
+                                if t["index"] == 245:
+                                    f2.write("Input tensor int8\n")
+                                    for j in range(t['shape'][1]):
+                                        for k in range(t['shape'][2]):
+                                            f2.write(str(d[0,j,k]) + " , ")
+                                        f2.write("\n")
+                                    f2.write("Input tensor float32\n")
+                                    for j in range(t['shape'][1]):
+                                        for k in range(t['shape'][2]):
+                                            f2.write(str((d[0,j,k]- t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                        f2.write("\n")
+                                if  t["index"] == 246:
+                                    f2.write("Output tensor int8\n")
+                                    for j in range(t['shape'][0]):
+                                        f2.write(str(d[j]) + " , ")
+                                    f2.write("\n")
+                                    f2.write("Output tensor float32\n")
+                                    for j in range(t['shape'][0]):
+                                        f2.write(str((d[j]- t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                    f2.write("\n")
+                except:
+                    continue
+            f.close()
+            f2.close()
+        model_cnt = model_cnt + 1
+
 def main():
     # select model
     model_type = args.model_type
@@ -478,6 +548,12 @@ def main():
         else:
             obj_ptr_tpos_proj = None
 
+        if args.verify_only_mask_decoder:
+            import tensorflow as tf
+            experimental_preserve_all_tensors = args.verify
+            image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
+            prompt_encoder = tf.lite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
+
     if not args.tflite and args.profile:
         image_encoder.set_profile_mode(True)
         prompt_encoder.set_profile_mode(True)
@@ -505,34 +581,7 @@ def main():
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
     if args.verify:
-        model_cnt = 0
-        for model in [image_encoder, mask_decoder]:
-            if args.tflite:
-                os.makedirs("./dump" + str(model_cnt), exist_ok=True)
-                for t in model.get_tensor_details():
-                    try:
-                        np.save("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy", model.get_tensor(t['index']))
-                    except:
-                        continue
-            else:
-                f = open("diff" + str(model_cnt) + ".csv", "w")
-                f.write("index , diff_mean , diff_max , name , shape\n")
-                for i in range(2153):
-                    try:
-                        t = model._Interpreter__get_tensor(i)
-                        v = model.get_tensor(i)
-                        s = np.sum(v)
-                        ref = np.load("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy")
-                        if v.dtype == np.float32 or v.dtype == np.int8:
-                            r = ref - v
-                            diff_mean = np.mean(np.abs(r))
-                            diff_max = np.max(np.abs(r))
-                            f.write(str(t["index"]) + " , " + str(diff_mean) + " , " + str(diff_max) + " , " + t["name"] + " , " + str(t["shape"]) + "\n")
-                    except:
-                        continue
-                f.close()
-            model_cnt = model_cnt + 1
-
+        verify_tensor(image_encoder, mask_decoder)
 
     if not args.tflite and args.profile:
         print("--- image_encoder")
