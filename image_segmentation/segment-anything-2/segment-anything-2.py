@@ -432,19 +432,28 @@ def verify_tensor(image_encoder, mask_decoder):
                     continue
         else:
             f = open("diff" + str(model_cnt) + ".csv", "w")
-            f.write("index , diff_mean , diff_max , name , shape\n")
+            f.write("index , diff_mean (int8) , diff_max (int8) , diff_mean (float) , diff_max (float) , name , shape\n")
             f2 = open("tensor" + str(model_cnt) + ".csv", "w")
             for i in range(2153):
                 try:
                     t = model._Interpreter__get_tensor(i)
                     v = model.get_tensor(i)
-                    s = np.sum(v)
                     ref = np.load("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy")
                     if v.dtype == np.float32 or v.dtype == np.int8:
-                        r = ref - v
-                        diff_mean = np.mean(np.abs(r))
-                        diff_max = np.max(np.abs(r))
-                        f.write(str(t["index"]) + " , " + str(diff_mean) + " , " + str(diff_max) + " , " + t["name"] + " , " + str(t["shape"]) + "\n")
+                        r_int8 = ref - v
+                        diff_mean_int8 = np.mean(np.abs(r_int8))
+                        diff_max_int8 = np.max(np.abs(r_int8))
+
+                        r_float = ((ref.astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) - ((v.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])
+                        diff_mean_float = np.mean(np.abs(r_float))
+                        diff_max_float = np.max(np.abs(r_float))
+
+                        f.write(str(t["index"]) + " , " + str(diff_mean_int8) + " , " + str(diff_max_int8) + " , " + str(diff_mean_float) + " , " + str(diff_max_float) + " , " + t["name"] + " , " + str(t["shape"]) + "\n")
+                        #f.write(str(v)+"\n")
+                        #f.write(str(ref)+"\n")
+                        #f.write(str((v.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])+"\n")
+                        #f.write(str((ref.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])+"\n")
+                        #f.write(str(r_float)+"\n")
 
                     if args.verify_only_mask_decoder:
                         if t["index"] == 245 or t["index"] == 246:
@@ -464,7 +473,7 @@ def verify_tensor(image_encoder, mask_decoder):
                                     f2.write("Input tensor float32\n")
                                     for j in range(t['shape'][1]):
                                         for k in range(t['shape'][2]):
-                                            f2.write(str((d[0,j,k]- t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                            f2.write(str((d[0,j,k].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
                                         f2.write("\n")
                                 if  t["index"] == 246:
                                     f2.write("Output tensor int8\n")
@@ -473,7 +482,7 @@ def verify_tensor(image_encoder, mask_decoder):
                                         f2.write("\n")
                                     f2.write("Output tensor float32\n")
                                     for j in range(t['shape'][0]):
-                                        f2.write(str((d[j]- t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                        f2.write(str((d[j].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
                                         f2.write("\n")
                 except:
                     continue
