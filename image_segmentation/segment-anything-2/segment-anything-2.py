@@ -470,11 +470,11 @@ def verify_tensor(image_encoder, mask_decoder):
                                     f2.write("Output tensor int8\n")
                                     for j in range(t['shape'][0]):
                                         f2.write(str(d[j]) + " , ")
-                                    f2.write("\n")
+                                        f2.write("\n")
                                     f2.write("Output tensor float32\n")
                                     for j in range(t['shape'][0]):
                                         f2.write(str((d[j]- t['quantization'][1]) * t['quantization'][0]) + " , ")
-                                    f2.write("\n")
+                                        f2.write("\n")
                 except:
                     continue
             f.close()
