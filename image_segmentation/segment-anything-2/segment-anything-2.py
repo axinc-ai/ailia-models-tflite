@@ -95,7 +95,7 @@ parser.add_argument(
     help='verify mask decoder tensor data.'
 )
 parser.add_argument(
-    '--accuracy', default='float', choices=('float', 'int8'),
+    '--accuracy', default='float', choices=('float', 'int8', 'mixed'),
     help='Select model.'
 )
 args = update_parser(parser)
@@ -219,7 +219,10 @@ def get_input_point():
 def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
     input_point, input_label, input_box = get_input_point()
 
-    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump, args.accuracy)
+    accuracy = "float"
+    if args.accuracy == "int8" or args.accuracy == "mixed":
+        accuracy = "int8"
+    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump, accuracy)
 
     for image_path in args.input:
         image = cv2.imread(image_path)
@@ -315,7 +318,11 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
     else:
         writer = None
 
-    predictor = SAM2VideoPredictor(args.benchmark, args.image_size, args.debug, args.dump, args.accuracy)
+    accuracy = "float"
+    if args.accuracy == "int8" or args.accuracy == "mixed":
+        accuracy = "int8"
+
+    predictor = SAM2VideoPredictor(args.benchmark, args.image_size, args.debug, args.dump, accuracy)
 
     inference_state = predictor.init_state(args.num_mask_mem, args.max_obj_ptrs_in_encoder, args.version)
     predictor.reset_state(inference_state)
@@ -456,7 +463,7 @@ def verify_tensor(image_encoder, mask_decoder):
                         #f.write(str(r_float)+"\n")
 
                     if args.verify_only_mask_decoder:
-                        if t["index"] == 245 or t["index"] == 246:
+                        if t["index"] == 335 or t["index"] == 337 or t["index"] == 338:
                             for ref_id in range(2):
                                 if ref_id == 1:
                                     d = ref
@@ -464,7 +471,7 @@ def verify_tensor(image_encoder, mask_decoder):
                                 else:
                                     d = v
                                     f2.write("ailia "+str(d.shape)+"\n")
-                                if t["index"] == 245:
+                                if t["index"] == 335 or t["index"] == 338:
                                     f2.write("Input tensor int8\n")
                                     for j in range(t['shape'][1]):
                                         for k in range(t['shape'][2]):
@@ -475,14 +482,14 @@ def verify_tensor(image_encoder, mask_decoder):
                                         for k in range(t['shape'][2]):
                                             f2.write(str((d[0,j,k].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
                                         f2.write("\n")
-                                if  t["index"] == 246:
+                                if  t["index"] == 337:
                                     f2.write("Output tensor int8\n")
-                                    for j in range(t['shape'][0]):
-                                        f2.write(str(d[j]) + " , ")
+                                    for j in range(t['shape'][1]):
+                                        f2.write(str(d[0,j,0]) + " , ")
                                         f2.write("\n")
                                     f2.write("Output tensor float32\n")
-                                    for j in range(t['shape'][0]):
-                                        f2.write(str((d[j].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                    for j in range(t['shape'][1]):
+                                        f2.write(str((d[0,j,0].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
                                         f2.write("\n")
                 except:
                     continue
@@ -496,19 +503,24 @@ def main():
     if args.version == "2.1":
         model_type = model_type + "_2.1"
 
-    if args.version == "2" and args.accuracy == "int8":
+    if args.version == "2" and (args.accuracy == "int8" or args.accuracy == "mixed"):
         raise Exception("Please use SAM2.1 for int8")
 
     if args.image_size != 1024:
         model_type = model_type + "_" + str(args.image_size)
     
     accuracy_type = ""
+    accuracy_type_torch = ""
     if args.accuracy == "int8":
         accuracy_type = ".int8"
+        accuracy_type_torch = ".int8"
+    if args.accuracy == "mixed":
+        accuracy_type = ".int8"
+        accuracy_type_torch = ".int8_torch"
 
-    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + accuracy_type + '.tflite'
+    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + accuracy_type_torch + '.tflite'
     WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + '.tflite' # 精度の問題でFloatで動かす
-    WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + accuracy_type + '.tflite'
+    WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + accuracy_type_torch + '.tflite'
     WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + accuracy_type + '.tflite'
     WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + accuracy_type + '.tflite'
     WEIGHT_MLP_L_PATH = 'mlp_' + model_type + accuracy_type + '.tflite'
