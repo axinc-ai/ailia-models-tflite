@@ -516,13 +516,13 @@ def main():
         accuracy_type_torch = ".int8"
     if args.accuracy == "mixed":
         accuracy_type = ".int8"
-        accuracy_type_torch = ".int8_torch"
+        accuracy_type_torch = ".mixed"
 
     WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + accuracy_type_torch + '.tflite'
     WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + '.tflite' # 精度の問題でFloatで動かす
     WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + accuracy_type_torch + '.tflite'
-    WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + accuracy_type + '.tflite'
-    WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + accuracy_type + '.tflite'
+    WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + accuracy_type_torch + '.tflite'
     WEIGHT_MLP_L_PATH = 'mlp_' + model_type + accuracy_type + '.tflite'
     WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH = 'obj_ptr_tpos_proj_' + model_type + accuracy_type + '.tflite'
 
