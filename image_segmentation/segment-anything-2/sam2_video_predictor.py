@@ -1411,24 +1411,41 @@ class SAM2VideoPredictor():
         if self.benchmark:
             start = int(round(time.time() * 1000))
 
-        #prompt_encoder.allocate_tensors()
         input_details = prompt_encoder.get_input_details()
         output_details = prompt_encoder.get_output_details()
-        #prompt_encoder.resize_tensor_input(
-        #    input_details[2]["index"], 
-        #    [1, sam_point_coords.shape[1], 2]
-        #)
-        #prompt_encoder.allocate_tensors()
 
-        prompt_encoder.set_tensor(input_details[2]["index"], sam_point_coords.astype(np.float32))
-        prompt_encoder.set_tensor(input_details[3]["index"], sam_point_labels.astype(np.int32))
-        prompt_encoder.set_tensor(input_details[0]["index"], mask_input_dummy.astype(np.float32))
-        prompt_encoder.set_tensor(input_details[1]["index"], masks_enable.astype(np.int32))
-        prompt_encoder.invoke()
+        #padding
+        padding_length = input_details[2]["shape"][1]
+        original_length = sam_point_coords.shape[1]
+        sam_point_coords_pad = np.zeros((sam_point_coords.shape[0], padding_length, sam_point_coords.shape[2]), dtype=np.float32)
+        sam_point_labels_pad = -np.ones((sam_point_labels.shape[0], padding_length), dtype=np.float32)
+        sam_point_coords_pad[:, 0:sam_point_coords.shape[1], :] = sam_point_coords
+        sam_point_labels_pad[:, 0:sam_point_labels.shape[1]] = sam_point_labels
+        sam_point_coords = sam_point_coords_pad
+        sam_point_labels = sam_point_labels_pad
 
-        sparse_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
-        dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
-        dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
+        if self.accuracy == "int8" or self.accuracy == "mixed":
+            prompt_encoder.set_tensor(input_details[2]["index"], format_input_tensor(sam_point_coords, input_details, 2))
+            prompt_encoder.set_tensor(input_details[3]["index"], format_input_tensor(sam_point_labels, input_details, 3))
+            prompt_encoder.set_tensor(input_details[0]["index"], format_input_tensor(mask_input_dummy, input_details, 0))
+            prompt_encoder.set_tensor(input_details[1]["index"], format_input_tensor(masks_enable.astype(np.int32), input_details, 1))
+            
+            prompt_encoder.invoke()
+
+            sparse_embeddings = get_output_tensor(prompt_encoder, output_details, 1)
+            dense_embeddings = get_output_tensor(prompt_encoder, output_details, 0)
+            dense_pe = get_output_tensor(prompt_encoder, output_details, 2)
+        else:
+            prompt_encoder.set_tensor(input_details[2]["index"], sam_point_coords.astype(np.float32))
+            prompt_encoder.set_tensor(input_details[3]["index"], sam_point_labels.astype(np.int32))
+            prompt_encoder.set_tensor(input_details[0]["index"], mask_input_dummy.astype(np.float32))
+            prompt_encoder.set_tensor(input_details[1]["index"], masks_enable.astype(np.int32))
+
+            prompt_encoder.invoke()
+
+            sparse_embeddings = prompt_encoder.get_tensor(output_details[1]["index"])
+            dense_embeddings = prompt_encoder.get_tensor(output_details[0]["index"])
+            dense_pe = prompt_encoder.get_tensor(output_details[2]["index"])
 
         if self.benchmark:
             end = int(round(time.time() * 1000))
@@ -1444,21 +1461,25 @@ class SAM2VideoPredictor():
             print("high_res_features", np.sum(high_res_features[0]))
             print("high_res_features", np.sum(high_res_features[1]))
 
+        sparse_embeddings = sparse_embeddings[:,:original_length + 1,:]
+
+        input_details = mask_decoder.get_input_details()
+        output_details = mask_decoder.get_output_details()
+
+        padding_length = input_details[1]["shape"][1]
+        sparse_embeddings_pad = np.zeros((sparse_embeddings.shape[0], padding_length, sparse_embeddings.shape[2]), np.float32)
+        sparse_embeddings_pad[:, 0:sparse_embeddings.shape[1], :] = sparse_embeddings
+        sparse_embeddings = sparse_embeddings_pad
+
+        attn_masks = np.zeros((sparse_embeddings.shape[0], padding_length), dtype = np.bool_)
+        attn_masks[:, 0:original_length + 1] = True
+
         if self.benchmark:
             start = int(round(time.time() * 1000))
 
-        #mask_decoder.allocate_tensors()
-        input_details = mask_decoder.get_input_details()
-        output_details = mask_decoder.get_output_details()
-        #mask_decoder.resize_tensor_input(
-        #    input_details[1]["index"], 
-        #    [1, sparse_embeddings.shape[1], 256]
-        #)
-        #mask_decoder.allocate_tensors()
-
         batched_mode = False
 
-        if self.accuracy == "int8":
+        if self.accuracy == "int8" or self.accuracy == "mixed":
             mask_decoder.set_tensor(input_details[3]["index"], format_input_tensor(backbone_features, input_details, 3))
             mask_decoder.set_tensor(input_details[6]["index"], format_input_tensor(dense_pe, input_details, 6))
             mask_decoder.set_tensor(input_details[1]["index"], format_input_tensor(sparse_embeddings, input_details, 1))
@@ -1466,6 +1487,8 @@ class SAM2VideoPredictor():
             mask_decoder.set_tensor(input_details[5]["index"], batched_mode)
             mask_decoder.set_tensor(input_details[0]["index"], format_input_tensor(high_res_features[0], input_details, 0))
             mask_decoder.set_tensor(input_details[4]["index"], format_input_tensor(high_res_features[1], input_details, 4))
+            if len(input_details) >= 7:
+                mask_decoder.set_tensor(input_details[7]["index"], attn_masks)
             mask_decoder.invoke()
 
             masks = get_output_tensor(mask_decoder, output_details, 2)
@@ -1480,6 +1503,8 @@ class SAM2VideoPredictor():
             mask_decoder.set_tensor(input_details[5]["index"], batched_mode)
             mask_decoder.set_tensor(input_details[0]["index"], high_res_features[0].astype(np.float32))
             mask_decoder.set_tensor(input_details[4]["index"], high_res_features[1].astype(np.float32))
+            if len(input_details) >= 7:
+                mask_decoder.set_tensor(input_details[7]["index"], attn_masks)
             mask_decoder.invoke()
 
             masks = mask_decoder.get_tensor(output_details[2]["index"])
