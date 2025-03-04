@@ -375,6 +375,8 @@ class SAM2ImagePredictor:
             self.dump_tensor("mask_decoder_input_5.dat", batched_mode)
             self.dump_tensor("mask_decoder_input_0.dat", high_res_features[0])
             self.dump_tensor("mask_decoder_input_4.dat", high_res_features[1])
+            if len(input_details) >= 7:
+                self.dump_tensor("mask_decoder_input_7.dat", attn_masks)
 
             self.dump_tensor("mask_decoder_output_2.dat", masks)
             self.dump_tensor("mask_decoder_output_0.dat", iou_pred)
