@@ -342,7 +342,7 @@ class SAM2ImagePredictor:
             mask_decoder.set_tensor(input_details[5]["index"], batched_mode)
             mask_decoder.set_tensor(input_details[0]["index"], format_input_tensor(high_res_features[0], input_details, 0))
             mask_decoder.set_tensor(input_details[4]["index"], format_input_tensor(high_res_features[1], input_details, 4))
-            if len(input_details) >= 7:
+            if len(input_details) >= 8:
                 mask_decoder.set_tensor(input_details[7]["index"], attn_masks)
             mask_decoder.invoke()
 
@@ -358,7 +358,7 @@ class SAM2ImagePredictor:
             mask_decoder.set_tensor(input_details[5]["index"], batched_mode)
             mask_decoder.set_tensor(input_details[0]["index"], high_res_features[0])
             mask_decoder.set_tensor(input_details[4]["index"], high_res_features[1])
-            if len(input_details) >= 7:
+            if len(input_details) >= 8:
                 mask_decoder.set_tensor(input_details[7]["index"], attn_masks)
             mask_decoder.invoke()
 
@@ -375,7 +375,7 @@ class SAM2ImagePredictor:
             self.dump_tensor("mask_decoder_input_5.dat", batched_mode)
             self.dump_tensor("mask_decoder_input_0.dat", high_res_features[0])
             self.dump_tensor("mask_decoder_input_4.dat", high_res_features[1])
-            if len(input_details) >= 7:
+            if len(input_details) >= 8:
                 self.dump_tensor("mask_decoder_input_7.dat", attn_masks)
 
             self.dump_tensor("mask_decoder_output_2.dat", masks)

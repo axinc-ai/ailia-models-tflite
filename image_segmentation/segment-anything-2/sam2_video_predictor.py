@@ -1487,7 +1487,7 @@ class SAM2VideoPredictor():
             mask_decoder.set_tensor(input_details[5]["index"], batched_mode)
             mask_decoder.set_tensor(input_details[0]["index"], format_input_tensor(high_res_features[0], input_details, 0))
             mask_decoder.set_tensor(input_details[4]["index"], format_input_tensor(high_res_features[1], input_details, 4))
-            if len(input_details) >= 7:
+            if len(input_details) >= 8:
                 mask_decoder.set_tensor(input_details[7]["index"], attn_masks)
             mask_decoder.invoke()
 
@@ -1503,7 +1503,7 @@ class SAM2VideoPredictor():
             mask_decoder.set_tensor(input_details[5]["index"], batched_mode)
             mask_decoder.set_tensor(input_details[0]["index"], high_res_features[0].astype(np.float32))
             mask_decoder.set_tensor(input_details[4]["index"], high_res_features[1].astype(np.float32))
-            if len(input_details) >= 7:
+            if len(input_details) >= 8:
                 mask_decoder.set_tensor(input_details[7]["index"], attn_masks)
             mask_decoder.invoke()
 
