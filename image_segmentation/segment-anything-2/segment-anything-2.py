@@ -1,0 +1,629 @@
+﻿import sys
+import os
+import time
+from logging import getLogger
+
+import cv2
+
+import os
+import numpy as np
+
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+
+from utils import get_base_parser, update_parser, get_savepath  # noqa
+from model_utils import check_and_download_models  # noqa
+from webcamera_utils import get_capture, get_writer  # noqa
+
+logger = getLogger(__name__)
+
+# ======================
+# Parameters
+# ======================
+
+IMAGE_PATH = 'truck.jpg'
+SAVE_IMAGE_PATH = 'output.png'
+
+POINT1 = (500, 375)
+POINT2 = (1125, 625)
+
+TARGET_LENGTH = 1024
+
+# ======================
+# Arguemnt Parser Config
+# ======================
+
+parser = get_base_parser(
+    'Segment Anything 2', IMAGE_PATH, SAVE_IMAGE_PATH
+)
+parser.add_argument(
+    '-p', '--pos', action='append', type=int, metavar="X", nargs=2,
+    help='Positive coordinate specified by x,y.'
+)
+parser.add_argument(
+    '--neg', action='append', type=int, metavar="X", nargs=2,
+    help='Negative coordinate specified by x,y.'
+)
+parser.add_argument(
+    '--box', type=int, metavar="X", nargs=4,
+    help='Box coordinate specified by x1,y1,x2,y2.'
+)
+parser.add_argument(
+    '--idx', type=int, choices=(0, 1, 2, 3),
+    help='Select mask index.'
+)
+parser.add_argument(
+    '-m', '--model_type', default='hiera_t', choices=('hiera_l', 'hiera_b+', 'hiera_s', 'hiera_t'),
+    help='Select model.'
+)
+parser.add_argument(
+    '--version', default='2.1', choices=('2', '2.1'),
+    help='Select model.'
+)
+parser.add_argument(
+    '--num_mask_mem', type=int, default=7, choices=(0, 1, 2, 3, 4, 5, 6, 7),
+    help='Number of mask mem. (default 7, 1 input frame + 6 previous frames)'
+)
+parser.add_argument(
+    '--max_obj_ptrs_in_encoder', type=int, default=16, choices=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16),
+    help='Number of obj ptr in encoder.'
+)
+parser.add_argument(
+    '--image_size', type=int, default=1024, choices=(512, 1024),
+    help='Inference image size.'
+)
+parser.add_argument(
+    '--dump', action='store_true',
+    help='dump tensor data to file.'
+)
+parser.add_argument(
+    '--verify', action='store_true',
+    help='verify tensor data.'
+)
+parser.add_argument(
+    '--verify_only_mask_decoder', action='store_true',
+    help='verify mask decoder tensor data.'
+)
+parser.add_argument(
+    '--accuracy', default='float', choices=('float', 'int8', 'mixed'),
+    help='Select model.'
+)
+args = update_parser(parser)
+
+# ======================
+# Model path
+# ======================
+
+if args.version == "2.1":
+    REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/segment-anything-2.1/'
+else:
+    REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/segment-anything-2/'
+    logger.warning("This model only supports num_mask_mem and max_obj_ptrs_in_encoder 1.")
+    args.num_mask_mem = 1
+    args.max_obj_ptrs_in_encoder = 1
+
+# ======================
+# Utility
+# ======================
+
+np.random.seed(3)
+
+
+def show_mask(mask, img, color = np.array([255, 144, 30]), obj_id=None, title=None,path_mask=args.savepath, ):
+    color = color.reshape(1, 1, -1)
+
+    h, w = mask.shape[-2:]
+    mask = mask.reshape(h, w, 1)
+    np.save( path_mask, mask)
+
+    mask_image = mask * color
+    img = (img * ~mask) + (img * mask) * 0.6 + mask_image * 0.4
+
+    # Add the title to the image
+    if title != None: 
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        font_color = (255, 255, 255)  # White color for the text
+        thickness = 2
+        text_x = 10  # Starting point (10 pixels from the left)
+        text_y = 30  # Starting point (30 pixels from the top)
+        t1, t2 =title.split(",")
+
+        img = cv2.putText(img, t1, (text_x, text_y), font, font_scale, font_color, thickness, cv2.LINE_AA)
+        img = cv2.putText(img, t2, (text_x, text_y+28), font, font_scale, font_color, thickness, cv2.LINE_AA)
+
+
+    return img
+
+
+def show_points(coords, labels, img):
+    pos_points = coords[labels == 1]
+    neg_points = coords[labels == 0]
+
+    for p in pos_points:
+        cv2.drawMarker(
+            img, p, (0, 255, 0), markerType=cv2.MARKER_TILTED_CROSS, line_type=cv2.LINE_AA,
+            markerSize=30, thickness=5)
+    for p in neg_points:
+        cv2.drawMarker(
+            img, p, (0, 0, 255), markerType=cv2.MARKER_TILTED_CROSS, line_type=cv2.LINE_AA,
+            markerSize=30, thickness=5)
+
+    return img
+
+
+def show_box(box, img):
+    if box is None:
+        return img
+
+    cv2.rectangle(
+        img, (box[0], box[1]), (box[2], box[3]), color=(2, 118, 2),
+        thickness=3,
+        lineType=cv2.LINE_4,
+        shift=0)
+
+    return img
+
+# ======================
+# Logic
+# ======================
+
+from sam2_image_predictor import SAM2ImagePredictor
+from sam2_video_predictor import SAM2VideoPredictor
+
+# ======================
+# Main
+# ======================
+
+
+def get_input_point():
+    pos_points = args.pos
+    neg_points = args.neg
+    box = args.box
+
+    if pos_points is None:
+        if neg_points is None and box is None:
+            pos_points = [POINT1]
+        else:
+            pos_points = []
+    if neg_points is None:
+        neg_points = []
+
+    input_point = []
+    input_label = []
+    if pos_points:
+        input_point.append(np.array(pos_points))
+        input_label.append(np.ones(len(pos_points)))
+    if neg_points:
+        input_point.append(np.array(neg_points))
+        input_label.append(np.zeros(len(neg_points)))
+    input_point = np.array(input_point)
+    input_label = np.array(input_label)
+    input_box = None
+    if box:
+        input_box = np.array(box)
+    
+    return input_point, input_label, input_box
+
+
+def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
+    input_point, input_label, input_box = get_input_point()
+
+    accuracy = "float"
+    if args.accuracy == "int8" or args.accuracy == "mixed":
+        accuracy = "int8"
+    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump, accuracy)
+
+    for image_path in args.input:
+        image = cv2.imread(image_path)
+        orig_hw = [image.shape[0], image.shape[1]]
+        image_np = preprocess_frame(image, image_size=args.image_size)
+
+        if args.benchmark:
+            logger.info('BENCHMARK mode')
+            total_time_estimation = 0
+            for i in range(args.benchmark_count):
+                start = int(round(time.time() * 1000))
+                features = image_predictor.set_image(image_np, image_encoder)
+                masks, scores, logits = image_predictor.predict(
+                    orig_hw=orig_hw,
+                    features=features,
+                    point_coords=input_point,
+                    point_labels=input_label,
+                    box=input_box,
+                    prompt_encoder=prompt_encoder,
+                    mask_decoder=mask_decoder
+                )
+                end = int(round(time.time() * 1000))
+                estimation_time = (end - start)
+
+                # Logging
+                logger.info(f'\tailia processing estimation time {estimation_time} ms')
+                if i != 0:
+                    total_time_estimation = total_time_estimation + estimation_time
+
+            logger.info(f'\taverage time estimation {total_time_estimation / (args.benchmark_count - 1)} ms')
+        else:
+            features = image_predictor.set_image(image_np, image_encoder)
+            masks, scores, logits = image_predictor.predict(
+                orig_hw=orig_hw,
+                features=features,
+                point_coords=input_point,
+                point_labels=input_label,
+                box=input_box,
+                prompt_encoder=prompt_encoder,
+                mask_decoder=mask_decoder
+            )
+
+        sorted_ind = np.argsort(scores)[::-1]
+        masks = masks[sorted_ind]
+        scores = scores[sorted_ind]
+        logits = logits[sorted_ind]
+
+        savepath = get_savepath(args.savepath, image_path, ext='.png')
+        logger.info(f'saved at : {savepath}')
+        title = args.savepath +", Score: "+str(scores[0])
+        image = show_mask(masks[0], image,  title=title, )
+        image = show_points(input_point, input_label, image)
+        image = show_box(input_box, image)
+        cv2.imwrite(savepath, image)
+        
+
+
+def preprocess_frame(img, image_size):
+    img_mean=(0.485, 0.456, 0.406)
+    img_std=(0.229, 0.224, 0.225)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, (image_size, image_size))
+    img = img / 255.0
+    img = img - img_mean
+    img = img / img_std
+    img = np.transpose(img, (2, 0, 1))
+    return img
+
+
+def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj):
+    if args.video == "demo":
+        frame_names = [
+            p for p in os.listdir(args.video)
+            if os.path.splitext(p)[-1] in [".jpg", ".jpeg", ".JPG", ".JPEG"]
+        ]
+        frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
+        if args.accuracy == "mixed":
+            input_point = np.array([[210, 350], [250, 220]], dtype=np.float32) # attn_mask対応
+            input_label = np.array([1, 1], np.int32)
+        else:
+            input_point = np.array([[210, 350]], dtype=np.float32) # tflite版は1pointのみ対応
+            input_label = np.array([1], np.int32)
+        input_box = None
+        video_width = 960
+        video_height = 540
+    else:
+        frame_names = None
+        capture = get_capture(args.video)
+        video_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        video_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        input_point, input_label, input_box = get_input_point()
+
+    if args.savepath != SAVE_IMAGE_PATH:
+        writer = get_writer(args.savepath, video_height, video_width)
+    else:
+        writer = None
+
+    accuracy = "float"
+    if args.accuracy == "int8" or args.accuracy == "mixed":
+        accuracy = "int8"
+
+    predictor = SAM2VideoPredictor(args.benchmark, args.image_size, args.debug, args.dump, accuracy)
+
+    inference_state = predictor.init_state(args.num_mask_mem, args.max_obj_ptrs_in_encoder, args.version)
+    predictor.reset_state(inference_state)
+
+    frame_shown = False
+
+    frame_idx = 0
+    while (True):
+        if frame_names is None:
+            ret, frame = capture.read()
+        else:
+            ret = True
+            if frame_idx >= len(frame_names):
+                break
+            frame = cv2.imread(os.path.join(args.video, frame_names[frame_idx]))
+            video_height = frame.shape[0]
+            video_width = frame.shape[1]
+
+        if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
+            break
+        if frame_shown and cv2.getWindowProperty('frame', cv2.WND_PROP_VISIBLE) == 0:
+            break
+
+        image = preprocess_frame(frame, args.image_size)
+
+        predictor.append_image(
+            inference_state,
+            image,
+            video_height,
+            video_width,
+            image_encoder)
+
+        if frame_idx == 0:
+            annotate_frame(input_point, input_label, input_box, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj)
+
+        frame = process_frame(frame, frame_idx, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj)
+        frame = frame.astype(np.uint8)
+
+        if frame_idx == 0:
+            frame = show_points(input_point.astype(np.int64), input_label.astype(np.int64), frame)
+            frame = show_box(input_box, frame)
+
+        cv2.imshow('frame', frame)
+        if frame_names is not None:
+            cv2.imwrite(f'video_{frame_idx}.png', frame)
+
+        if writer is not None:
+            writer.write(frame)
+
+        frame_shown = True
+        frame_idx = frame_idx + 1
+
+    if writer is not None:
+        writer.release()
+
+def annotate_frame(points, labels, box, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj):
+    ann_frame_idx = 0  # the frame index we interact with
+    ann_obj_id = 1  # give a unique id to each object we interact with (it can be any integers)
+
+    _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
+        inference_state=inference_state,
+        frame_idx=ann_frame_idx,
+        obj_id=ann_obj_id,
+        points=points,
+        labels=labels,
+        box=box,
+        image_encoder=image_encoder,
+        prompt_encoder=prompt_encoder,
+        mask_decoder=mask_decoder,
+        memory_attention=memory_attention,
+        memory_encoder=memory_encoder,
+        mlp=mlp,
+        obj_ptr_tpos_proj = obj_ptr_tpos_proj
+    )
+
+    predictor.propagate_in_video_preflight(inference_state,
+                                                                            image_encoder = image_encoder,
+                                                                            prompt_encoder = prompt_encoder,
+                                                                            mask_decoder = mask_decoder,
+                                                                            memory_attention = memory_attention,
+                                                                            memory_encoder = memory_encoder,
+                                                                            mlp = mlp,
+                                                                            obj_ptr_tpos_proj = obj_ptr_tpos_proj)
+
+def process_frame(image, frame_idx, predictor, inference_state, image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj):
+    out_frame_idx, out_obj_ids, out_mask_logits = predictor.propagate_in_video(inference_state,
+                                                                                image_encoder = image_encoder,
+                                                                                prompt_encoder = prompt_encoder,
+                                                                                mask_decoder = mask_decoder,
+                                                                                memory_attention = memory_attention,
+                                                                                memory_encoder = memory_encoder,
+                                                                                mlp = mlp,
+                                                                                obj_ptr_tpos_proj = obj_ptr_tpos_proj,
+                                                                                frame_idx = frame_idx)
+
+    image = show_mask((out_mask_logits[0] > 0.0), image, color = np.array([30, 144, 255]), obj_id = out_obj_ids[0], title=None)
+
+    return image
+
+def verify_tensor(image_encoder, mask_decoder):
+    if args.verify_only_mask_decoder:
+        verify_list = [mask_decoder]
+        model_cnt = 1
+    else:
+        verify_list = [image_encoder, mask_decoder]
+        model_cnt = 0
+    for model in verify_list:
+        if args.tflite:
+            os.makedirs("./dump" + str(model_cnt), exist_ok=True)
+            for t in model.get_tensor_details():
+                try:
+                    np.save("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy", model.get_tensor(t['index']))
+                except:
+                    continue
+        else:
+            f = open("diff" + str(model_cnt) + ".csv", "w")
+            f.write("index , diff_mean (int8) , diff_max (int8) , diff_mean (float) , diff_max (float) , name , shape\n")
+            f2 = open("tensor" + str(model_cnt) + ".csv", "w")
+            for i in range(2153):
+                try:
+                    t = model._Interpreter__get_tensor(i)
+                    v = model.get_tensor(i)
+                    ref = np.load("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy")
+                    if v.dtype == np.float32 or v.dtype == np.int8:
+                        r_int8 = ref - v
+                        diff_mean_int8 = np.mean(np.abs(r_int8))
+                        diff_max_int8 = np.max(np.abs(r_int8))
+
+                        r_float = ((ref.astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) - ((v.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])
+                        diff_mean_float = np.mean(np.abs(r_float))
+                        diff_max_float = np.max(np.abs(r_float))
+
+                        f.write(str(t["index"]) + " , " + str(diff_mean_int8) + " , " + str(diff_max_int8) + " , " + str(diff_mean_float) + " , " + str(diff_max_float) + " , " + t["name"] + " , " + str(t["shape"]) + "\n")
+                        #f.write(str(v)+"\n")
+                        #f.write(str(ref)+"\n")
+                        #f.write(str((v.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])+"\n")
+                        #f.write(str((ref.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])+"\n")
+                        #f.write(str(r_float)+"\n")
+
+                    if args.verify_only_mask_decoder:
+                        if t["index"] == 335 or t["index"] == 337 or t["index"] == 338:
+                            for ref_id in range(2):
+                                if ref_id == 1:
+                                    d = ref
+                                    f2.write("tflite "+str(d.shape)+"\n")
+                                else:
+                                    d = v
+                                    f2.write("ailia "+str(d.shape)+"\n")
+                                if t["index"] == 335 or t["index"] == 338:
+                                    f2.write("Input tensor int8\n")
+                                    for j in range(t['shape'][1]):
+                                        for k in range(t['shape'][2]):
+                                            f2.write(str(d[0,j,k]) + " , ")
+                                        f2.write("\n")
+                                    f2.write("Input tensor float32\n")
+                                    for j in range(t['shape'][1]):
+                                        for k in range(t['shape'][2]):
+                                            f2.write(str((d[0,j,k].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                        f2.write("\n")
+                                if  t["index"] == 337:
+                                    f2.write("Output tensor int8\n")
+                                    for j in range(t['shape'][1]):
+                                        f2.write(str(d[0,j,0]) + " , ")
+                                        f2.write("\n")
+                                    f2.write("Output tensor float32\n")
+                                    for j in range(t['shape'][1]):
+                                        f2.write(str((d[0,j,0].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                        f2.write("\n")
+                except:
+                    continue
+            f.close()
+            f2.close()
+        model_cnt = model_cnt + 1
+
+def main():
+    # select model
+    model_type = args.model_type
+    if args.version == "2.1":
+        model_type = model_type + "_2.1"
+
+    if args.version == "2" and (args.accuracy == "int8" or args.accuracy == "mixed"):
+        raise Exception("Please use SAM2.1 for int8")
+
+    if args.image_size != 1024:
+        model_type = model_type + "_" + str(args.image_size)
+    
+    accuracy_type = ""
+    accuracy_type_torch = ""
+    if args.accuracy == "int8":
+        accuracy_type = ".int8"
+        accuracy_type_torch = ".int8"
+    if args.accuracy == "mixed":
+        accuracy_type = ".int8"
+        accuracy_type_torch = ".mixed"
+
+    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MLP_L_PATH = 'mlp_' + model_type + accuracy_type + '.tflite'
+    WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH = 'obj_ptr_tpos_proj_' + model_type + accuracy_type + '.tflite'
+
+    # model files check and download
+    check_and_download_models(WEIGHT_IMAGE_ENCODER_L_PATH, REMOTE_PATH)
+    check_and_download_models(WEIGHT_PROMPT_ENCODER_L_PATH, REMOTE_PATH)
+    check_and_download_models(WEIGHT_MASK_DECODER_L_PATH, REMOTE_PATH)
+    check_and_download_models(WEIGHT_MEMORY_ATTENTION_L_PATH, REMOTE_PATH)
+    check_and_download_models(WEIGHT_MEMORY_ENCODER_L_PATH, REMOTE_PATH)
+    check_and_download_models(WEIGHT_MLP_L_PATH, REMOTE_PATH)
+    if args.version == "2.1":
+        check_and_download_models(WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH, REMOTE_PATH)
+    
+    if args.tflite:
+        import tensorflow as tf
+    else:
+        import ailia_tflite
+
+    if args.tflite:
+        experimental_preserve_all_tensors = args.verify
+        image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
+        prompt_encoder = tf.lite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
+        mask_decoder = tf.lite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
+        memory_attention = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH)
+        memory_encoder = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
+        mlp = tf.lite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
+        if args.version == "2.1":
+            obj_ptr_tpos_proj = tf.lite.Interpreter(model_path=WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH)
+        else:
+            obj_ptr_tpos_proj = None
+    else:
+        memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE
+        if args.verify:
+            memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_DEFAULT
+        flags = int(args.flags)
+        env_id = int(args.env_id)
+        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        if args.version == "2.1":
+            obj_ptr_tpos_proj = ailia_tflite.Interpreter(model_path=WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH)
+        else:
+            obj_ptr_tpos_proj = None
+
+        if args.verify_only_mask_decoder:
+            import tensorflow as tf
+            experimental_preserve_all_tensors = args.verify
+            image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
+            prompt_encoder = tf.lite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
+
+    if not args.tflite and args.profile:
+        image_encoder.set_profile_mode(True)
+        prompt_encoder.set_profile_mode(True)
+        mask_decoder.set_profile_mode(True)
+        memory_attention.set_profile_mode(True)
+        memory_encoder.set_profile_mode(True)
+        mlp.set_profile_mode(True)
+        if obj_ptr_tpos_proj is not None:
+            obj_ptr_tpos_proj.set_profile_mode(True)
+    
+    image_encoder.allocate_tensors()
+    prompt_encoder.allocate_tensors()
+    mask_decoder.allocate_tensors()
+    memory_attention.allocate_tensors()
+    memory_encoder.allocate_tensors()
+    mlp.allocate_tensors()
+    if obj_ptr_tpos_proj is not None:
+        obj_ptr_tpos_proj.allocate_tensors()
+    #for detail in image_encoder.get_tensor_details():
+    #    print(detail['name'], detail['dtype'])
+
+    if args.video is not None:
+        recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_attention, memory_encoder, mlp, obj_ptr_tpos_proj)
+    else:
+        recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
+
+    if args.verify:
+        verify_tensor(image_encoder, mask_decoder)
+
+    if not args.tflite and args.profile:
+        print("--- image_encoder")
+        print(image_encoder.get_summary())
+        print("--- prompt_encoder")
+        print(prompt_encoder.get_summary())
+        print("--- mask_decoder")
+        print(mask_decoder.get_summary())
+        print("--- memory_attention")
+        print(memory_attention.get_summary())
+        print("--- memory_encoder")
+        print(memory_encoder.get_summary())
+        print("--- mlp")
+        print(mlp.get_summary())
+        if obj_ptr_tpos_proj is not None:
+            print("--- obj_ptr_tpos_proj")
+            print(obj_ptr_tpos_proj.get_summary())
+    logger.info('Script finished successfully.')
+
+if __name__ == '__main__':
+    main()

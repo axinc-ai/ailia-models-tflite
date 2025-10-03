@@ -67,6 +67,7 @@ pip3 install ailia_tflite
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="image_segmentation/deeplabv3plus/output.png" width=128px>](image_segmentation/deeplabv3plus/) | [DeepLabv3+](/image_segmentation/deeplabv3plus/) | [PINTO_model_zoo](https://github.com/PINTO0309/PINTO_model_zoo/tree/master/026_mobile-deeplabv3-plus/03_integer_quantization)| TensorFlow | 1.0.0 |
 | [<img src="image_segmentation/hrnet_segmentation/output.png" width=128px>](image_segmentation/hrnet_segmentation/) | [HRNet-Semantic-Segmentation](/image_segmentation/hrnet_segmentation/) | [HRNet-Semantic-Segmentation](https://github.com/HRNet/HRNet-Semantic-Segmentation)| TensorFlow | 1.1.0 |
+| [<img src="image_segmentation/segment-anything-2/output.png" width=128px>](image_segmentation/segment-anything-2/) | [SegmentAnthing2](image_segmentation/segment-anything-2/) | [SegmentAnthing2](https://github.com/facebookresearch/sam2) | Torch | 1.2.3 |
 
 ## Object detection
 
