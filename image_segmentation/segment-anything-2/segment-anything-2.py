@@ -86,7 +86,18 @@ parser.add_argument(
     '--dump', action='store_true',
     help='dump tensor data to file.'
 )
-
+parser.add_argument(
+    '--verify', action='store_true',
+    help='verify tensor data.'
+)
+parser.add_argument(
+    '--verify_only_mask_decoder', action='store_true',
+    help='verify mask decoder tensor data.'
+)
+parser.add_argument(
+    '--accuracy', default='float', choices=('float', 'int8', 'mixed'),
+    help='Select model.'
+)
 args = update_parser(parser)
 
 # ======================
@@ -208,7 +219,10 @@ def get_input_point():
 def recognize_from_image(image_encoder, prompt_encoder, mask_decoder):
     input_point, input_label, input_box = get_input_point()
 
-    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump)
+    accuracy = "float"
+    if args.accuracy == "int8" or args.accuracy == "mixed":
+        accuracy = "int8"
+    image_predictor = SAM2ImagePredictor(args.image_size, args.debug, args.dump, accuracy)
 
     for image_path in args.input:
         image = cv2.imread(image_path)
@@ -285,10 +299,12 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
             if os.path.splitext(p)[-1] in [".jpg", ".jpeg", ".JPG", ".JPEG"]
         ]
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
-        #input_point = np.array([[210, 350], [250, 220]], dtype=np.float32)
-        #input_label = np.array([1, 1], np.int32)
-        input_point = np.array([[210, 350]], dtype=np.float32) # tflite版は1pointのみ対応
-        input_label = np.array([1], np.int32)
+        if args.accuracy == "mixed":
+            input_point = np.array([[210, 350], [250, 220]], dtype=np.float32) # attn_mask対応
+            input_label = np.array([1, 1], np.int32)
+        else:
+            input_point = np.array([[210, 350]], dtype=np.float32) # tflite版は1pointのみ対応
+            input_label = np.array([1], np.int32)
         input_box = None
         video_width = 960
         video_height = 540
@@ -304,7 +320,11 @@ def recognize_from_video(image_encoder, prompt_encoder, mask_decoder, memory_att
     else:
         writer = None
 
-    predictor = SAM2VideoPredictor(args.benchmark, args.image_size, args.debug, args.dump)
+    accuracy = "float"
+    if args.accuracy == "int8" or args.accuracy == "mixed":
+        accuracy = "int8"
+
+    predictor = SAM2VideoPredictor(args.benchmark, args.image_size, args.debug, args.dump, accuracy)
 
     inference_state = predictor.init_state(args.num_mask_mem, args.max_obj_ptrs_in_encoder, args.version)
     predictor.reset_state(inference_state)
@@ -404,21 +424,109 @@ def process_frame(image, frame_idx, predictor, inference_state, image_encoder, p
 
     return image
 
+def verify_tensor(image_encoder, mask_decoder):
+    if args.verify_only_mask_decoder:
+        verify_list = [mask_decoder]
+        model_cnt = 1
+    else:
+        verify_list = [image_encoder, mask_decoder]
+        model_cnt = 0
+    for model in verify_list:
+        if args.tflite:
+            os.makedirs("./dump" + str(model_cnt), exist_ok=True)
+            for t in model.get_tensor_details():
+                try:
+                    np.save("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy", model.get_tensor(t['index']))
+                except:
+                    continue
+        else:
+            f = open("diff" + str(model_cnt) + ".csv", "w")
+            f.write("index , diff_mean (int8) , diff_max (int8) , diff_mean (float) , diff_max (float) , name , shape\n")
+            f2 = open("tensor" + str(model_cnt) + ".csv", "w")
+            for i in range(2153):
+                try:
+                    t = model._Interpreter__get_tensor(i)
+                    v = model.get_tensor(i)
+                    ref = np.load("./dump" + str(model_cnt) + "/" + str(t['index']) + ".npy")
+                    if v.dtype == np.float32 or v.dtype == np.int8:
+                        r_int8 = ref - v
+                        diff_mean_int8 = np.mean(np.abs(r_int8))
+                        diff_max_int8 = np.max(np.abs(r_int8))
+
+                        r_float = ((ref.astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) - ((v.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])
+                        diff_mean_float = np.mean(np.abs(r_float))
+                        diff_max_float = np.max(np.abs(r_float))
+
+                        f.write(str(t["index"]) + " , " + str(diff_mean_int8) + " , " + str(diff_max_int8) + " , " + str(diff_mean_float) + " , " + str(diff_max_float) + " , " + t["name"] + " , " + str(t["shape"]) + "\n")
+                        #f.write(str(v)+"\n")
+                        #f.write(str(ref)+"\n")
+                        #f.write(str((v.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])+"\n")
+                        #f.write(str((ref.astype(np.int32) - t['quantization'][1]) * t['quantization'][0])+"\n")
+                        #f.write(str(r_float)+"\n")
+
+                    if args.verify_only_mask_decoder:
+                        if t["index"] == 335 or t["index"] == 337 or t["index"] == 338:
+                            for ref_id in range(2):
+                                if ref_id == 1:
+                                    d = ref
+                                    f2.write("tflite "+str(d.shape)+"\n")
+                                else:
+                                    d = v
+                                    f2.write("ailia "+str(d.shape)+"\n")
+                                if t["index"] == 335 or t["index"] == 338:
+                                    f2.write("Input tensor int8\n")
+                                    for j in range(t['shape'][1]):
+                                        for k in range(t['shape'][2]):
+                                            f2.write(str(d[0,j,k]) + " , ")
+                                        f2.write("\n")
+                                    f2.write("Input tensor float32\n")
+                                    for j in range(t['shape'][1]):
+                                        for k in range(t['shape'][2]):
+                                            f2.write(str((d[0,j,k].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                        f2.write("\n")
+                                if  t["index"] == 337:
+                                    f2.write("Output tensor int8\n")
+                                    for j in range(t['shape'][1]):
+                                        f2.write(str(d[0,j,0]) + " , ")
+                                        f2.write("\n")
+                                    f2.write("Output tensor float32\n")
+                                    for j in range(t['shape'][1]):
+                                        f2.write(str((d[0,j,0].astype(np.int32) - t['quantization'][1]) * t['quantization'][0]) + " , ")
+                                        f2.write("\n")
+                except:
+                    continue
+            f.close()
+            f2.close()
+        model_cnt = model_cnt + 1
+
 def main():
     # select model
     model_type = args.model_type
     if args.version == "2.1":
         model_type = model_type + "_2.1"
+
+    if args.version == "2" and (args.accuracy == "int8" or args.accuracy == "mixed"):
+        raise Exception("Please use SAM2.1 for int8")
+
     if args.image_size != 1024:
         model_type = model_type + "_" + str(args.image_size)
+    
+    accuracy_type = ""
+    accuracy_type_torch = ""
+    if args.accuracy == "int8":
+        accuracy_type = ".int8"
+        accuracy_type_torch = ".int8"
+    if args.accuracy == "mixed":
+        accuracy_type = ".int8"
+        accuracy_type_torch = ".mixed"
 
-    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + '.tflite'
-    WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + '.tflite'
-    WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + '.tflite'
-    WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + '.tflite'
-    WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + '.tflite'
-    WEIGHT_MLP_L_PATH = 'mlp_' + model_type + '.tflite'
-    WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH = 'obj_ptr_tpos_proj_' + model_type + '.tflite'
+    WEIGHT_IMAGE_ENCODER_L_PATH = 'image_encoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_PROMPT_ENCODER_L_PATH = 'prompt_encoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MASK_DECODER_L_PATH = 'mask_decoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MEMORY_ATTENTION_L_PATH = 'memory_attention_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MEMORY_ENCODER_L_PATH = 'memory_encoder_' + model_type + accuracy_type_torch + '.tflite'
+    WEIGHT_MLP_L_PATH = 'mlp_' + model_type + accuracy_type + '.tflite'
+    WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH = 'obj_ptr_tpos_proj_' + model_type + accuracy_type + '.tflite'
 
     # model files check and download
     check_and_download_models(WEIGHT_IMAGE_ENCODER_L_PATH, REMOTE_PATH)
@@ -436,9 +544,10 @@ def main():
         import ailia_tflite
 
     if args.tflite:
-        image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH)
+        experimental_preserve_all_tensors = args.verify
+        image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
         prompt_encoder = tf.lite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
-        mask_decoder = tf.lite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH)
+        mask_decoder = tf.lite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
         memory_attention = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH)
         memory_encoder = tf.lite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH)
         mlp = tf.lite.Interpreter(model_path=WEIGHT_MLP_L_PATH)
@@ -447,19 +556,27 @@ def main():
         else:
             obj_ptr_tpos_proj = None
     else:
-        memory_mode = None
         memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_REDUCE_INTERSTAGE
-        flags= int(args.flags)
-        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
-        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
-        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode, flags = flags)
-        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode, flags = flags)
-        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags)
-        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode, flags = flags)
+        if args.verify:
+            memory_mode = ailia_tflite.AILIA_TFLITE_MEMORY_MODE_DEFAULT
+        flags = int(args.flags)
+        env_id = int(args.env_id)
+        image_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        prompt_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        mask_decoder = ailia_tflite.Interpreter(model_path=WEIGHT_MASK_DECODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        memory_attention = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ATTENTION_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        memory_encoder = ailia_tflite.Interpreter(model_path=WEIGHT_MEMORY_ENCODER_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
+        mlp = ailia_tflite.Interpreter(model_path=WEIGHT_MLP_L_PATH, memory_mode=memory_mode, flags = flags, env_id = env_id)
         if args.version == "2.1":
             obj_ptr_tpos_proj = ailia_tflite.Interpreter(model_path=WEIGHT_OBJ_PTR_TPOS_PROJ_L_PATH)
         else:
             obj_ptr_tpos_proj = None
+
+        if args.verify_only_mask_decoder:
+            import tensorflow as tf
+            experimental_preserve_all_tensors = args.verify
+            image_encoder = tf.lite.Interpreter(model_path=WEIGHT_IMAGE_ENCODER_L_PATH, experimental_preserve_all_tensors=experimental_preserve_all_tensors)
+            prompt_encoder = tf.lite.Interpreter(model_path=WEIGHT_PROMPT_ENCODER_L_PATH)
 
     if not args.tflite and args.profile:
         image_encoder.set_profile_mode(True)
@@ -487,6 +604,8 @@ def main():
     else:
         recognize_from_image(image_encoder, prompt_encoder, mask_decoder)
 
+    if args.verify:
+        verify_tensor(image_encoder, mask_decoder)
 
     if not args.tflite and args.profile:
         print("--- image_encoder")
