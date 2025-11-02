@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from logging import getLogger  # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -17,13 +17,14 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-import webcamera_utils  # noqa: E402
-from image_utils import load_image  # noqa: E402
-from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
-from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
+import webcamera_utils
+from image_utils import load_image
+from model_utils import check_and_download_models, format_input_tensor, get_output_tensor
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj
 import blazeface_utils as but
 
 
@@ -103,15 +104,15 @@ def imread(filename, flags=cv2.IMREAD_COLOR):
 def crop_blazeface(obj, margin, frame):
     w = frame.shape[1]
     h = frame.shape[0]
-    cx = (obj[1] + (obj[3] - obj[1])/2) * w
-    cy = (obj[0] + (obj[2] - obj[0])/2) * h
+    cx = (obj[1] + (obj[3] - obj[1]) / 2) * w
+    cy = (obj[0] + (obj[2] - obj[0]) / 2) * h
     cw = max((obj[3] - obj[1]) * w * margin, (obj[2] - obj[0]) * h * margin)
-    fx = max(cx - cw/2, 0)
-    fy = max(cy - cw/2, 0)
-    fw = min(cw, w-fx)
-    fh = min(cw, h-fy)
+    fx = max(cx - cw / 2, 0)
+    fy = max(cy - cw / 2, 0)
+    fw = min(cw, w - fx)
+    fh = min(cw, h - fy)
     top_left = (int(fx), int(fy))
-    bottom_right = (int((fx+fw)), int(fy+fh))
+    bottom_right = (int((fx + fw)), int(fy + fh))
     crop_img = frame[
         top_left[1]:bottom_right[1], top_left[0]:bottom_right[0], 0:3
     ]
@@ -122,7 +123,7 @@ def crop_blazeface(obj, margin, frame):
 # Main functions
 # ======================
 def recognize_from_image(interpreter_emo, interpreter_gen):
-    
+
     input_details_emo = interpreter_emo.get_input_details()
     output_details_emo = interpreter_emo.get_output_details()
     input_details_gen = interpreter_gen.get_input_details()
@@ -152,7 +153,7 @@ def recognize_from_image(interpreter_emo, interpreter_gen):
             input_data = input_data.astype(float)
         input_data = np.expand_dims(input_data, axis=0)
         input_data = np.expand_dims(input_data, axis=3)
-        
+
         inputs = format_input_tensor(input_data, input_details_emo, 0)
 
         # inference emotion
@@ -172,7 +173,7 @@ def recognize_from_image(interpreter_emo, interpreter_gen):
             interpreter_emo.set_tensor(input_details_emo[0]['index'], inputs)
             interpreter_emo.invoke()
             preds_tf_lite = get_output_tensor(interpreter_emo, output_details_emo, 0)
-                    
+
         class_count = np.argsort(-preds_tf_lite[0][0][0])
         count = EMOTION_MAX_CLASS_COUNT
         logger.info(f'emotion_class_count={count}')
@@ -202,7 +203,7 @@ def recognize_from_image(interpreter_emo, interpreter_gen):
             interpreter_gen.set_tensor(input_details_gen[0]['index'], inputs)
             interpreter_gen.invoke()
             preds_tf_lite = get_output_tensor(interpreter_gen, output_details_gen, 0)
-        
+
         class_count = np.argsort(-preds_tf_lite[0][0][0])
         count = GENDER_MAX_CLASS_COUNT
         logger.info(f'gender_class_count={count}')
@@ -218,7 +219,6 @@ def recognize_from_image(interpreter_emo, interpreter_gen):
 
 
 def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
-    
     input_details_emo = interpreter_emo.get_input_details()
     output_details_emo = interpreter_emo.get_output_details()
     input_details_gen = interpreter_gen.get_input_details()
@@ -244,7 +244,7 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
         writer = None
 
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
 
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
@@ -262,11 +262,11 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
         interpreter_det.invoke()
         preds_tf_lite = {}
         if args.float:
-            preds_tf_lite[0] = interpreter_det.get_tensor(output_details_det[0]['index'])   #1x896x16 regressors
-            preds_tf_lite[1] = interpreter_det.get_tensor(output_details_det[1]['index'])   #1x896x1 classificators
+            preds_tf_lite[0] = interpreter_det.get_tensor(output_details_det[0]['index'])   # 1x896x16 regressors
+            preds_tf_lite[1] = interpreter_det.get_tensor(output_details_det[1]['index'])   # 1x896x1 classificators
         else:
-            preds_tf_lite[0] = interpreter_det.get_tensor(output_details_det[1]['index'])   #1x896x16 regressors
-            preds_tf_lite[1] = interpreter_det.get_tensor(output_details_det[0]['index'])   #1x896x1 classificators
+            preds_tf_lite[0] = interpreter_det.get_tensor(output_details_det[1]['index'])   # 1x896x16 regressors
+            preds_tf_lite[1] = interpreter_det.get_tensor(output_details_det[0]['index'])   # 1x896x1 classificators
 
         # postprocessing
         detections = but.postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
@@ -283,8 +283,8 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
 
                 dtype = np.float32
                 input_image2, input_data = webcamera_utils.preprocess_frame(
-                crop_img, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='127.5',
-                bgr_to_rgb=False, output_type=dtype
+                    crop_img, IMAGE_HEIGHT, IMAGE_WIDTH, normalize_type='127.5',
+                    bgr_to_rgb=False, output_type=dtype
                 )
 
                 input_data = np.squeeze(input_data, axis=0)
@@ -312,14 +312,10 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
                 for idx in range(count):
                     logger.info(f'+ idx={idx}')
                     info = class_count[idx]
-                    logger.info(
-                        f'  category={info} ' +
-                        f'[ {EMOTION_CATEGORY[info]} ]'
-                    )
+                    logger.info(f'  category={info} [ {EMOTION_CATEGORY[info]} ]')
                     logger.info(f'  prob={preds_tf_lite[0][0][0][info]}')
                     if idx == 0:
-                        emotion_text = (f'[ {EMOTION_CATEGORY[info]} ] '
-                                        f'prob={preds_tf_lite[0][0][0][info]:.3f}')
+                        emotion_text = (f'[ {EMOTION_CATEGORY[info]} ] prob={preds_tf_lite[0][0][0][info]:.3f}')
                 logger.info('')
 
                 # gender inference
@@ -335,10 +331,7 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
                 for idx in range(count):
                     logger.info(f'+ idx={idx}')
                     info = class_count[idx]
-                    logger.info(
-                        f'  category={info} ' +
-                        f'[ {GENDER_CATEGORY[info]} ]'
-                    )
+                    logger.info(f'  category={info} [ {GENDER_CATEGORY[info]} ]')
                     logger.info(f'  prob={preds_tf_lite[0][0][0][info]}')
                     if idx == 0:
                         gender_text = (f'[ {GENDER_CATEGORY[info]} ] '
@@ -353,12 +346,12 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
                 cv2.rectangle(
                     render_image,
                     top_left,
-                    (top_left[0]+LABEL_WIDTH, top_left[1]+LABEL_HEIGHT),
+                    (top_left[0] + LABEL_WIDTH, top_left[1] + LABEL_HEIGHT),
                     color,
                     thickness=-1,
                 )
 
-                text_position = (top_left[0], top_left[1]+LABEL_HEIGHT//2)
+                text_position = (top_left[0], top_left[1] + LABEL_HEIGHT // 2)
                 color = (0, 0, 0)
                 fontScale = 0.5
                 cv2.putText(
@@ -395,13 +388,17 @@ def main():
     check_and_download_models(
         GENDER_MODEL_PATH, REMOTE_PATH
     )
-    
+
     # net emotion initialize
     if args.tflite:
         interpreter_emo = tf.lite.Interpreter(model_path=EMOTION_MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH,
+                                                       memory_mode=args.memory_mode,
+                                                       flags=args.flags,
+                                                       env_id=args.env_id,
+                                                       experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter_emo = ailia_tflite.Interpreter(model_path=EMOTION_MODEL_PATH)
     if args.profile:
@@ -413,7 +410,11 @@ def main():
         interpreter_gen = tf.lite.Interpreter(model_path=GENDER_MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH,
+                                                       memory_mode=args.memory_mode,
+                                                       flags=args.flags,
+                                                       env_id=args.env_id,
+                                                       experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter_gen = ailia_tflite.Interpreter(model_path=GENDER_MODEL_PATH)
     if args.profile:
@@ -429,7 +430,9 @@ def main():
             interpreter_det = tf.lite.Interpreter(model_path=FACE_MODEL_PATH)
         else:
             if args.flags or args.memory_mode or args.env_id:
-                interpreter_det = ailia_tflite.Interpreter(model_path=FACE_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags)
+                interpreter_det = ailia_tflite.Interpreter(model_path=FACE_MODEL_PATH,
+                                                           memory_mode=args.memory_mode,
+                                                           flags=args.flags)
             else:
                 interpreter_det = ailia_tflite.Interpreter(model_path=FACE_MODEL_PATH)
         interpreter_det.allocate_tensors()

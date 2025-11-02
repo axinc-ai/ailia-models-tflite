@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import cv2
 import numpy as np
@@ -17,12 +17,13 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
-import webcamera_utils  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath
+from model_utils import check_and_download_models
+import webcamera_utils
 
 
 logger = getLogger(__name__)
@@ -60,7 +61,7 @@ if args.float:
 else:
     MODEL_NAME = 'espcn_quant'
 MODEL_PATH = file_abs_path(__file__, f'{MODEL_NAME}.tflite')
-REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/espcn/'
+REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/espcn/'
 
 
 # ======================
@@ -77,6 +78,7 @@ def get_input_tensor(tensor, input_details, idx):
     else:
         return tensor
 
+
 def get_real_tensor(interpreter, output_details, idx):
     details = output_details[idx]
     if details['dtype'] == np.uint8 or details['dtype'] == np.int8:
@@ -92,13 +94,14 @@ def get_real_tensor(interpreter, output_details, idx):
 # Main functions
 # ======================
 
+
 def recognize_from_image():
     logger.info('Start inference...')
 
     for test_img_path in args.input:
         img = cv2.imread(test_img_path)
         ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
-        y, cr, cb = ycrcb[:,:,0], ycrcb[:,:,1], ycrcb[:,:,2]
+        y, cr, cb = ycrcb[:, :, 0], ycrcb[:, :, 1], ycrcb[:, :, 2]
 
         y = np.expand_dims(y, axis=2)
         y = y.astype("float32") / 255.0
@@ -109,7 +112,10 @@ def recognize_from_image():
             interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
         else:
             if args.flags or args.memory_mode or args.env_id:
-                interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+                interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                       memory_mode=args.memory_mode,
+                                                       flags=args.flags,
+                                                       env_id=args.env_id)
             else:
                 interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
         interpreter.resize_tensor_input(0, input_data.shape)
@@ -135,14 +141,14 @@ def recognize_from_image():
             interpreter.set_tensor(input_details[0]['index'], inputs)
             interpreter.invoke()
         out_img_y = get_real_tensor(interpreter, output_details, 0)
-        out_img_y = out_img_y[0,:,:,0]
+        out_img_y = out_img_y[0, :, :, 0]
 
         out_img_y *= 255.0
 
         # Restore the image in RGB color space.
         out_img_y = out_img_y.clip(0, 255)
         out_img_y = out_img_y.reshape((np.shape(out_img_y)[0], np.shape(out_img_y)[1]))
-        
+
         out_img_y = out_img_y.astype(np.uint8)
         out_img_cr = cv2.resize(cr, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
         out_img_cb = cv2.resize(cb, (out_img_y.shape[1], out_img_y.shape[0]), cv2.INTER_CUBIC).astype(np.uint8)
@@ -179,7 +185,10 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
 
@@ -192,7 +201,7 @@ def recognize_from_video():
     output_details = interpreter.get_output_details()
 
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -200,10 +209,10 @@ def recognize_from_video():
             break
 
         h, w = frame.shape[0], frame.shape[1]
-        frame = frame[h//2:h//2+i_h, w//2:w//2+i_w, :]
+        frame = frame[h // 2:h // 2 + i_h, w // 2:w // 2 + i_w, :]
 
         ycrcb = cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
-        y, cr, cb = ycrcb[:,:,0], ycrcb[:,:,1], ycrcb[:,:,2]
+        y, cr, cb = ycrcb[:, :, 0], ycrcb[:, :, 1], ycrcb[:, :, 2]
 
         y = np.expand_dims(y, axis=2)
         y = y.astype("float32") / 255.0
@@ -214,8 +223,8 @@ def recognize_from_video():
         interpreter.set_tensor(input_details[0]['index'], inputs)
         interpreter.invoke()
         out_img_y = get_real_tensor(interpreter, output_details, 0)
-        out_img_y = out_img_y[0,:,:,0]
-        
+        out_img_y = out_img_y[0, :, :, 0]
+
         out_img_y *= 255.0
 
         # Restore the image in RGB color space.
@@ -234,8 +243,8 @@ def recognize_from_video():
 
         out_img = cv2.cvtColor(out_img, cv2.COLOR_YCrCb2BGR)
 
-        #bilinear_img = cv2.resize(frame, (out_img_y.shape[1], out_img_y.shape[0]))
-        #out_img[:, 0:out_img.shape[1]//2, :] = bilinear_img[:, 0:out_img.shape[1]//2, :]
+        # bilinear_img = cv2.resize(frame, (out_img_y.shape[1], out_img_y.shape[0]))
+        # out_img[:, 0:out_img.shape[1]//2, :] = bilinear_img[:, 0:out_img.shape[1]//2, :]
 
         cv2.imshow('frame', out_img)
         frame_shown = True
@@ -248,7 +257,6 @@ def recognize_from_video():
     if writer is not None:
         writer.release()
     logger.info('Script finished successfully.')
-
 
 
 def main():

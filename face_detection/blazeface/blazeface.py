@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from logging import getLogger   # noqa: E402
+from logging import getLogger
 
 import cv2
 
@@ -16,13 +16,14 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
-from image_utils import load_image  # noqa: E402
-import webcamera_utils  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from model_utils import check_and_download_models
+from image_utils import load_image
+import webcamera_utils
 import blazeface_utils as but
 
 
@@ -67,6 +68,7 @@ else:
     MODEL_PATH = MODEL_INT_PATH
 MODEL_PATH = file_abs_path(__file__, MODEL_PATH)
 
+
 # ======================
 # Main functions
 # ======================
@@ -76,7 +78,11 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     interpreter.allocate_tensors()
@@ -120,17 +126,17 @@ def recognize_from_image():
 
         preds_tf_lite = {}
         if args.float:
-            preds_tf_lite[0] = interpreter.get_tensor(output_details[0]['index'])   #1x896x16 regressors
-            preds_tf_lite[1] = interpreter.get_tensor(output_details[1]['index'])   #1x896x1 classificators
+            preds_tf_lite[0] = interpreter.get_tensor(output_details[0]['index'])   # 1x896x16 regressors
+            preds_tf_lite[1] = interpreter.get_tensor(output_details[1]['index'])   # 1x896x1 classificators
         else:
-            preds_tf_lite[0] = interpreter.get_tensor(output_details[1]['index'])   #1x896x16 regressors
-            preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
+            preds_tf_lite[0] = interpreter.get_tensor(output_details[1]['index'])   # 1x896x16 regressors
+            preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   # 1x896x1 classificators
 
         # postprocessing
         detections = but.postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         savepath = get_savepath(args.savepath, image_path)
-        logger.info(f'saved at : {savepath}')        
+        logger.info(f'saved at : {savepath}')
 
         # generate detections
         for detection in detections:
@@ -145,7 +151,10 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
 
@@ -166,7 +175,7 @@ def recognize_from_video():
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -180,11 +189,11 @@ def recognize_from_video():
         interpreter.invoke()
         preds_tf_lite = {}
         if args.float:
-            preds_tf_lite[0] = interpreter.get_tensor(output_details[0]['index'])   #1x896x16 regressors
-            preds_tf_lite[1] = interpreter.get_tensor(output_details[1]['index'])   #1x896x1 classificators
+            preds_tf_lite[0] = interpreter.get_tensor(output_details[0]['index'])   # 1x896x16 regressors
+            preds_tf_lite[1] = interpreter.get_tensor(output_details[1]['index'])   # 1x896x1 classificators
         else:
-            preds_tf_lite[0] = interpreter.get_tensor(output_details[1]['index'])   #1x896x16 regressors
-            preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   #1x896x1 classificators
+            preds_tf_lite[0] = interpreter.get_tensor(output_details[1]['index'])   # 1x896x16 regressors
+            preds_tf_lite[1] = interpreter.get_tensor(output_details[0]['index'])   # 1x896x1 classificators
 
         # postprocessing
         detections = but.postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))

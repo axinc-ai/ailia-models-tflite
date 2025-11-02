@@ -1,13 +1,12 @@
+import os
 import sys
 import time
+from logging import getLogger
 
 import numpy as np
 import cv2
 
-import const
 
-
-import os
 def find_and_append_util_path():
     current_dir = os.path.abspath(os.path.dirname(__file__))
     while current_dir != os.path.dirname(current_dir):
@@ -18,17 +17,19 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
-from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
-from image_utils import load_image as load_image_img, preprocess_image  # noqa: E402
-from detector_utils import load_image as load_image_det  # noqa: E402
-from nms_utils import nms # noqa: E402
-import webcamera_utils  # noqa: E402
-from pose_resnet_util import compute, keep_aspect  # noqa: E402
 
-from logging import getLogger   # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj
+from model_utils import check_and_download_models
+from image_utils import load_image as load_image_img, preprocess_image
+from detector_utils import load_image as load_image_det
+from nms_utils import nms
+import webcamera_utils
+from pose_resnet_util import compute, keep_aspect
+import const
+
 logger = getLogger(__name__)
 
 
@@ -67,12 +68,12 @@ parser = get_base_parser(
 parser.add_argument(
     '-th', '--threshold',
     default=THRESHOLD, type=float,
-    help='The detection threshold for yolo. (default: '+str(THRESHOLD)+')'
+    help=f'The detection threshold for yolo. (default:  {str(THRESHOLD)})'
 )
 parser.add_argument(
     '-iou', '--iou',
     default=IOU, type=float,
-    help='The detection iou for yolo. (default: '+str(IOU)+')'
+    help=f'The detection iou for yolo. (default: {str(IOU)})'
 )
 args = update_parser(parser)
 
@@ -100,7 +101,7 @@ if args.float:
 else:
     DETECT_MODEL_NAME = 'yolov3-tiny-416_full_integer_quant'
 DETECT_MODEL_PATH = file_abs_path(__file__, f'{DETECT_MODEL_NAME}.tflite')
-DETECT_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolov3-tiny/'
+DETECT_REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/yolov3-tiny/'
 
 
 # ======================
@@ -116,7 +117,7 @@ def line(input_img, person, point1, point2):
     threshold = POSE_THRESHOLD
     if person.points[point1].score > threshold and\
        person.points[point2].score > threshold:
-        color = hsv_to_rgb(255*point1/const.POSE_KEYPOINT_CNT, 255, 255)
+        color = hsv_to_rgb(255 * point1 / const.POSE_KEYPOINT_CNT, 255, 255)
 
         x1 = int(input_img.shape[1] * person.points[point1].x)
         y1 = int(input_img.shape[0] * person.points[point1].y)
@@ -172,15 +173,15 @@ def pose_estimation(boxes, scores, classes, interpreter_pose, img):
     dtype = np.int8
     if args.float:
         dtype = np.float32
-    
+
     pose_img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
     h, w = img.shape[0], img.shape[1]
     count = len(classes)
 
     pose_detections = []
     for idx in range(count):
-        top_left = (int(w*boxes[idx][0]), int(h*boxes[idx][1]))
-        bottom_right = (int(w*boxes[idx][2]), int(h*boxes[idx][3]))
+        top_left = (int(w * boxes[idx][0]), int(h * boxes[idx][1]))
+        bottom_right = (int(w * boxes[idx][2]), int(h * boxes[idx][3]))
         CATEGORY_PERSON = 0
         if classes[idx] != CATEGORY_PERSON:
             pose_detections.append(None)
@@ -190,10 +191,10 @@ def pose_estimation(boxes, scores, classes, interpreter_pose, img):
         )
         crop_img = pose_img[py1:py2, px1:px2, :]
 
-        offset_x = px1/img.shape[1]
-        offset_y = py1/img.shape[0]
-        scale_x = crop_img.shape[1]/img.shape[1]
-        scale_y = crop_img.shape[0]/img.shape[0]
+        offset_x = px1 / img.shape[1]
+        offset_y = py1 / img.shape[0]
+        scale_x = crop_img.shape[1] / img.shape[1]
+        scale_y = crop_img.shape[0] / img.shape[0]
         detections = compute(
             interpreter_pose, crop_img, offset_x, offset_y, scale_x, scale_y, dtype
         )
@@ -216,9 +217,9 @@ def plot_results(boxes, scores, classes, img, category, pose_detections, logging
             logger.info(f'  y1={boxes[idx][1]}')
             logger.info(f'  x2={boxes[idx][2]}')
             logger.info(f'  y2={boxes[idx][3]}')
-        top_left = (int(w*boxes[idx][0]), int(h*boxes[idx][1]))
-        bottom_right = (int(w*boxes[idx][2]), int(h*boxes[idx][3]))
-        text_position = (int(w*boxes[idx][0])+4, int(h*boxes[idx][3]-8))
+        top_left = (int(w * boxes[idx][0]), int(h * boxes[idx][1]))
+        bottom_right = (int(w * boxes[idx][2]), int(h * boxes[idx][3]))
+        text_position = (int(w * boxes[idx][0]) + 4, int(h * boxes[idx][3] - 8))
 
         # update image
         color = hsv_to_rgb(256 * classes[idx] / len(category), 255, 255)
@@ -320,7 +321,7 @@ def recognize_from_image(interpreter_pose, interpreter_detect):
 
     # input image loop
     for image_path in args.input:
-        
+
         logger.info(image_path)
         det_w = 416
         det_h = 416
@@ -360,13 +361,11 @@ def recognize_from_image(interpreter_pose, interpreter_detect):
             preds_tf_lite[1] = get_real_tensor(interpreter_detect, output_details, 0)
 
         boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
-            det_w, det_h, pad, score_threshold=args.threshold)
+                                        det_w, det_h, pad, score_threshold=args.threshold)
         boxes, scores, classes = nms(boxes[0], pred_conf[0],
-            iou_threshold=args.iou, score_threshold=args.threshold)
+                                     iou_threshold=args.iou, score_threshold=args.threshold)
 
-        img = load_image_det(
-            image_path
-        )
+        img = load_image_det(image_path)
 
         logger.info('Start inference...')
         # pose estimation
@@ -404,9 +403,9 @@ def recognize_from_video(interpreter_pose, interpreter_detect):
         writer = webcamera_utils.get_writer(args.savepath, f_h, f_w)
     else:
         writer = None
-    
+
     frame_shown = False
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -438,14 +437,14 @@ def recognize_from_video(interpreter_pose, interpreter_detect):
             preds_tf_lite[1] = get_real_tensor(interpreter_detect, output_details, 0)
 
         boxes, pred_conf = filter_boxes(preds_tf_lite[1], preds_tf_lite[0],
-            det_w, det_h, pad, score_threshold=args.threshold)
+                                        det_w, det_h, pad, score_threshold=args.threshold)
         boxes, scores, classes = nms(boxes[0], pred_conf[0],
-            iou_threshold=args.iou, score_threshold=args.threshold)
+                                     iou_threshold=args.iou, score_threshold=args.threshold)
 
         logger.info('Start inference...')
         # pose estimation
-        pose_detections = pose_estimation(boxes, scores, classes, interpreter_pose, frame) 
-        
+        pose_detections = pose_estimation(boxes, scores, classes, interpreter_pose, frame)
+
         # plot result
         res_img = plot_results(boxes, scores, classes, frame, COCO_CATEGORY, pose_detections)
 
@@ -472,7 +471,11 @@ def main():
         interpreter_pose = tf.lite.Interpreter(model_path=POSE_MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH,
+                                                        memory_mode=args.memory_mode,
+                                                        flags=args.flags,
+                                                        env_id=args.env_id,
+                                                        experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter_pose = ailia_tflite.Interpreter(model_path=POSE_MODEL_PATH)
     interpreter_pose.allocate_tensors()
@@ -482,11 +485,14 @@ def main():
         interpreter_detect = tf.lite.Interpreter(model_path=DETECT_MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH,
+                                                          memory_mode=args.memory_mode,
+                                                          flags=args.flags,
+                                                          env_id=args.env_id,
+                                                          experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter_detect = ailia_tflite.Interpreter(model_path=DETECT_MODEL_PATH)
     interpreter_detect.allocate_tensors()
-
 
     if args.video is not None:
         # video mode

@@ -15,14 +15,14 @@ def find_and_append_util_path():
         current_dir = os.path.dirname(current_dir)
     raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
 
+
 find_and_append_util_path()
 
 
-from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
-from model_utils import check_and_download_models  # noqa: E402
-from image_utils import load_image  # noqa: E402
-from detector_utils import plot_results  # noqa: E402
-import webcamera_utils  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj
+from model_utils import check_and_download_models
+from image_utils import load_image
+import webcamera_utils
 import mobilenetv2ssdlite_utils as mut
 
 
@@ -72,12 +72,16 @@ def recognize_from_image():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id or args.delegate_path is not None:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id,
+                                                   experimental_delegates=delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     try:
         interpreter.set_num_threads(4)
-    except:
+    except Exception:
         pass
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
@@ -94,7 +98,7 @@ def recognize_from_image():
             boxes = interpreter.get_tensor(output_details[0]['index'])[0]
             classes = interpreter.get_tensor(output_details[1]['index'])[0]
             scores = interpreter.get_tensor(output_details[2]['index'])[0]
-            count = interpreter.get_tensor(output_details[3]['index'])[0]
+            # count = interpreter.get_tensor(output_details[3]['index'])[0]
             end = int(round(time.time() * 1000))
             print(f'\tailia processing time {end - start} ms')
     else:
@@ -103,7 +107,7 @@ def recognize_from_image():
         boxes = interpreter.get_tensor(output_details[0]['index'])[0]
         classes = interpreter.get_tensor(output_details[1]['index'])[0]
         scores = interpreter.get_tensor(output_details[2]['index'])[0]
-        count = interpreter.get_tensor(output_details[3]['index'])[0]
+        # count = interpreter.get_tensor(output_details[3]['index'])[0]
 
     # postprocessing
     mut.postprocessing(org_img, boxes, classes, scores)
@@ -118,12 +122,15 @@ def recognize_from_video():
         interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
     else:
         if args.flags or args.memory_mode or args.env_id:
-            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id)
+            interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH,
+                                                   memory_mode=args.memory_mode,
+                                                   flags=args.flags,
+                                                   env_id=args.env_id)
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
     try:
         interpreter.set_num_threads(4)
-    except:
+    except Exception:
         pass
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
@@ -142,7 +149,7 @@ def recognize_from_video():
     else:
         writer = None
 
-    while(True):
+    while True:
         ret, frame = capture.read()
         if (cv2.waitKey(1) & 0xFF == ord('q')) or not ret:
             break
@@ -157,7 +164,7 @@ def recognize_from_video():
         boxes = interpreter.get_tensor(output_details[0]['index'])[0]
         classes = interpreter.get_tensor(output_details[1]['index'])[0]
         scores = interpreter.get_tensor(output_details[2]['index'])[0]
-        count = interpreter.get_tensor(output_details[3]['index'])[0]
+        # count = interpreter.get_tensor(output_details[3]['index'])[0]
 
         # postprocessing
         mut.postprocessing(input_image, boxes, classes, scores)
@@ -186,6 +193,7 @@ def main():
         # image mode
         args.input = args.input[0]
         recognize_from_image()
+
 
 if __name__ == '__main__':
     main()
