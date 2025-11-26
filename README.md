@@ -84,6 +84,12 @@ pip3 install ailia_tflite
 |:------------:|:------------:|:------------:|:------------:|:------------:|
 | [<img src="pose_estimation/pose_resnet/output.png" width=128px>](pose_estimation/pose_resnet/) | [pose_resnet](/pose_estimation/pose_resnet/) | [Simple Baselines for Human Pose Estimation and Tracking](https://github.com/microsoft/human-pose-estimation.pytorch) | Pytorch | 1.1.7 for int8, 1.1.9 for float |
 
+## Road detection
+
+| | Model | Reference | Exported From | Supported Ailia Version |
+|:------------:|:------------:|:------------:|:------------:|:------------:|
+| [<img src="road_detection/road-segmentation-adas/output.png" width=128px>](road_detection/road-segmentation-adas/) | [road-segmentation-adas](/road_detection/road-segmentation-adas/) | [OpenVINO - road-segmentation-adas-0001](https://docs.openvinotoolkit.org/latest/omz_models_model_road_segmentation_adas_0001.html) | OpenVINO | 1.1.9 |
+
 ## Super resolution
 
 | | Model | Reference | Exported From | Supported Ailia Version |
