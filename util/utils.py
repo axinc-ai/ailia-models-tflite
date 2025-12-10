@@ -251,3 +251,12 @@ def delegate_obj(delegate_path):
         return None
     else:
         return [ailia_tflite.load_delegate(delegate_path)]
+
+
+def file_abs_path(calling__file__: str, file_name: str) -> str:
+    '''
+    Gives the absolute path of the `file_name` (assumed to be in the same dir. as the calling functions' file)
+    @param calling__file__: this should be `__file__` from where this function is called
+    @param file_name: name or path of the file that we want to extract the absolute path of
+    '''
+    return os.path.join(os.path.dirname(os.path.abspath(calling__file__)), os.path.basename(file_name))

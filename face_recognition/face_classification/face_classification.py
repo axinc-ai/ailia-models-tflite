@@ -1,21 +1,31 @@
 import os
 import sys
 import time
+from logging import getLogger  # noqa: E402
 
 import cv2
 import numpy as np
 
-import blazeface_utils as but
 
-# import original modules
-sys.path.append('../../util')
-# logger
-from logging import getLogger  # noqa: E402
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
 
 import webcamera_utils  # noqa: E402
 from image_utils import load_image  # noqa: E402
 from model_utils import check_and_download_models, format_input_tensor, get_output_tensor  # noqa: E402
-from utils import get_base_parser, update_parser, delegate_obj  # noqa: E402
+from utils import file_abs_path, get_base_parser, update_parser, delegate_obj  # noqa: E402
+import blazeface_utils as but
+
 
 logger = getLogger(__name__)
 
@@ -72,9 +82,9 @@ else:
     EMOTION_MODEL_NAME = 'emotion_miniXception_quant'
     GENDER_MODEL_NAME = 'gender_miniXception_quant'
     FACE_MODEL_NAME = 'face_detection_front_128_full_integer_quant'
-EMOTION_MODEL_PATH = f'{EMOTION_MODEL_NAME}.tflite'
-GENDER_MODEL_PATH = f'{GENDER_MODEL_NAME}.tflite'
-FACE_MODEL_PATH = f'{FACE_MODEL_NAME}.tflite'
+EMOTION_MODEL_PATH = file_abs_path(__file__, f'{EMOTION_MODEL_NAME}.tflite')
+GENDER_MODEL_PATH = file_abs_path(__file__, f'{GENDER_MODEL_NAME}.tflite')
+FACE_MODEL_PATH = file_abs_path(__file__, f'{FACE_MODEL_NAME}.tflite')
 
 REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/face_classification/'
 FACE_REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/blazeface/'
@@ -259,7 +269,7 @@ def recognize_from_video(interpreter_emo, interpreter_gen, interpreter_det):
             preds_tf_lite[1] = interpreter_det.get_tensor(output_details_det[0]['index'])   #1x896x1 classificators
 
         # postprocessing
-        detections = but.postprocess(preds_tf_lite)
+        detections = but.postprocess(preds_tf_lite, file_abs_path(__file__, "anchors.npy"))
 
         for detection in detections:
             for obj in detection:

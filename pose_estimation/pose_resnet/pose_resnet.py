@@ -6,9 +6,21 @@ import cv2
 
 import const
 
-# import original modules
-sys.path.append('../../util')
-from utils import get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
+
+import os
+def find_and_append_util_path():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    while current_dir != os.path.dirname(current_dir):
+        potential_util_path = os.path.join(current_dir, 'util')
+        if os.path.exists(potential_util_path):
+            sys.path.append(potential_util_path)
+            return
+        current_dir = os.path.dirname(current_dir)
+    raise FileNotFoundError("Couldn't find 'util' directory. Please ensure it's in the project directory structure.")
+
+find_and_append_util_path()
+
+from utils import file_abs_path, get_base_parser, update_parser, get_savepath, delegate_obj  # noqa: E402
 from model_utils import check_and_download_models  # noqa: E402
 from image_utils import load_image as load_image_img, preprocess_image  # noqa: E402
 from detector_utils import load_image as load_image_det  # noqa: E402
@@ -16,7 +28,6 @@ from nms_utils import nms # noqa: E402
 import webcamera_utils  # noqa: E402
 from pose_resnet_util import compute, keep_aspect  # noqa: E402
 
-# logger
 from logging import getLogger   # noqa: E402
 logger = getLogger(__name__)
 
@@ -81,14 +92,14 @@ if args.float:
     POSE_MODEL_NAME = 'pose_resnet_50_256x192_float32'
 else:
     POSE_MODEL_NAME = 'pose_resnet_50_256x192_int8'
-POSE_MODEL_PATH = f'{POSE_MODEL_NAME}.tflite'
+POSE_MODEL_PATH = file_abs_path(__file__, f'{POSE_MODEL_NAME}.tflite')
 POSE_REMOTE_PATH = 'https://storage.googleapis.com/ailia-models-tflite/pose_resnet/'
 
 if args.float:
     DETECT_MODEL_NAME = 'yolov3-tiny-416'
 else:
     DETECT_MODEL_NAME = 'yolov3-tiny-416_full_integer_quant'
-DETECT_MODEL_PATH = f'{DETECT_MODEL_NAME}.tflite'
+DETECT_MODEL_PATH = file_abs_path(__file__, f'{DETECT_MODEL_NAME}.tflite')
 DETECT_REMOTE_PATH = f'https://storage.googleapis.com/ailia-models-tflite/yolov3-tiny/'
 
 
