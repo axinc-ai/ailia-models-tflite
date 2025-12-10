@@ -188,8 +188,7 @@ def recognize_from_image():
                 start = int(round(time.time() * 1000))
                 outputs = compute(interpreter, inputs)
                 end = int(round(time.time() * 1000))
-                if i != 0:
-                    total_time = total_time + (end - start)
+                total_time = total_time + (end - start)
                 logger.info(f'\tailia processing time {end - start} ms')
             logger.info(f'\taverage time {total_time / args.benchmark_count} ms')
         else:
