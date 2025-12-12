@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from logging import getLogger  # noqa: E402
 
 import cv2
@@ -180,18 +181,31 @@ def recognize_from_image(interpreter):
         logger.info('Start inference...')
 
         inputs = format_input_tensor(input_data, input_details, 0)
-        interpreter.set_tensor(input_details[0]['index'], inputs)
-        interpreter.invoke()
-
         details = output_details[0]
+
+        if args.benchmark:
+            logger.info('BENCHMARK mode')
+            average_time = 0
+            for i in range(args.benchmark_count):
+                start = int(round(time.time() * 1000))
+                interpreter.set_tensor(input_details[0]['index'], inputs)
+                interpreter.invoke()
+                real_tensor = interpreter.get_tensor(details['index'])
+                end = int(round(time.time() * 1000))
+                average_time = average_time + (end - start)
+                logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
+        else:
+            interpreter.set_tensor(input_details[0]['index'], inputs)
+            interpreter.invoke()
+            real_tensor = interpreter.get_tensor(details['index'])
+
         dtype = details['dtype']
+
         if dtype == np.uint8 or dtype == np.int8:
             quant_params = details['quantization_parameters']
-            int_tensor = interpreter.get_tensor(details['index'])
-            real_tensor = int_tensor - quant_params['zero_points']
+            real_tensor = real_tensor - quant_params['zero_points']
             real_tensor = real_tensor.astype(np.float32) * quant_params['scales']
-        else:
-            real_tensor = interpreter.get_tensor(details['index'])
 
         save_path = args.savepath
         logger.info(f'saved at : {save_path}')

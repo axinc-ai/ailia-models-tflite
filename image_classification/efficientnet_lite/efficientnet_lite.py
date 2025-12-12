@@ -2,6 +2,7 @@ import os
 import enum
 import sys
 import time
+from logging import getLogger   # noqa: E402
 
 import cv2
 import numpy as np
@@ -26,6 +27,8 @@ from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results, write_predictions  # noqa: E402
 import webcamera_utils  # noqa: E402
 import efficientnet_lite_labels
+
+logger = getLogger(__name__)
 
 
 # ======================
@@ -129,11 +132,11 @@ def recognize_from_image():
     output_details = interpreter.get_output_details()
 
     if args.shape:
-        print(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
+        logger.info(f"update input shape {[1, IMAGE_HEIGHT, IMAGE_WIDTH, 3]}")
         interpreter.resize_tensor_input(input_details[0]["index"], [1, IMAGE_HEIGHT, IMAGE_WIDTH, 3])
         interpreter.allocate_tensors()
 
-    print('Start inference...')
+    logger.info('Start inference...')
 
     if args.legacy:
         normalize_type='Caffe'
@@ -170,7 +173,7 @@ def recognize_from_image():
 
         # inference
         if args.benchmark:
-            print('BENCHMARK mode')
+            logger.info('BENCHMARK mode')
             average_time = 0
             for i in range(args.benchmark_count):
                 start = int(round(time.time() * 1000))
@@ -179,8 +182,8 @@ def recognize_from_image():
                 preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
                 end = int(round(time.time() * 1000))
                 average_time = average_time + (end - start)
-                print(f'\tailia processing time {end - start} ms')
-            print(f'\taverage time {average_time / args.benchmark_count} ms')
+                logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
         else:
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
@@ -188,7 +191,7 @@ def recognize_from_image():
 
         preds_tf_lite_int8 = interpreter.get_tensor(output_details[0]['index'])
 
-        print(f"=== {image_path} ===")
+        logger.info(f"=== {image_path} ===")
         print_results([preds_tf_lite[0],preds_tf_lite_int8[0]], efficientnet_lite_labels.imagenet_category)
 
         # write prediction
@@ -198,9 +201,9 @@ def recognize_from_image():
             write_predictions(pred_file, preds_tf_lite, efficientnet_lite_labels.imagenet_category)
 
         if args.profile:
-            print(interpreter.get_summary())
+            logger.info(interpreter.get_summary())
 
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def recognize_from_video():
@@ -273,7 +276,7 @@ def recognize_from_video():
     cv2.destroyAllWindows()
     if writer is not None:
         writer.release()
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def main():

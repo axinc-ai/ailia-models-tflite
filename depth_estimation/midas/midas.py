@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from logging import getLogger  # noqa: E402
 
 import cv2
@@ -150,11 +151,22 @@ def recognize_from_image(interpreter):
 
         # inference
         logger.info('Start inference...')
-        
-        interpreter.set_tensor(input_details[0]['index'], inputs)
-        interpreter.invoke()
-
-        preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
+        if args.benchmark:
+            logger.info('BENCHMARK mode')
+            average_time = 0
+            for i in range(args.benchmark_count):
+                start = int(round(time.time() * 1000))
+                interpreter.set_tensor(input_details[0]['index'], inputs)
+                interpreter.invoke()
+                preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
+                end = int(round(time.time() * 1000))
+                average_time = average_time + (end - start)
+                logger.info(f'\tailia processing time {end - start} ms')
+            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
+        else:
+            interpreter.set_tensor(input_details[0]['index'], inputs)
+            interpreter.invoke()
+            preds_tf_lite = get_output_tensor(interpreter, output_details, 0)
 
         depth_min = preds_tf_lite.min()
         depth_max = preds_tf_lite.max()
