@@ -344,8 +344,8 @@ def recognize_from_image(interpreter_pose, interpreter_detect):
                 interpreter_detect.invoke()
                 end = int(round(time.time() * 1000))
                 average_time = average_time + (end - start)
-                logger.info(f'\tailia processing time {end - start} ms')
-            logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
+                logger.info(f'\tailia processing detection time {end - start} ms')
+            logger.info(f'\taverage detection time {average_time / args.benchmark_count} ms')
         else:
             inputs = get_input_tensor(input_data, input_details, 0)
             interpreter_detect.set_tensor(input_details[0]['index'], inputs)
@@ -377,10 +377,10 @@ def recognize_from_image(interpreter_pose, interpreter_detect):
                 start = int(round(time.time() * 1000))
                 pose_detections = pose_estimation(boxes, scores, classes, interpreter_pose, img)
                 end = int(round(time.time() * 1000))
-                logger.info(f'\tailia processing detection time {end - start} ms')
+                logger.info(f'\tailia processing estimation time {end - start} ms')
                 if i != 0:
                     total_time = total_time + (end - start)
-            logger.info(f'\taverage detection time {total_time / (args.benchmark_count-1)} ms')
+            logger.info(f'\taverage estimation time {total_time / (args.benchmark_count-1)} ms')
         else:
             pose_detections = pose_estimation(boxes, scores, classes, interpreter_pose, img)
 

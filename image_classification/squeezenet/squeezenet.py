@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from logging import getLogger   # noqa: E402
 
 import cv2
 import numpy as np
@@ -25,6 +26,8 @@ from image_utils import load_image  # noqa: E402
 from classifier_utils import plot_results, print_results  # noqa: E402
 import webcamera_utils  # noqa: E402
 import squeezenet_labels
+
+logger = getLogger(__name__)
 
 
 # ======================
@@ -96,9 +99,9 @@ def recognize_from_image():
     output_details = interpreter.get_output_details()
 
     # inference
-    print('Start inference...')
+    logger.info('Start inference...')
     if args.benchmark:
-        print('BENCHMARK mode')
+        logger.info('BENCHMARK mode')
         average_time = 0
         for i in range(args.benchmark_count):
             start = int(round(time.time() * 1000))
@@ -107,15 +110,15 @@ def recognize_from_image():
             preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
             end = int(round(time.time() * 1000))
             average_time = average_time + (end - start)
-            print(f'\tailia processing time {end - start} ms')
-        print(f'\taverage time {average_time / args.benchmark_count} ms')
+            logger.info(f'\tailia processing time {end - start} ms')
+        logger.info(f'\taverage time {average_time / args.benchmark_count} ms')
     else:
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         preds_tf_lite = interpreter.get_tensor(output_details[0]['index'])
 
     print_results(preds_tf_lite, squeezenet_labels.imagenet_category)
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def recognize_from_video():
@@ -173,7 +176,7 @@ def recognize_from_video():
     cv2.destroyAllWindows()
     if writer is not None:
         writer.release()
-    print('Script finished successfully.')
+    logger.info('Script finished successfully.')
 
 
 def main():

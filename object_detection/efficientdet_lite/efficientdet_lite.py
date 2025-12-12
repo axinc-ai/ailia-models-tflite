@@ -211,6 +211,10 @@ def recognize_from_image():
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH, memory_mode = args.memory_mode, flags = args.flags, env_id = args.env_id, experimental_delegates = delegate_obj(args.delegate_path))
         else:
             interpreter = ailia_tflite.Interpreter(model_path=MODEL_PATH)
+
+    if args.profile:
+        interpreter.set_profile_mode(True)
+
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
@@ -240,8 +244,6 @@ def recognize_from_image():
         )
 
         # inference
-        if args.profile:
-            interpreter.set_profile_mode(True)
         if args.benchmark:
             logger.info('BENCHMARK mode')
             average_time = 0
