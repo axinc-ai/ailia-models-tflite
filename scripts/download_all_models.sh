@@ -1,4 +1,5 @@
-export OPTION="-b -bc 100 --float"
+export OPTION="-b -bc 100"
+
 cd ../
 cd background_removal/u2net; python3 u2net.py ${OPTION}
 cd ../../depth_estimation/midas; python3 midas.py ${OPTION}
@@ -9,8 +10,6 @@ cd ../../image_classification/efficientnet_lite; python3 efficientnet_lite.py ${
 cd ../../image_classification/mobilenetv1; python3 mobilenetv1.py ${OPTION}
 cd ../../image_classification/mobilenetv2; python3 mobilenetv2.py ${OPTION}
 cd ../../image_classification/resnet50; python3 resnet50.py ${OPTION}
-cd ../../image_classification/resnet50; python3 resnet50.py ${OPTION} --float
-cd ../../image_classification/googlenet; python3 googlenet.py ${OPTION}
 cd ../../image_classification/vgg16; python3 vgg16.py ${OPTION}
 cd ../../image_classification/squeezenet; python3 squeezenet.py ${OPTION}
 cd ../../image_classification/efficientnet_lite; python3 efficientnet_lite.py ${OPTION}

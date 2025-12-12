@@ -127,6 +127,8 @@ def recognize_from_video(interpreter):
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         input_data = transform(frame, (args.width, args.height))
+        if args.float:
+            input_data = input_data.astype(np.float32)
 
         inputs = format_input_tensor(input_data, input_details, 0)
         interpreter.set_tensor(input_details[0]['index'], inputs)
@@ -181,6 +183,8 @@ def recognize_from_image(interpreter):
         logger.info('Start inference...')
 
         inputs = format_input_tensor(input_data, input_details, 0)
+        if args.float:
+            inputs = inputs.astype(np.float32)
         details = output_details[0]
 
         if args.benchmark:

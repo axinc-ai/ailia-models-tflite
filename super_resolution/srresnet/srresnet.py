@@ -123,7 +123,7 @@ def recognize_from_image(interpreter):
 
         # postprocessing
         output_img = preds_tf_lite[0]
-        logger.info(f"{output_img.shape}")
+        #logger.info(f"{output_img.shape}")
         output_img = cv2.cvtColor(output_img, cv2.COLOR_RGB2BGR)
         savepath = get_savepath(args.savepath, image_path)
         logger.info(f'saved at : {savepath}')
